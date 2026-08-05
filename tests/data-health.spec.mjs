@@ -1,17 +1,29 @@
 import { test, expect, selectors, waitForReady, waitForSignedOut, signIn } from './fixtures/mock-bol.mjs';
 import { healthyScenario, orderSummary, parcel, snapshot } from './fixtures/data.mjs';
 
+const mismatchedParcel = parcel({ n: 88, shippedAt: '2026-08-05T09:00:00Z' });
+mismatchedParcel.detail.shipmentDateTime = '2026-08-05T09:00:01Z';
+const invalidPlacedAtParcel = parcel({ n: 89, shippedAt: '2026-08-05T09:00:00Z' });
+invalidPlacedAtParcel.detail.order.orderPlacedDateTime = 'not-a-date';
+const impossiblePlacedAtParcel = parcel({ n: 90, shippedAt: '2026-08-05T09:00:00Z' });
+impossiblePlacedAtParcel.detail.order.orderPlacedDateTime = '2026-02-30T10:00:00Z';
+const impossibleShipmentListParcel = parcel({ n: 91, shippedAt: '2026-08-05T09:00:00Z' });
+impossibleShipmentListParcel.summary.shipmentDateTime = '2026-02-30T10:00:00Z';
+
 for (const failure of [
   { name: 'orders list', scenario: healthyScenario({ failures: [{ kind: 'orders', page: 1 }] }) },
   { name: 'shipments list', scenario: healthyScenario({ failures: [{ kind: 'shipments', page: 1 }] }) },
   {
-    name: 'order detail',
+    name: 'order summary',
     scenario: healthyScenario({
-      snapshots: [snapshot({ orders: [orderSummary({ orderId: 'OPEN-ORDER-1' })], parcels: [parcel()] })],
-      failures: [{ kind: 'orderDetail', identifier: 'OPEN-ORDER-1' }],
+      snapshots: [snapshot({ orders: [{ orderId: 'OPEN-ORDER-1', orderPlacedDateTime: '2026-08-05T08:00:00Z' }], parcels: [parcel()] })],
     }),
   },
   { name: 'shipment detail', scenario: healthyScenario({ failures: [{ kind: 'shipmentDetail', identifier: 'SHIPMENT-1' }] }) },
+  { name: 'shipment list/detail mismatch', scenario: healthyScenario({ snapshots: [snapshot({ parcels: [mismatchedParcel] })] }) },
+  { name: 'shipment detail order timestamp', scenario: healthyScenario({ snapshots: [snapshot({ parcels: [invalidPlacedAtParcel] })] }) },
+  { name: 'shipment detail impossible calendar timestamp', scenario: healthyScenario({ snapshots: [snapshot({ parcels: [impossiblePlacedAtParcel] })] }) },
+  { name: 'shipment list impossible calendar timestamp', scenario: healthyScenario({ snapshots: [snapshot({ parcels: [impossibleShipmentListParcel] })] }) },
 ]) {
   test.describe(failure.name, () => {
     test.use({ scenario: failure.scenario });
@@ -32,6 +44,26 @@ test.describe('pending initial snapshot', () => {
     await expect(input).toBeDisabled();
     await expect(page.locator(selectors.dataStatus)).toHaveAttribute('data-state', 'loading');
     await waitForReady(page);
+  });
+});
+
+test.describe('bounded detail failure cleanup', () => {
+  const parcels = Array.from({ length: 8 }, (_, index) => parcel({ n: index + 1 }));
+  test.use({ scenario: healthyScenario({
+    snapshots: [snapshot({ parcels })],
+    delays: { shipmentDetail: 150 },
+    failures: [{ kind: 'shipmentDetail', identifier: 'SHIPMENT-1', delayMs: 50 }],
+  }) });
+
+  test('settles the active worker batch before allowing retry', async ({ page }) => {
+    await expect(page.locator(selectors.dataStatus)).toHaveAttribute('data-state', 'error');
+    expect(await page.evaluate(() => window.__apiMock.callsOf('shipmentDetail').length)).toBe(4);
+    await page.waitForTimeout(300);
+    expect(await page.evaluate(() => window.__apiMock.callsOf('shipmentDetail').length)).toBe(4);
+    await page.evaluate(() => window.__apiMock.clearFailures());
+    await page.locator(selectors.retryData).click();
+    await waitForReady(page);
+    expect(await page.evaluate(() => window.__apiMock.callsOf('shipmentDetail').length)).toBe(12);
   });
 });
 

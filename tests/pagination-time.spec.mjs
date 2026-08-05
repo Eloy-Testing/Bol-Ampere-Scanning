@@ -6,16 +6,36 @@ test.describe('pagination', () => {
   const parcels = paginatedRecords('shipments', 51, (n) => parcel({ n, orderId: `SHIP-ORDER-${n}`, track: `PAGE-TRACK-${n}` }));
   test.use({ scenario: healthyScenario({ snapshots: [snapshot({ orders, parcels, pageSize: 50 })] }) });
 
-  test('loads every orders and shipments page before enabling scanning', async ({ page }) => {
+  test('loads every required orders and shipments page before enabling scanning', async ({ page }) => {
     await waitForReady(page);
     const calls = await page.evaluate(() => ({
       orders: window.__apiMock.callsOf('orders').map((call) => call.page),
       shipments: window.__apiMock.callsOf('shipments').map((call) => call.page),
     }));
-    expect(calls.orders).toEqual(expect.arrayContaining([1, 2]));
-    expect(calls.shipments).toEqual(expect.arrayContaining([1, 2]));
+    expect(calls.orders).toEqual([1, 2, 3]);
+    expect(calls.shipments).toEqual([1, 2, 3]);
+    expect(await page.evaluate(() => window.__apiMock.callsOf('orderDetail').length)).toBe(0);
     await expect(page.locator('[data-track-code="PAGE-TRACK-51"]')).toBeAttached();
     await expect(page.locator('[data-order-id="ORDER-PAGE-51"]')).toBeAttached();
+  });
+});
+
+test.describe('cutoff-aware shipment pagination', () => {
+  const parcels = [
+    parcel({ n: 1, shippedAt: '2026-08-05T09:00:00Z' }),
+    parcel({ n: 2, shippedAt: '2026-08-05T08:00:00Z' }),
+    parcel({ n: 3, shippedAt: '2026-08-04T13:59:59Z' }),
+    parcel({ n: 4, shippedAt: '2026-08-03T10:00:00Z' }),
+    parcel({ n: 5, shippedAt: '2026-08-02T10:00:00Z' }),
+  ];
+  test.use({ scenario: healthyScenario({ snapshots: [snapshot({ parcels, pageSize: 2 })] }) });
+
+  test('stops at the first verified descending page crossing the operational cutoff', async ({ page }) => {
+    await waitForReady(page);
+    const pages = await page.evaluate(() => window.__apiMock.callsOf('shipments').map(call => call.page));
+    expect(pages).toEqual([1, 2]);
+    await expect(page.locator('[data-track-code="TRACK-2"]')).toBeAttached();
+    await expect(page.locator('[data-track-code="TRACK-3"]')).toHaveCount(0);
   });
 });
 

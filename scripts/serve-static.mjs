@@ -91,7 +91,11 @@ function handleSyntheticBol(request, response, url) {
   const path = url.pathname.slice('/__bol/api'.length);
   if (path === '/orders') {
     const page = Number(url.searchParams.get('page') || 1);
-    return json(response, 200, { orders: page === 1 ? [{ orderId: syntheticOrder.orderId, orderPlacedDateTime: syntheticOrder.orderPlacedDateTime }] : [], totalPages: 1, totalElements: 1 });
+    return json(response, 200, { orders: page === 1 ? [{
+      orderId: syntheticOrder.orderId,
+      orderPlacedDateTime: syntheticOrder.orderPlacedDateTime,
+      orderItems: syntheticOrder.orderItems,
+    }] : [], totalPages: 1, totalElements: 1 });
   }
   if (path === '/shipments') {
     const page = Number(url.searchParams.get('page') || 1);

@@ -6,6 +6,7 @@ const API_BASE_URL = 'https://api.bol.com/retailer';
 const ACCEPT = 'application/vnd.retailer.v10+json';
 const USER_AGENT = 'Ampere-Warehouse-Scanner/1.0';
 const PAGE_LIMIT = 100;
+const ISO_INSTANT = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d{1,9})?(?:Z|[+-](\d{2}):(\d{2}))$/;
 
 function text(value, maxLength = 256) {
   return typeof value === 'string' && value.length <= maxLength ? value : undefined;
@@ -27,6 +28,36 @@ function requiredIdentifier(value, maxLength = 128) {
   } catch {
     throw new UpstreamError();
   }
+}
+
+function isValidIsoInstant(value) {
+  if (typeof value !== 'string') return false;
+  const match = ISO_INSTANT.exec(value);
+  if (!match) return false;
+  const [, yearText, monthText, dayText, hourText, minuteText, secondText, offsetHourText = '0', offsetMinuteText = '0'] = match;
+  const year = Number(yearText);
+  const month = Number(monthText);
+  const day = Number(dayText);
+  const daysInMonth = [31, year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0) ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  return month >= 1 && month <= 12
+    && day >= 1 && day <= daysInMonth[month - 1]
+    && Number(hourText) <= 23
+    && Number(minuteText) <= 59
+    && Number(secondText) <= 59
+    && Number(offsetHourText) <= 23
+    && Number(offsetMinuteText) <= 59
+    && Number.isFinite(new Date(value).getTime());
+}
+
+function requiredIso(value, maxLength = 64) {
+  const result = requiredText(value, maxLength);
+  if (!isValidIsoInstant(result)) throw new UpstreamError();
+  return result;
+}
+
+function optionalIso(value, maxLength = 64) {
+  if (value == null) return undefined;
+  return requiredIso(value, maxLength);
 }
 
 function compact(object) {
@@ -67,7 +98,7 @@ export function sanitizeOrder(order, { detail = false } = {}) {
   const orderId = requiredIdentifier(order.orderId);
   const sanitized = compact({
     orderId,
-    orderPlacedDateTime: text(order.orderPlacedDateTime, 64),
+    orderPlacedDateTime: requiredIso(order.orderPlacedDateTime),
   });
   if (detail || Array.isArray(order.orderItems)) {
     if (!Array.isArray(order.orderItems) || order.orderItems.length === 0) throw new UpstreamError();
@@ -82,10 +113,10 @@ export function sanitizeShipment(shipment, { detail = false } = {}) {
   const orderId = shipment.order?.orderId == null ? undefined : requiredIdentifier(shipment.order.orderId);
   const sanitized = compact({
     shipmentId,
-    shipmentDateTime: text(shipment.shipmentDateTime, 64),
+    shipmentDateTime: requiredIso(shipment.shipmentDateTime),
     order: orderId ? compact({
       orderId,
-      orderPlacedDateTime: text(shipment.order?.orderPlacedDateTime, 64),
+      orderPlacedDateTime: optionalIso(shipment.order?.orderPlacedDateTime),
     }) : undefined,
   });
   if (detail) {
@@ -187,8 +218,6 @@ export class BolClient {
     return compact({
       orders: payload.orders.map((order) => sanitizeOrder(order)),
       page,
-      totalPages: finite(payload.totalPages),
-      totalElements: finite(payload.totalElements),
     });
   }
 
@@ -199,19 +228,21 @@ export class BolClient {
     return compact({
       shipments: payload.shipments.map((shipment) => sanitizeShipment(shipment)),
       page,
-      totalPages: finite(payload.totalPages),
-      totalElements: finite(payload.totalElements),
     });
   }
 
   async getOrder(id) {
     const identifier = validateIdentifier(id);
-    return sanitizeOrder(await this.#request(`/orders/${encodeURIComponent(identifier)}`), { detail: true });
+    const order = sanitizeOrder(await this.#request(`/orders/${encodeURIComponent(identifier)}`), { detail: true });
+    if (order.orderId !== identifier) throw new UpstreamError();
+    return order;
   }
 
   async getShipment(id) {
     const identifier = validateIdentifier(id);
-    return sanitizeShipment(await this.#request(`/shipments/${encodeURIComponent(identifier)}`), { detail: true });
+    const shipment = sanitizeShipment(await this.#request(`/shipments/${encodeURIComponent(identifier)}`), { detail: true });
+    if (shipment.shipmentId !== identifier) throw new UpstreamError();
+    return shipment;
   }
 
   async #all(resource) {

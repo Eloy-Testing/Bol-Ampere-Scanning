@@ -20,7 +20,7 @@
   },
   "artifact": {
     "path": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/index.html",
-    "sha256": "3a0a9aa6ea59b09cb41cdeb2073dfbbe2a05a31df18b479b28a462b948a01963"
+    "sha256": "63b303a33aafe4b3c2495afb4bba4b15863b619da1276a34c73b52dc6aa6228c"
   },
   "verification": {
     "visual_evidence": [
@@ -31,18 +31,18 @@
       },
       {
         "path": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/verification/screenshot-evidence/2026-08-05-standalone-vercel-scanner-desktop.png",
-        "sha256": "241b76f2b48c11e1bf02faf072a3c54bbf88aec83c3a7350132efe3d55c7477a",
+        "sha256": "16a56a6f9d8a2065801a9c61e068ebc87a1a2fed9b734dfdaae5bfd44b99e26f",
         "viewport": "desktop"
       },
       {
         "path": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/verification/screenshot-evidence/2026-08-05-standalone-vercel-scanner-mobile.png",
-        "sha256": "58d4c181811dbaee1e04db5383cb2224631a72c7482f3c88ea33019c1a515d66",
+        "sha256": "2f47f808de280ef801a4ccd0f96e7c0bc1293d19c91e9c536324c5e7d52d8618",
         "viewport": "mobile"
       }
     ],
     "visual_qa": {
       "path": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/verification/2026-08-05-standalone-vercel-scanner-visual-qa.json",
-      "sha256": "4f1bfda83ee40131f62bb844b83292e5fa110324997ba1570e3b66fd21b936f6",
+      "sha256": "99fce879bd10f13ec4c473fe59b45d64bac4a19f7487eece98052e592002f598",
       "status": "pass"
     }
   }

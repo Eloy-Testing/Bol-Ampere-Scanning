@@ -283,6 +283,7 @@
     const REFRESH_INTERVAL_MS = 5 * 60 * 1000;
     const LANGUAGE_KEY = 'ampere_language_v2';
     const LOGOUT_PENDING_KEY = 'ampere_logout_pending_v1';
+    const ISO_INSTANT = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d{1,9})?(?:Z|[+-](\d{2}):(\d{2}))$/;
 
     const TEXT = {
       nl: {
@@ -348,7 +349,24 @@
     function safeLogoutPendingGet() { try { return sessionStorage.getItem(LOGOUT_PENDING_KEY) === '1'; } catch (_) { return false; } }
     function safeLogoutPendingSet(value) { try { if (value) sessionStorage.setItem(LOGOUT_PENDING_KEY, '1'); else sessionStorage.removeItem(LOGOUT_PENDING_KEY); } catch (_) {} }
     function canonicalCode(value) { return String(value == null ? '' : value).trim().toUpperCase().slice(0, 256); }
-    function validIso(value) { return typeof value === 'string' && Number.isFinite(new Date(value).getTime()); }
+    function validIso(value) {
+      if (typeof value !== 'string') return false;
+      const match = ISO_INSTANT.exec(value);
+      if (!match) return false;
+      const [, yearText, monthText, dayText, hourText, minuteText, secondText, offsetHourText = '0', offsetMinuteText = '0'] = match;
+      const year = Number(yearText);
+      const month = Number(monthText);
+      const day = Number(dayText);
+      const daysInMonth = [31, year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0) ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+      return month >= 1 && month <= 12
+        && day >= 1 && day <= daysInMonth[month - 1]
+        && Number(hourText) <= 23
+        && Number(minuteText) <= 59
+        && Number(secondText) <= 59
+        && Number(offsetHourText) <= 23
+        && Number(offsetMinuteText) <= 59
+        && Number.isFinite(new Date(value).getTime());
+    }
     function plainText(value, fallback = '') { return value == null ? fallback : String(value); }
 
     function zonedParts(date) {
@@ -466,12 +484,6 @@
 
     function unwrapPayload(payload) { return payload && payload.data && typeof payload.data === 'object' ? payload.data : payload; }
 
-    function pageMeta(payload) {
-      const root = payload && payload.data ? payload.data : payload || {};
-      const value = root.totalPages ?? payload.totalPages;
-      return Number.isFinite(Number(value)) ? Number(value) : null;
-    }
-
     async function pagedResource(resource) {
       const all = [];
       for (let page = 1; page <= MAX_PAGES; page += 1) {
@@ -482,51 +494,100 @@
         const rows = Array.isArray(data[resource]) ? data[resource] : null;
         if (!rows) throw new Error(`${resource} page ${page} was incomplete`);
         all.push(...rows);
-        const pages = pageMeta(payload);
-        if (rows.length === 0 || (pages != null && page >= pages)) return all;
+        if (rows.length === 0) return all;
       }
       throw new Error(`${resource} pagination exceeded safety limit`);
+    }
+
+    async function pagedShipmentsSince(cutoffIso) {
+      if (!validIso(cutoffIso)) throw new Error('Shipment cutoff was invalid');
+      const cutoff = new Date(cutoffIso);
+      const recent = [];
+      let previousTimestamp = Number.POSITIVE_INFINITY;
+      for (let page = 1; page <= MAX_PAGES; page += 1) {
+        app.progress = tx().loadingShipments(page);
+        renderHealth();
+        const payload = await requestJson(`/api/retailer?resource=shipments&page=${page}`);
+        const data = unwrapPayload(payload);
+        const rows = Array.isArray(data.shipments) ? data.shipments : null;
+        if (!rows) throw new Error(`shipments page ${page} was incomplete`);
+        let crossedCutoff = false;
+        for (const row of rows) {
+          if (!validIso(row && row.shipmentDateTime)) throw new Error('Shipment pagination timestamp was incomplete');
+          const timestamp = new Date(row && row.shipmentDateTime).getTime();
+          if (timestamp > previousTimestamp) throw new Error('Shipment pagination order was incomplete');
+          previousTimestamp = timestamp;
+          if (timestamp >= cutoff.getTime()) recent.push(row);
+          else crossedCutoff = true;
+        }
+        if (rows.length === 0 || crossedCutoff) return recent;
+      }
+      throw new Error('shipments pagination exceeded safety limit');
+    }
+
+    async function mapConcurrent(items, concurrency, mapper) {
+      const results = new Array(items.length);
+      let nextIndex = 0;
+      let failure = null;
+      async function worker() {
+        while (!failure && nextIndex < items.length) {
+          const index = nextIndex;
+          nextIndex += 1;
+          try {
+            results[index] = await mapper(items[index], index);
+          } catch (error) {
+            if (!failure) failure = error;
+          }
+        }
+      }
+      await Promise.all(Array.from({ length: Math.min(concurrency, items.length) }, () => worker()));
+      if (failure) throw failure;
+      return results;
     }
 
     async function buildSnapshot() {
       const loadedAt = now();
       const window = amsterdamWindow(loadedAt);
       const orders = await pagedResource('orders');
-      const detailedOrders = [];
-      for (let i = 0; i < orders.length; i += 1) {
-        const order = orders[i];
+      const detailedOrders = orders.map(order => {
         const orderId = plainText(order.orderId);
         if (!orderId) throw new Error('Open order without orderId');
-        app.progress = tx().loadingDetails(i + 1, orders.length);
-        renderHealth();
-        const detail = unwrapPayload(await requestJson(`/api/retailer?resource=order&id=${encodeURIComponent(orderId)}`));
-        if (!detail || !Array.isArray(detail.orderItems)) throw new Error(`Order ${orderId} detail was incomplete`);
-        detailedOrders.push({ ...order, ...detail, orderId, orderItems: detail.orderItems });
-      }
+        if (!validIso(order.orderPlacedDateTime)) throw new Error(`Order ${orderId} timestamp was incomplete`);
+        if (!Array.isArray(order.orderItems) || order.orderItems.length === 0) throw new Error(`Order ${orderId} summary was incomplete`);
+        return { ...order, orderId, orderItems: order.orderItems };
+      });
 
-      const listedShipments = await pagedResource('shipments');
-      const recent = listedShipments.filter(item => validIso(item.shipmentDateTime) && new Date(item.shipmentDateTime) >= new Date(window.previousCutoffIso));
-      const shipments = [];
-      for (let i = 0; i < recent.length; i += 1) {
-        const listed = recent[i];
+      const recent = await pagedShipmentsSince(window.previousCutoffIso);
+      let completedDetails = 0;
+      const shipments = await mapConcurrent(recent, 4, async listed => {
         const shipmentId = plainText(listed.shipmentId);
         if (!shipmentId) throw new Error('Shipment without shipmentId');
-        app.progress = tx().loadingDetails(i + 1, recent.length);
-        renderHealth();
         const data = unwrapPayload(await requestJson(`/api/retailer?resource=shipment&id=${encodeURIComponent(shipmentId)}`));
+        const detailShipmentId = plainText(data && data.shipmentId);
+        const listedOrderId = plainText(listed.order && listed.order.orderId);
         const orderId = plainText(data && data.order && data.order.orderId);
         const items = data && Array.isArray(data.shipmentItems) ? data.shipmentItems : null;
-        if (!data || !orderId || !items || !validIso(data.shipmentDateTime)) throw new Error(`Shipment ${shipmentId} detail was incomplete`);
-        shipments.push({
+        const listedTimestamp = new Date(listed.shipmentDateTime).getTime();
+        const detailTimestamp = new Date(data && data.shipmentDateTime).getTime();
+        const placedAt = plainText(data && data.order && data.order.orderPlacedDateTime || listed.order && listed.order.orderPlacedDateTime);
+        if (!data || detailShipmentId !== shipmentId || !listedOrderId || orderId !== listedOrderId || !items || !items.length
+          || !Number.isFinite(listedTimestamp) || detailTimestamp !== listedTimestamp || (placedAt && !validIso(placedAt))) {
+          throw new Error(`Shipment ${shipmentId} detail did not match its list record`);
+        }
+        completedDetails += 1;
+        app.progress = tx().loadingDetails(completedDetails, recent.length);
+        renderHealth();
+        return {
           shipmentId, orderId,
-          placedAt: plainText(data.order.orderPlacedDateTime || listed.order && listed.order.orderPlacedDateTime),
+          placedAt,
           shipmentDateTime: data.shipmentDateTime,
           trackAndTrace: canonicalCode(data.transport && data.transport.trackAndTrace),
           transporterCode: plainText(data.transport && data.transport.transporterCode),
           items
-        });
-      }
-      shipments.sort((a, b) => new Date(a.placedAt || a.shipmentDateTime) - new Date(b.placedAt || b.shipmentDateTime));
+        };
+      });
+      shipments.sort((a, b) => new Date(a.placedAt || a.shipmentDateTime) - new Date(b.placedAt || b.shipmentDateTime)
+        || a.shipmentId.localeCompare(b.shipmentId));
       const trackIndex = new Map();
       for (const shipment of shipments) if (shipment.trackAndTrace) {
         if (trackIndex.has(shipment.trackAndTrace)) throw new Error(`Duplicate tracking code ${shipment.trackAndTrace}`);

@@ -18,7 +18,7 @@
 - Tokens are short-lived (`expires_in` is normally 299 seconds) and are sent as `Authorization: Bearer <token>`.
 - The Retailer API base URL is `https://api.bol.com/retailer`.
 - v10 is requested through `Accept: application/vnd.retailer.v10+json`.
-- `GET /orders` and `GET /shipments` use 1-based `page` pagination with 50 records per page; clients continue until an omitted/empty collection proves the boundary.
+- `GET /orders` and `GET /shipments` use 1-based `page` pagination with up to 50 records per page. Orders continue until an empty collection proves the boundary. Shipments are documented newest-first, so the scanner validates descending timestamps and stops only after a page crosses the previous Amsterdam cutoff; this proves the complete operational window without reading the three-month shipment archive.
 - The scanner needs read-only access to exactly four shapes: order list, order detail, shipment list, and shipment detail.
 - Credentials must not be hardcoded or sent to the browser.
 - The existing Bankhoes dashboard uses `@libsql/client` with `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN` against `bankhoes-bi-data-zanderbmc.aws-eu-west-1.turso.io`.
