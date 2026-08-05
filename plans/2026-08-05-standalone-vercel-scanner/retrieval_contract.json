@@ -1,0 +1,96 @@
+{
+  "task_id": "2026-08-05-standalone-vercel-scanner",
+  "created_at": "2026-08-05",
+  "target_surface": "Internal warehouse scanner deployed as a static Vercel frontend plus Node.js Functions",
+  "project_owner": "BHP Warehouse Packing Tracker",
+  "request_summary": "Remove the CoWork dependency and make the hands-free scanner a standalone deployable application.",
+  "included_pages": [
+    "index.html",
+    "README.md",
+    "package.json",
+    "playwright.config.mjs",
+    "scripts/serve-static.mjs",
+    "tests/**",
+    "plans/2026-08-05-hands-free-scanner/**",
+    "plans/2026-08-05-standalone-vercel-scanner/api_source_contract.md",
+    "official bol Retailer API authentication, conventions, v10, orders and shipments documentation",
+    "official Vercel Functions and environment-variable documentation",
+    "official Turso TypeScript client, batch-transaction, and server environment documentation",
+    "Bankhoes BI Dashboard AGENTS.md, engineering/Context.md, integrations/Context.md, lib/db.ts, package.json, and sanitized Turso database identity"
+  ],
+  "excluded_pages": [
+    "Live bol Seller Dashboard or retailer data",
+    "Any Vercel team, project, deployment, or environment configuration",
+    "Unrelated repositories and account memory",
+    "Third-party authentication services or browser-stored bearer tokens",
+    "Write-capable bol Retailer API resources"
+  ],
+  "active_rules": [
+    "Preserve the proven FIFO fail-closed scanner loop",
+    "No external account access without a matching project authority rule",
+    "Never expose bol/database credentials, password hashes, or session secrets to the browser",
+    "Operational state and auth lockout must be shared and durable in isolated Turso ampere_* tables",
+    "Browser-visible changes require current desktop and mobile inspection",
+    "A materially changed plan requires a sealed independent review"
+  ],
+  "required_project_contracts": [
+    "design-system/interface-integrity.md",
+    "plans/2026-08-05-standalone-vercel-scanner/spatial_priority_contract.json",
+    "plans/2026-08-05-standalone-vercel-scanner/interface_output_contract.json"
+  ],
+  "active_skills": [
+    "creative-design-orchestrator",
+    "vercel-functions",
+    "env-vars",
+    "verification",
+    "No Turso-specific skill was available; use the inspected Bankhoes contract and official Turso docs"
+  ],
+  "tool_surfaces": [
+    "local filesystem",
+    "shell",
+    "Playwright",
+    "public official documentation"
+  ],
+  "write_targets": [
+    "index.html",
+    "api/**",
+    "server/**",
+    ".env.example",
+    "vercel.json",
+    "README.md",
+    "package.json",
+    "scripts/**",
+    "tests/**",
+    "plans/2026-08-05-standalone-vercel-scanner/**",
+    "verification/**"
+  ],
+  "page_fault_policy": "record-and-resolve-before-design",
+  "external_account_policy": "blocked-unless-explicitly-approved",
+  "content_truth_policy": "real-data-labeled-sample-or-neutral-placeholder",
+  "assumptions": {
+    "verified": [
+      "The current browser code depends on window.cowork.callMcpTool.",
+      "The bol v10 read endpoints and OAuth client-credentials flow are publicly documented.",
+      "The repository already has a working hands-free queue and deterministic browser tests.",
+      "Vercel supports static assets and Node.js Functions in one project."
+    ],
+    "inferred": [
+      "Standalone means no CoWork or third-party identity provider, while bol remains the required system of record.",
+      "A shared warehouse access password is acceptable for this internal station when protected by a signed server-side session cookie."
+    ],
+    "unknown": [
+      "The target Vercel account, team, and project identity.",
+      "The production bol retailer credentials and exact warehouse scanner model.",
+      "The final station and operator labels used for audit metadata.",
+      "The target Vercel project and how the already-approved Turso credentials will be injected there."
+    ]
+  },
+  "verification_required": {
+    "browser_visual": true,
+    "state_coverage": true,
+    "interface_output_contract": true,
+    "spatial_priority_contract": true,
+    "specialized_profile_contract": false,
+    "pagespace_status": false
+  }
+}

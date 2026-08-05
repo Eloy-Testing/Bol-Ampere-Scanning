@@ -1,0 +1,88 @@
+{
+  "schema_version": 3,
+  "marker": "PLAN_CRITIC_REVIEW_V2",
+  "review_status": "complete",
+  "verdict": "PASS",
+  "review_stage": "initial",
+  "reviewer_identity": "plan_critic:/root/standalone_turso_final_review",
+  "packet_sha256": "73be9c026ad1e73872a06a81f16e88a2c0070a96e73d6e1e63d887020579f052",
+  "reviewed_draft_sha256": "2a0478c2ade6d952b734a074b2812e4410f0b720c4aa2dbe4f9ffe46949e297f",
+  "context_bootstrap": {
+    "first_action": "project_index_and_context",
+    "inspected_context_paths": [
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/AGENTS.md",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/index.html",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/README.md",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/playwright.config.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/package-lock.json",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/package.json",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/plans/2026-08-05-standalone-vercel-scanner/api_source_contract.md",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/plans/2026-08-05-standalone-vercel-scanner/spatial_priority_contract.json",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/plans/2026-08-05-standalone-vercel-scanner/interface_output_contract.json",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/plans/2026-08-05-standalone-vercel-scanner/design_contract.md",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/plans/2026-08-05-standalone-vercel-scanner/implementation_plan.md",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/scripts/serve-static.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/fixtures/data.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/fixtures/mock-bol.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/data-health.spec.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/mobile.spec.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/pagination-time.spec.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/refresh-persistence.spec.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/repo-hygiene.test.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/scan-flow.spec.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/security.spec.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/visual-evidence.spec.mjs",
+      "/Users/zanderbrilleman/Documents/Bankhoes BI Dashboard/AGENTS.md",
+      "/Users/zanderbrilleman/Documents/Bankhoes BI Dashboard/lib/db.ts"
+    ],
+    "inspected_target_paths": [
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/AGENTS.md",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/.gitignore",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/README.md",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/index.html",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/package-lock.json",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/package.json",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/playwright.config.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/plans/2026-08-05-standalone-vercel-scanner/api_source_contract.md",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/plans/2026-08-05-standalone-vercel-scanner/spatial_priority_contract.json",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/plans/2026-08-05-standalone-vercel-scanner/interface_output_contract.json",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/plans/2026-08-05-standalone-vercel-scanner/design_contract.md",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/plans/2026-08-05-standalone-vercel-scanner/implementation_plan.md",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/scripts/serve-static.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/fixtures/data.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/fixtures/mock-bol.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/data-health.spec.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/mobile.spec.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/pagination-time.spec.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/refresh-persistence.spec.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/repo-hygiene.test.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/scan-flow.spec.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/security.spec.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/visual-evidence.spec.mjs"
+    ]
+  },
+  "findings": [],
+  "aggregate_risk": {
+    "level": "medium",
+    "rationale": "The change crosses UI, authentication, server API, bol verification, and shared database concurrency boundaries, but the plan binds each current CoWork/localStorage dependency to an isolated replacement and requires focused failure, concurrency, end-to-end, full-suite, migration, and visual proof before completion."
+  },
+  "verification_gaps": [
+    "The planned server, migration, Vercel-function, and replacement fixture files do not yet exist, so their correctness is execution-stage evidence to be produced by S6 and S7 rather than current implementation evidence.",
+    "Live bol and Vercel behavior will remain unverified because those accounts are explicitly excluded; the plan correctly limits proof to synthetic bol/local Vercel-shaped execution and the narrowly approved ampere_* Turso migration."
+  ],
+  "contrarian": {
+    "strongest_case_against": "A single cutover spanning auth, API transport, durable state, concurrency, and UI can create interacting regressions that the current CoWork/localStorage-specific browser harness cannot detect until it is replaced.",
+    "simpler_alternative": "Keep the same frozen outcome but execute the existing steps as three gated cuts: prove the server/Turso/auth contracts locally, cut the UI and browser fixtures to same-origin handlers, then perform the approved ampere_* migration and final visual/adoption verification.",
+    "disconfirming_evidence": "Passing atomic concurrent-decision tests, the actual handler/libSQL browser journey, all retained scanner behavior tests, and current desktop/mobile failure-state inspection would disconfirm the aggregate-regression concern.",
+    "reversal_condition": "Revise before live migration if the local Vercel-shaped handlers cannot exercise the production cookie/origin path or if concurrent accepted scans cannot deterministically yield one canonical completion with auditable duplicate attempts."
+  },
+  "required_changes": [],
+  "scope_escalations": [],
+  "falsifiers": [
+    "Any production reference to CoWork/MCP or any non-language localStorage operational key invalidates OUT-1 and OUT-5.",
+    "Any API path that accepts a browser-supplied accepted outcome without reloading shipment and relevant order details invalidates OUT-4.",
+    "Any migration or runtime query that creates, reads, writes, or couples to a non-ampere table invalidates OUT-3 and the approved account boundary.",
+    "A concurrency test that permits two canonical accepted completions for one workday/tracking code invalidates OUT-3.",
+    "Failure of auth, database, partial-data, or live verification that leaves scanning enabled or increments completion invalidates OUT-2, OUT-4, and OUT-5."
+  ]
+}

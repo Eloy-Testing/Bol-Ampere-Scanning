@@ -1,0 +1,311 @@
+{
+  "schema_version": 3,
+  "marker": "PLAN_CRITIC_REVIEW_V2",
+  "envelope": {
+    "review_id": "2026-08-05-standalone-vercel-turso-scanner-evidence-complete-v2",
+    "literal_request": "Yeah, make it work without Cowork dependency. Needs to be fully standalone. Additional requirement: replace browser-only localStorage with a shared durable datastore for operational scan state and include a temporary auth gate that is actually secure. Actually, go check the Bankhoes dashboard project and piggyback onto the Turso DB there.",
+    "intended_outcome": "The named scanner repository becomes a standalone Vercel-shaped application with its own secure API/auth boundary and isolated shared operational state in the approved Bankhoes Turso database, while bol remains the source of truth and the rapid fail-closed scan loop works across stations without CoWork or browser-only state.",
+    "outcomes": [
+      {
+        "id": "OUT-1",
+        "text": "The browser and production source contain no CoWork artifact metadata, MCP tool names, CoWork bridge, browser-exposed secret, browser bearer token, or localStorage-backed operational state."
+      },
+      {
+        "id": "OUT-2",
+        "text": "All API routes enforce a secure temporary warehouse login with salted scrypt verification, shared Turso lockout, short-lived signed HttpOnly session cookies, origin/Fetch Metadata checks, revocation/logout, and fail-closed database behavior."
+      },
+      {
+        "id": "OUT-3",
+        "text": "Only isolated ampere_* tables in the approved Bankhoes Turso database persist session/audit metadata, append-only scan events, and canonical workday package state through atomic libSQL batches that prevent cross-station double completion."
+      },
+      {
+        "id": "OUT-4",
+        "text": "Known scans are independently revalidated server-side against bol shipment and order details before an accepted/cancelled decision; unknown/unverified results never create acceptance and every database/auth/upstream uncertainty stops scanning."
+      },
+      {
+        "id": "OUT-5",
+        "text": "The start, scan, next, repeat interface preserves FIFO processing, synchronous input clearing, duplicate suppression, automatic focus, Amsterdam workdays, complete atomic snapshots, decisive GO/STOP output, and shared-state restoration."
+      },
+      {
+        "id": "OUT-6",
+        "text": "Idempotent schema tests, server tests, the full browser suite, a real local handler/libSQL journey, current desktop/mobile inspection, and an adoption manifest prove the implementation without live bol or Vercel account access."
+      }
+    ],
+    "unacceptable_narrow_interpretation": "Replacing window.cowork with a browser fetch while leaving secrets/client-authoritative decisions, localStorage completion state, unaudited password auth, non-durable rate limits, partial bol data, cross-station races, or any coupling to existing non-ampere Bankhoes tables.",
+    "in_scope": [
+      "The current index.html hands-free scanner and its deterministic tests.",
+      "Standalone same-origin Vercel Functions for session, state, read-only retailer data, and authoritative scan decisions.",
+      "An additive idempotent ampere_* Turso schema plus a local-file migration path and narrowly approved live schema verification.",
+      "Server-only bol/Turso/auth environment contracts, security headers, password-hash tooling, docs, and failure-path coverage.",
+      "Current desktop/mobile visual and accessibility proof."
+    ],
+    "out_of_scope": [
+      "Queries, writes, migrations, schema coupling, or refactors involving existing non-ampere Bankhoes Turso tables.",
+      "Turso token/account/database setting changes or new token creation.",
+      "Live bol retailer credentials/data, live Vercel project/team access, deployment, aliasing, or environment-variable mutation.",
+      "Individual identity/SSO, write-capable bol operations, full bol payload persistence, customer data warehousing, and unrelated redesign."
+    ],
+    "acceptance_evidence": [
+      "Static and repository assertions find no Cowork/MCP production dependency, operational localStorage, committed secret, or browser-visible infrastructure error.",
+      "Server tests prove scrypt verification, signed/expired/revoked sessions, shared lockout, origin enforcement, ampere-only data access, safe cookies/errors, and fail-closed database behavior.",
+      "Turso migration tests prove every created object starts with ampere_, reruns idempotently, and atomic concurrent accepted scans produce one canonical completion plus auditable duplicate events.",
+      "Mocked bol tests prove v10 OAuth/header contracts, complete pagination, shipment-code identity, item-scoped cancellation, unknown/unverified STOP, and secret-safe errors.",
+      "A browser journey through actual local handlers and a disposable libSQL file proves login, state hydration, complete load, scan, server verification, persistence, reload, and shared duplicate state.",
+      "Current 1440x980 and 390x900 screenshots plus accessibility/console checks cover access, ready, GO, STOP, and shared-state failure surfaces; adoption validation binds final hashes."
+    ],
+    "dependency_expansion_rule": "A surface becomes required only through an inspected causal dependency edge to OUT-1 through OUT-6."
+  },
+  "context": {
+    "context_root": "/Users/zanderbrilleman/Documents",
+    "project_index_paths": [
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/AGENTS.md",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/index.html",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/README.md",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/playwright.config.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/package-lock.json",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/package.json"
+    ],
+    "project_context_paths": [
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/plans/2026-08-05-standalone-vercel-scanner/api_source_contract.md",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/plans/2026-08-05-standalone-vercel-scanner/spatial_priority_contract.json",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/plans/2026-08-05-standalone-vercel-scanner/interface_output_contract.json",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/scripts/serve-static.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/fixtures/data.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/fixtures/mock-bol.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/data-health.spec.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/mobile.spec.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/pagination-time.spec.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/refresh-persistence.spec.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/repo-hygiene.test.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/scan-flow.spec.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/security.spec.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/visual-evidence.spec.mjs",
+      "/Users/zanderbrilleman/Documents/Bankhoes BI Dashboard/AGENTS.md",
+      "/Users/zanderbrilleman/Documents/Bankhoes BI Dashboard/lib/db.ts"
+    ],
+    "governing_instructions": [
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/AGENTS.md",
+      "/Users/zanderbrilleman/Documents/Bankhoes BI Dashboard/AGENTS.md"
+    ],
+    "inspected_paths": [
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/AGENTS.md",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/index.html",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/README.md",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/playwright.config.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/package-lock.json",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/package.json",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/plans/2026-08-05-standalone-vercel-scanner/api_source_contract.md",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/plans/2026-08-05-standalone-vercel-scanner/spatial_priority_contract.json",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/plans/2026-08-05-standalone-vercel-scanner/interface_output_contract.json",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/plans/2026-08-05-standalone-vercel-scanner/design_contract.md",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/plans/2026-08-05-standalone-vercel-scanner/implementation_plan.md",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/scripts/serve-static.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/fixtures/data.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/fixtures/mock-bol.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/data-health.spec.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/mobile.spec.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/pagination-time.spec.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/refresh-persistence.spec.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/repo-hygiene.test.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/scan-flow.spec.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/security.spec.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/visual-evidence.spec.mjs",
+      "/Users/zanderbrilleman/Documents/Bankhoes BI Dashboard/AGENTS.md",
+      "/Users/zanderbrilleman/Documents/Bankhoes BI Dashboard/lib/db.ts"
+    ]
+  },
+  "target": {
+    "target_system_root": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker",
+    "governing_instructions": [
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/AGENTS.md"
+    ],
+    "existing_direct_target_paths": [
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/.gitignore",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/README.md",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/index.html",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/package-lock.json",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/package.json",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/playwright.config.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/scripts/serve-static.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/fixtures/data.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/fixtures/mock-bol.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/data-health.spec.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/mobile.spec.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/pagination-time.spec.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/refresh-persistence.spec.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/repo-hygiene.test.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/scan-flow.spec.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/security.spec.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/visual-evidence.spec.mjs"
+    ],
+    "planned_target_paths": [
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/.env.example",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/vercel.json",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/migrations/001_ampere_scanner.sql",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/api/session.js",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/api/retailer.js",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/api/state.js",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/api/scan.js",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/server/http.js",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/server/auth.js",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/server/bol.js",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/server/turso.js",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/server/scan-service.js",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/scripts/hash-password.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/scripts/migrate.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/server/auth.test.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/server/bol.test.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/server/turso.test.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/server/handlers.test.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/standalone-flow.spec.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/verification/2026-08-05-standalone-vercel-scanner-visual-qa.json",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/verification/2026-08-05-standalone-vercel-scanner-state-qa.md",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/verification/screenshot-evidence/2026-08-05-standalone-vercel-scanner-desktop.png",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/verification/screenshot-evidence/2026-08-05-standalone-vercel-scanner-mobile.png",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/plans/2026-08-05-standalone-vercel-scanner/adoption_manifest.json"
+    ],
+    "inspected_paths": [
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/AGENTS.md",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/.gitignore",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/README.md",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/index.html",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/package-lock.json",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/package.json",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/playwright.config.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/plans/2026-08-05-standalone-vercel-scanner/api_source_contract.md",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/plans/2026-08-05-standalone-vercel-scanner/spatial_priority_contract.json",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/plans/2026-08-05-standalone-vercel-scanner/interface_output_contract.json",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/plans/2026-08-05-standalone-vercel-scanner/design_contract.md",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/plans/2026-08-05-standalone-vercel-scanner/implementation_plan.md",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/scripts/serve-static.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/fixtures/data.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/fixtures/mock-bol.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/data-health.spec.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/mobile.spec.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/pagination-time.spec.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/refresh-persistence.spec.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/repo-hygiene.test.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/scan-flow.spec.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/security.spec.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/visual-evidence.spec.mjs"
+    ],
+    "cross_root_authority_reason": "The scanner remains independently deployed but Zander explicitly approved the named Bankhoes Turso database; the target AGENTS.md narrows that authority to additive ampere_* schema and state only."
+  },
+  "plan_manifest": {
+    "draft_text": "# Standalone Vercel Scanner Implementation Plan\n\n- **S1 — user_request:** Remove CoWork artifact metadata, MCP identifiers, and the `window.cowork` bridge; replace them with same-origin session/state/retailer/scan HTTP clients while preserving the proven FIFO scanner loop.\n- **S2 — user_request:** Add an idempotent Turso/libSQL migration and repository for isolated `ampere_*` station/principal/session audit records, shared login lockout, current workday package state, append-only scan events, and an atomic write-batch decision that prevents cross-station double completion without storing full bol payloads or coupling to existing Bankhoes tables.\n- **S3 — required_dependency:** Add standalone Node.js Vercel Functions and shared server modules for scrypt password verification, signed opaque audited sessions, route/origin enforcement, strict validation, bol OAuth token caching, four read-only Retailer API shapes, server-authoritative scan verification, bounded timeouts, safe error mapping, and production security headers.\n- **S4 — required_dependency:** Add a focused login/session-expiry/shared-state-failure surface that collects constrained audit labels, fails closed, never persists credentials or operational state in browser storage, hydrates Turso workday state, and hands focus to the scanner only after auth, database, and bol snapshots are healthy.\n- **S5 — required_dependency:** Add deployment and migration configuration plus operator documentation for the existing Turso environment contract, password-hash generation, idempotent migration, credential rotation, and account-boundary Vercel steps without copying or committing live secrets.\n- **S6 — required_dependency:** Replace the CoWork synthetic bridge with same-origin HTTP fixtures; add server/database unit tests and one local end-to-end path through the actual session/state/retailer/scan handlers while retaining all security, pagination, timezone, refresh, shared persistence, queue, duplicate, cancellation, focus, and mobile assertions.\n- **S7 — required_dependency:** Validate the contracts and Vercel-shaped project, run the migration against a disposable local libSQL file, run the full suite, apply/verify only the approved additive `ampere_*` migration against the named Turso database after local proof, inspect current desktop/mobile login and ready/scan states, record visual/state evidence, and pass the project-local adoption gate.\n\n## Immutable finish line\n\nThe repository runs as a standalone static frontend plus its own authenticated Vercel Functions and isolated shared Turso state, contains no CoWork/MCP runtime dependency, browser-only operational state, browser-side secret, or dependency on Bankhoes application code/tables, preserves the rapid fail-closed `start → scan → next → repeat` flow across stations, and is locally plus schema-verified without accessing a live bol or Vercel account.\n",
+    "steps": [
+      {
+        "id": "S1",
+        "text": "Replace CoWork/MCP/browser-state boundaries with same-origin standalone clients while preserving FIFO scanning.",
+        "provenance": "user_request",
+        "required": true,
+        "required_surfaces": [
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/index.html",
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/fixtures/mock-bol.mjs"
+        ],
+        "requirement_source": "OUT-1, OUT-5",
+        "dependency_evidence": []
+      },
+      {
+        "id": "S2",
+        "text": "Create isolated ampere_* Turso schema and atomic shared state/event repository.",
+        "provenance": "user_request",
+        "required": true,
+        "required_surfaces": [
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/migrations/001_ampere_scanner.sql",
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/server/turso.js"
+        ],
+        "requirement_source": "OUT-3",
+        "dependency_evidence": []
+      },
+      {
+        "id": "S3",
+        "text": "Implement secure sessions, lockout, route enforcement, bol reads, and authoritative scan verification.",
+        "provenance": "required_dependency",
+        "required": true,
+        "required_surfaces": [
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/api/session.js",
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/api/retailer.js",
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/api/state.js",
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/api/scan.js",
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/server/auth.js",
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/server/bol.js",
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/server/scan-service.js"
+        ],
+        "requirement_source": "OUT-2, OUT-4",
+        "dependency_evidence": [
+          "OUT-2 requires shared lockout and auditable revocable sessions; OUT-4 requires accepted decisions to be server-authoritative."
+        ]
+      },
+      {
+        "id": "S4",
+        "text": "Add fail-closed access/shared-state UI and Turso hydration without operational web storage.",
+        "provenance": "required_dependency",
+        "required": true,
+        "required_surfaces": [
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/index.html"
+        ],
+        "requirement_source": "OUT-2, OUT-5",
+        "dependency_evidence": [
+          "The browser must expose authentication/recovery before the scan loop and must restore cross-station state."
+        ]
+      },
+      {
+        "id": "S5",
+        "text": "Document environment, hashing, migration, credential rotation, and Vercel setup boundaries.",
+        "provenance": "required_dependency",
+        "required": true,
+        "required_surfaces": [
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/.env.example",
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/vercel.json",
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/README.md",
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/scripts/hash-password.mjs",
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/scripts/migrate.mjs"
+        ],
+        "requirement_source": "OUT-1, OUT-2, OUT-3",
+        "dependency_evidence": [
+          "A standalone deploy cannot safely start without explicit server-only configuration and repeatable schema setup."
+        ]
+      },
+      {
+        "id": "S6",
+        "text": "Add server/Turso tests and an actual local handler/libSQL browser journey while retaining the scanner suite.",
+        "provenance": "required_dependency",
+        "required": true,
+        "required_surfaces": [
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/package.json",
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/scripts/serve-static.mjs",
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/server/auth.test.mjs",
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/server/bol.test.mjs",
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/server/turso.test.mjs",
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/server/handlers.test.mjs",
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/standalone-flow.spec.mjs"
+        ],
+        "requirement_source": "OUT-6",
+        "dependency_evidence": [
+          "Cross-boundary auth, data, and concurrency guarantees need deterministic server and browser proof."
+        ]
+      },
+      {
+        "id": "S7",
+        "text": "Run validators/tests, narrowly migrate/verify ampere_* schema, capture current browser evidence, and pass adoption.",
+        "provenance": "required_dependency",
+        "required": true,
+        "required_surfaces": [
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/plans/2026-08-05-standalone-vercel-scanner/adoption_manifest.json",
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/verification/2026-08-05-standalone-vercel-scanner-visual-qa.json",
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/verification/2026-08-05-standalone-vercel-scanner-state-qa.md"
+        ],
+        "requirement_source": "OUT-3, OUT-6",
+        "dependency_evidence": [
+          "Browser-visible security-sensitive work and an approved shared production schema require current evidence bound to final artifacts."
+        ]
+      }
+    ]
+  },
+  "hashes": {
+    "envelope_sha256": "0709a40eda0e11c580a63e2ec2a087aec298a8783455806b808c0cae55a9f398",
+    "draft_sha256": "2a0478c2ade6d952b734a074b2812e4410f0b720c4aa2dbe4f9ffe46949e297f",
+    "packet_sha256": "73be9c026ad1e73872a06a81f16e88a2c0070a96e73d6e1e63d887020579f052"
+  }
+}

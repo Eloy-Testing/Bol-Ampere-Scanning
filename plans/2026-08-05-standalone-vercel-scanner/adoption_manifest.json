@@ -1,0 +1,49 @@
+{
+  "schema_version": "creative-framework.adoption.v1",
+  "task_id": "2026-08-05-standalone-vercel-scanner",
+  "active_project_root": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker",
+  "surface_kind": "browser_visible",
+  "framework_control_root": "/Users/zanderbrilleman/Documents/Codex/2026-07-06/co",
+  "contracts": {
+    "retrieval": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/plans/2026-08-05-standalone-vercel-scanner/retrieval_contract.json",
+    "design": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/plans/2026-08-05-standalone-vercel-scanner/design_contract.md",
+    "implementation_plan": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/plans/2026-08-05-standalone-vercel-scanner/implementation_plan.md",
+    "review_packet": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/plans/2026-08-05-standalone-vercel-scanner/review_packet.json",
+    "plan_review": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/plans/2026-08-05-standalone-vercel-scanner/plan_review.json",
+    "interface_output": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/plans/2026-08-05-standalone-vercel-scanner/interface_output_contract.json"
+  },
+  "contract_sha256": {
+    "retrieval": "3629fbc1db24df3a68bab1add9db94c4f5277b236405dce278ffaa2f69e02884",
+    "design": "da783ecaee699255e59733df1f8b35268186bf7109abcc586b9380f6dd588a97",
+    "implementation_plan": "2a0478c2ade6d952b734a074b2812e4410f0b720c4aa2dbe4f9ffe46949e297f",
+    "interface_output": "3d7f2650228a5a7e6361f8e9507536552b85bd7b0f5aa655d253d0bae558d9ba"
+  },
+  "artifact": {
+    "path": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/index.html",
+    "sha256": "3a0a9aa6ea59b09cb41cdeb2073dfbbe2a05a31df18b479b28a462b948a01963"
+  },
+  "verification": {
+    "visual_evidence": [
+      {
+        "path": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/verification/screenshot-evidence/2026-08-05-standalone-vercel-scanner-login.png",
+        "sha256": "c91c8b8b9d9a93087666ada45e7071ca0abcb73b5b0dc8b088110f7b108382a3",
+        "viewport": "desktop"
+      },
+      {
+        "path": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/verification/screenshot-evidence/2026-08-05-standalone-vercel-scanner-desktop.png",
+        "sha256": "241b76f2b48c11e1bf02faf072a3c54bbf88aec83c3a7350132efe3d55c7477a",
+        "viewport": "desktop"
+      },
+      {
+        "path": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/verification/screenshot-evidence/2026-08-05-standalone-vercel-scanner-mobile.png",
+        "sha256": "58d4c181811dbaee1e04db5383cb2224631a72c7482f3c88ea33019c1a515d66",
+        "viewport": "mobile"
+      }
+    ],
+    "visual_qa": {
+      "path": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/verification/2026-08-05-standalone-vercel-scanner-visual-qa.json",
+      "sha256": "4f1bfda83ee40131f62bb844b83292e5fa110324997ba1570e3b66fd21b936f6",
+      "status": "pass"
+    }
+  }
+}

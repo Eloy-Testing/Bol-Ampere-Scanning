@@ -1,0 +1,44 @@
+{
+  "schema_version": "browser-critic.visual-qa.v1",
+  "task_id": "2026-08-05-standalone-vercel-scanner",
+  "status": "pass",
+  "artifact": {
+    "path": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/index.html",
+    "sha256": "3a0a9aa6ea59b09cb41cdeb2073dfbbe2a05a31df18b479b28a462b948a01963"
+  },
+  "evidence": [
+    {
+      "path": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/verification/screenshot-evidence/2026-08-05-standalone-vercel-scanner-login.png",
+      "sha256": "c91c8b8b9d9a93087666ada45e7071ca0abcb73b5b0dc8b088110f7b108382a3",
+      "viewport": "1440x980",
+      "state": "signed-out secure station gate"
+    },
+    {
+      "path": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/verification/screenshot-evidence/2026-08-05-standalone-vercel-scanner-desktop.png",
+      "sha256": "241b76f2b48c11e1bf02faf072a3c54bbf88aec83c3a7350132efe3d55c7477a",
+      "viewport": "1440x980",
+      "state": "standalone actual handlers with verified GO"
+    },
+    {
+      "path": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/verification/screenshot-evidence/2026-08-05-standalone-vercel-scanner-mobile.png",
+      "sha256": "58d4c181811dbaee1e04db5383cb2224631a72c7482f3c88ea33019c1a515d66",
+      "viewport": "390x900",
+      "state": "standalone actual handlers with unknown STOP"
+    }
+  ],
+  "browser_checks": {
+    "runtime_errors": 0,
+    "login_gate_first_focus": true,
+    "scan_input_first_after_authentication": true,
+    "scan_input_focused_after_terminal_state": true,
+    "non_color_go_stop_copy": true,
+    "desktop_layout_breaks": false,
+    "mobile_document_overflow": false,
+    "responsive_tables_contain_overflow": true
+  },
+  "findings": [],
+  "notes": [
+    "The current browser run used the real same-origin application handlers, a disposable local libSQL database, and a synthetic same-server bol endpoint.",
+    "Live bol and Vercel account access remained outside the approved authority boundary."
+  ]
+}

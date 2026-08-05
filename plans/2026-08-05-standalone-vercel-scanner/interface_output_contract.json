@@ -1,0 +1,114 @@
+{
+  "schema_version": "creative-framework.interface-output-contract.v1",
+  "task": "Standalone authenticated warehouse package scanning",
+  "surface_has_interface_output": true,
+  "interface_output_producers": "applicable",
+  "not_applicable_reason": "",
+  "planned_output_channels": ["visible", "assistive", "telemetry"],
+  "producers": [
+    {
+      "id": "session_checking",
+      "event_origin": "product_workflow",
+      "presentation_owner": "product_owner",
+      "channel": "visible",
+      "source_condition": "The station is checking for a valid signed session.",
+      "user_impact": "The operator cannot scan yet.",
+      "recovery": "Wait for the access check to finish.",
+      "copy_purpose": "Explain the temporary access state.",
+      "final_copy": "Checking station access…",
+      "external_proof": "Browser loading-state assertion"
+    },
+    {
+      "id": "sign_in_required",
+      "event_origin": "product_workflow",
+      "presentation_owner": "product_owner",
+      "channel": "visible",
+      "source_condition": "No valid scanner session exists.",
+      "user_impact": "Retailer data and scanning remain unavailable.",
+      "recovery": "Enter the warehouse access password and submit.",
+      "copy_purpose": "Provide the single safe route into the station.",
+      "final_copy": "Enter the warehouse password to open the scan station.",
+      "external_proof": "Signed-out browser and focus assertion"
+    },
+    {
+      "id": "sign_in_failed",
+      "event_origin": "product_workflow",
+      "presentation_owner": "product_owner",
+      "channel": "visible",
+      "source_condition": "The submitted password was not accepted.",
+      "user_impact": "The station remains locked.",
+      "recovery": "Check the password and try again.",
+      "copy_purpose": "Explain failure without exposing authentication internals.",
+      "final_copy": "Access not accepted. Check the password and try again.",
+      "external_proof": "Invalid-login browser assertion"
+    },
+    {
+      "id": "configuration_blocked",
+      "event_origin": "autonomous_condition",
+      "presentation_owner": "product_owner",
+      "channel": "visible",
+      "source_condition": "Required server configuration is absent or invalid.",
+      "user_impact": "The station cannot authenticate or load retailer data.",
+      "recovery": "Contact the station owner; do not scan until setup is complete.",
+      "copy_purpose": "Make a deployment setup fault actionable without revealing secret names or values.",
+      "final_copy": "Station setup is incomplete. Contact the station owner before scanning.",
+      "external_proof": "Missing-configuration API and browser assertions"
+    },
+    {
+      "id": "session_expired",
+      "event_origin": "autonomous_condition",
+      "presentation_owner": "product_owner",
+      "channel": "visible",
+      "source_condition": "A previously valid signed session is no longer accepted.",
+      "user_impact": "Scanning stops and loaded retailer state is removed from the page.",
+      "recovery": "Sign in again, then wait for a fresh complete snapshot.",
+      "copy_purpose": "Fail closed and return the operator to a clear recovery action.",
+      "final_copy": "Station access expired. Sign in again to continue.",
+      "external_proof": "Session-expiry browser assertion"
+    },
+    {
+      "id": "shared_state_blocked",
+      "event_origin": "autonomous_condition",
+      "presentation_owner": "product_owner",
+      "channel": "visible",
+      "source_condition": "The Turso-backed operational store cannot authenticate the session, hydrate the workday, or commit a scan decision.",
+      "user_impact": "The station cannot safely prove or persist package progress.",
+      "recovery": "Pause scanning and retry only after the station reports ready.",
+      "copy_purpose": "Fail closed when shared operational state is unavailable.",
+      "final_copy": "Scanning paused — shared station state is unavailable. Retry before continuing.",
+      "external_proof": "Database-failure API and browser assertions"
+    },
+    {
+      "id": "data_and_scan_states",
+      "event_origin": "product_workflow",
+      "presentation_owner": "product_owner",
+      "channel": "visible",
+      "source_condition": "The authenticated station is loading, ready, checking, accepted, duplicate, cancelled, unknown, or unverifiable.",
+      "user_impact": "The operator needs a safe package decision and next action.",
+      "recovery": "Retry unhealthy data, dispatch GO packages, and pull aside STOP packages before scanning the next.",
+      "copy_purpose": "Preserve the existing fail-closed hands-free decisions.",
+      "final_copy": "Ready for the next scan / GO — package cleared / STOP — do not send this package.",
+      "external_proof": "Existing and updated browser state assertions"
+    },
+    {
+      "id": "session_and_refresh_diagnostics",
+      "event_origin": "autonomous_helper",
+      "presentation_owner": "none",
+      "channel": "telemetry",
+      "source_condition": "A session or background refresh completes without user impact.",
+      "user_impact": "No product-visible impact.",
+      "recovery": "Not applicable.",
+      "copy_purpose": "Keep non-actionable runtime diagnostics outside product chrome.",
+      "final_copy": "",
+      "external_proof": "Automated API and refresh assertions"
+    }
+  ],
+  "technical_status_exception": {"applicable": false, "direct_object_of_work": false, "producer_ids": [], "reason": ""},
+  "what_must_not_appear": [
+    "CoWork or MCP names",
+    "bol client credentials or access tokens",
+    "Database URLs, session secrets, cookie signatures, password hashes, or password values",
+    "Raw upstream bodies, stack traces, Vercel internals, or test narration",
+    "Customer personal information on the access surface"
+  ]
+}

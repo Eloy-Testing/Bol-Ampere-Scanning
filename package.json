@@ -1,0 +1,24 @@
+{
+  "name": "bhp-warehouse-packing-tracker",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "hash:password": "node scripts/hash-password.mjs",
+    "migrate": "node scripts/migrate.mjs",
+    "migrate:local": "TURSO_DATABASE_URL=file:./.data/ampere.db TURSO_AUTH_TOKEN= node scripts/migrate.mjs",
+    "serve:test": "node scripts/serve-static.mjs",
+    "capture:visual": "node scripts/capture-visual-evidence.mjs",
+    "test": "npm run test:server && npm run test:browser",
+    "test:server": "node --test tests/server/*.test.mjs",
+    "test:browser": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:report": "playwright show-report"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.62.1"
+  },
+  "dependencies": {
+    "@libsql/client": "0.17.4"
+  }
+}

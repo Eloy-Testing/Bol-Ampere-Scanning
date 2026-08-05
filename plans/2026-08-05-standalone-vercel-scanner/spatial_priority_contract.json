@@ -1,0 +1,92 @@
+{
+  "schema_version": "creative-framework.spatial-priority.v1",
+  "task_id": "2026-08-05-standalone-vercel-scanner",
+  "surface": "Authenticated internal warehouse scanning tool",
+  "primary_decision": {
+    "statement": "Can the operator safely advance the current package?",
+    "primary_action": "Authenticate when required, then scan the package tracking code",
+    "item_id": "access_and_scan"
+  },
+  "items": [
+    {
+      "id": "access_and_scan",
+      "label": "Conditional access gate and active scan decision",
+      "purpose": "Present exactly one primary action for the current state: sign in when blocked, otherwise scan and read the package decision.",
+      "priority": "p0",
+      "consequence_of_omission": "The station either exposes retailer data without access control or makes the active package decision ambiguous.",
+      "visibility": "immediate",
+      "placement": {"mode": "explicit", "region": "primary_decision_zone", "anchor": "top_of_document", "justification": "Authentication and scanning are mutually exclusive primary states and each must own first attention and focus."},
+      "attention_order": 1,
+      "attention_dependencies": [],
+      "interactive": true,
+      "focus_order": 1,
+      "adaptive_behavior": {
+        "desktop": {"region": "primary_decision_zone", "visibility": "immediate", "order": 1},
+        "mobile": {"region": "primary_decision_zone", "visibility": "immediate", "order": 1},
+        "invariant": "Only the primary action for the active access state is visible and focused first."
+      },
+      "demotion_reason": null
+    },
+    {
+      "id": "data_health",
+      "label": "Data health and retry",
+      "purpose": "Block scanning until a complete snapshot exists and provide recovery when loading fails.",
+      "priority": "p1",
+      "consequence_of_omission": "Partial or stale data could be mistaken for a safe empty state.",
+      "visibility": "adjacent",
+      "placement": {"mode": "explicit", "region": "supporting_status_zone", "anchor": "scan_station", "justification": "Snapshot health is a prerequisite but remains subordinate when healthy."},
+      "attention_order": 2,
+      "attention_dependencies": ["access_and_scan"],
+      "interactive": true,
+      "focus_order": 2,
+      "adaptive_behavior": {
+        "desktop": {"region": "supporting_status_zone", "visibility": "adjacent", "order": 2},
+        "mobile": {"region": "supporting_status_zone", "visibility": "adjacent", "order": 2},
+        "invariant": "Blocking health and recovery remain visible before progress tables."
+      },
+      "demotion_reason": "Healthy data reduces to a compact readiness line."
+    },
+    {
+      "id": "progress_and_exceptions",
+      "label": "Progress and exception detail",
+      "purpose": "Show completion counts, no-label work, cancellations, and manual-review records after the active decision.",
+      "priority": "p2",
+      "consequence_of_omission": "Follow-up context is lost but the current package decision remains safe.",
+      "visibility": "downstream",
+      "placement": {"mode": "implicit", "region": "detail_zone", "anchor": "after_primary_decision_zone", "justification": "Aggregate and historical information must not interrupt repeated scans."},
+      "attention_order": 3,
+      "attention_dependencies": ["access_and_scan", "data_health"],
+      "interactive": false,
+      "focus_order": null,
+      "adaptive_behavior": {
+        "desktop": {"region": "detail_zone", "visibility": "downstream", "order": 3},
+        "mobile": {"region": "detail_zone", "visibility": "downstream", "order": 3},
+        "invariant": "Tables stay below the scanner and scroll only within their own regions."
+      },
+      "demotion_reason": "Aggregate context is less consequential than access, readiness, and the current parcel."
+    },
+    {
+      "id": "session_and_language_utility",
+      "label": "Language and sign-out utility",
+      "purpose": "Allow occasional language changes and deliberate session termination without stealing scan focus.",
+      "priority": "p3",
+      "consequence_of_omission": "Operators lose secondary controls but package safety is unaffected.",
+      "visibility": "downstream",
+      "placement": {"mode": "implicit", "region": "utility_zone", "anchor": "header_end", "justification": "These controls are occasional utilities rather than per-package decisions."},
+      "attention_order": 4,
+      "attention_dependencies": ["access_and_scan"],
+      "interactive": true,
+      "focus_order": 3,
+      "adaptive_behavior": {
+        "desktop": {"region": "utility_zone", "visibility": "downstream", "order": 4},
+        "mobile": {"region": "utility_zone", "visibility": "downstream", "order": 4},
+        "invariant": "Utility controls remain reachable after the active task controls and never take automatic focus."
+      },
+      "demotion_reason": "Used occasionally, outside the scan loop."
+    }
+  ],
+  "attention_sequence": ["access_and_scan", "data_health", "progress_and_exceptions", "session_and_language_utility"],
+  "focus_sequence": ["access_and_scan", "data_health", "session_and_language_utility"],
+  "responsive_invariants": {"primary_decision_precedes_secondary": true, "dom_order_matches_visual_order": true, "focus_order_matches_task_order": true},
+  "verification": {"desktop_viewport": "1440x980", "mobile_viewport": "390x900", "geometry_required": true, "keyboard_required": true, "overflow_required": true}
+}

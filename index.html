@@ -1,632 +1,1190 @@
 <!doctype html>
-<script type="application/json" id="cowork-artifact-meta">
-{
-  "name": "Ampere Scan Dashboard",
-  "schemaVersion": 1,
-  "description": "Live scan-controle dashboard: haalt Bankhoesdiscounter bol.com orders/verzendingen live op, laat je Muisstil-orders handmatig toevoegen (geen API-toegang), en vinkt orders automatisch af zodra de bijbehorende track & trace gescand wordt.",
-  "mcpTools": [
-    "mcp__3bd27b79-868e-4c4b-9c30-1811c8456fa7__get_bol_retailer_data",
-    "mcp__3bd27b79-868e-4c4b-9c30-1811c8456fa7__bol_retailer_api_request"
-  ],
-  "mcpServerNames": [
-    "Bankhoes BI Warehouse",
-    "Bankhoes BI Warehouse"
-  ]
-}
-</script>
-<html>
+<html lang="nl">
 <head>
-<meta charset="utf-8">
-<style>
-  :root { color-scheme: light; }
-  * { box-sizing: border-box; }
-  body {
-    margin: 0; padding: 20px; background: #f8fafc; color: #111827;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
-    font-size: 14px;
-  }
-  .topbar { display:flex; align-items:flex-start; justify-content:space-between; gap: 12px; flex-wrap:wrap; }
-  h1 { font-size: 20px; margin: 0 0 4px; }
-  .sub { color: #6b7280; font-size: 12px; margin-bottom: 16px; }
-  .lang-switch { display:flex; gap:4px; background:#f3f4f6; border-radius:8px; padding:3px; }
-  .lang-switch button {
-    border:none; background:transparent; padding:5px 10px; font-size:12px; font-weight:600;
-    border-radius:6px; cursor:pointer; color:#6b7280;
-  }
-  .lang-switch button.active { background:#111827; color:#fff; }
-  .scan-box {
-    background: #111827; border-radius: 10px; padding: 16px; margin-bottom: 16px;
-  }
-  .scan-box label { color: #d1d5db; font-size: 12px; display:block; margin-bottom:6px; }
-  #scanInput {
-    width: 100%; font-size: 20px; padding: 12px 14px; border-radius: 8px;
-    border: 2px solid #374151; background:#fff; color:#111827; letter-spacing: 0.5px;
-  }
-  #scanInput:focus { outline: none; border-color:#3b82f6; }
-  #scanFeedback { margin-top: 10px; font-size: 14px; font-weight: 600; min-height: 20px; }
-  .fb-ok { color: #22c55e; }
-  .fb-warn { color: #f59e0b; }
-  .fb-err { color: #f87171; }
-  .summary { display:flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
-  .card {
-    background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 12px 16px;
-    min-width: 130px;
-  }
-  .card .num { font-size: 22px; font-weight: 700; }
-  .card .lbl { font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: .04em; }
-  .card.red .num { color:#dc2626; }
-  .card.green .num { color:#16a34a; }
-  .card.amber .num { color:#d97706; }
-  section { background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 14px 16px; margin-bottom: 16px; }
-  section h2 { font-size: 14px; margin: 0 0 10px; display:flex; align-items:center; gap:8px; }
-  section h2 .count { background:#f3f4f6; border-radius: 999px; padding: 1px 9px; font-size: 12px; color:#374151; }
-  table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  th { text-align:left; color:#6b7280; font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:.03em; padding: 6px 8px; border-bottom: 1px solid #e5e7eb; }
-  td { padding: 7px 8px; border-bottom: 1px solid #f3f4f6; vertical-align: top; }
-  tr.scanned { background: #f0fdf4; }
-  tr.overdue td.age { color:#dc2626; font-weight:600; }
-  .badge { display:inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight:600; }
-  .badge.open { background:#fef3c7; color:#92400e; }
-  .badge.scanned { background:#dcfce7; color:#166534; }
-  .badge.nolabel { background:#fee2e2; color:#991b1b; }
-  .badge.cancelled { background:#dc2626; color:#fff; }
-  .badge.later { background:#e0e7ff; color:#3730a3; }
-  tr.cancelled-row { background: #fef2f2; }
-  #scanFeedback.fb-stop { color:#fff; background:#dc2626; padding:10px 12px; border-radius:8px; font-size:16px; }
-  .muted { color:#9ca3af; }
-  .tt { font-family: "SF Mono", Menlo, Consolas, monospace; font-size:12.5px; }
-  .add-form { display:flex; gap:8px; margin-top: 10px; flex-wrap:wrap; }
-  .add-form input { flex:1; min-width:160px; padding:7px 10px; border:1px solid #d1d5db; border-radius:6px; font-size:13px; }
-  .add-form button { padding: 7px 14px; border-radius:6px; border:none; background:#111827; color:#fff; font-size:13px; cursor:pointer; }
-  .add-form button:hover { background:#1f2937; }
-  .empty { color:#9ca3af; font-style:italic; padding: 8px 0; }
-  .note { font-size:11px; color:#9ca3af; margin-top:8px; }
-  .del { color:#9ca3af; cursor:pointer; font-size:12px; }
-  .del:hover { color:#dc2626; }
-  #status { font-size:12px; color:#6b7280; margin-bottom:10px; }
-</style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ampere Scan Station</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #102027;
+      --muted: #66757d;
+      --line: #d9e1e4;
+      --paper: #ffffff;
+      --canvas: #eef3f2;
+      --navy: #10272d;
+      --navy-2: #193940;
+      --cyan: #69d4df;
+      --go: #0a7b54;
+      --go-bg: #e3f5ed;
+      --warn: #9a6200;
+      --warn-bg: #fff3d8;
+      --stop: #b42318;
+      --stop-bg: #ffebe8;
+      --shadow: 0 18px 50px rgba(16, 39, 45, .10);
+    }
+
+    * { box-sizing: border-box; }
+    html { min-width: 0; background: var(--canvas); }
+    body {
+      margin: 0;
+      min-width: 0;
+      overflow-x: hidden;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top right, rgba(105, 212, 223, .20), transparent 30rem),
+        var(--canvas);
+      font: 14px/1.45 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    button, input { font: inherit; }
+    button { touch-action: manipulation; }
+
+    .shell { width: min(1180px, calc(100% - 32px)); margin: 0 auto; padding: 24px 0 48px; }
+    .topbar { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; margin-bottom: 18px; }
+    .eyebrow { margin: 0 0 5px; color: #187482; font-size: 11px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+    h1 { margin: 0; font-size: clamp(25px, 3vw, 36px); line-height: 1.05; letter-spacing: -.035em; }
+    .subtitle { max-width: 680px; margin: 8px 0 0; color: var(--muted); font-size: 13px; }
+    .utility-zone { display: flex; align-items: flex-start; gap: 8px; }
+    .session-utility { display: flex; align-items: center; gap: 8px; border: 1px solid var(--line); border-radius: 10px; padding: 3px 3px 3px 10px; background: rgba(255,255,255,.82); }
+    .session-label { max-width: 210px; overflow: hidden; color: var(--muted); font-size: 11px; font-weight: 750; text-overflow: ellipsis; white-space: nowrap; }
+    .lang-switch { display: flex; gap: 3px; padding: 3px; border: 1px solid var(--line); border-radius: 10px; background: rgba(255,255,255,.72); }
+    .lang-switch button { min-width: 42px; border: 0; border-radius: 7px; padding: 7px 9px; color: var(--muted); background: transparent; font-size: 12px; font-weight: 800; cursor: pointer; }
+    .lang-switch button[aria-pressed="true"] { color: #fff; background: var(--navy); }
+
+    .healthbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 46px; margin-bottom: 12px; padding: 9px 12px; border: 1px solid var(--line); border-radius: 12px; background: rgba(255,255,255,.86); }
+    .health-copy { display: flex; align-items: center; gap: 9px; min-width: 0; }
+    .health-dot { width: 9px; height: 9px; flex: 0 0 auto; border-radius: 50%; background: var(--warn); box-shadow: 0 0 0 4px var(--warn-bg); }
+    .healthbar[data-state="ready"] .health-dot { background: var(--go); box-shadow: 0 0 0 4px var(--go-bg); }
+    .healthbar[data-state="error"] .health-dot { background: var(--stop); box-shadow: 0 0 0 4px var(--stop-bg); }
+    .health-text { min-width: 0; color: var(--muted); font-size: 12px; font-weight: 650; }
+    .health-actions { display: flex; flex: 0 0 auto; gap: 7px; }
+    .ghost-button { border: 1px solid #cbd5d8; border-radius: 8px; padding: 7px 11px; color: var(--ink); background: #fff; font-size: 12px; font-weight: 750; cursor: pointer; }
+    .ghost-button:hover { border-color: #97a8ad; }
+    .ghost-button:disabled { opacity: .5; cursor: wait; }
+    [hidden] { display: none !important; }
+
+    .access-gate { width: min(520px, 100%); margin: 42px auto 0; border: 1px solid var(--line); border-radius: 18px; padding: clamp(22px, 4vw, 34px); background: rgba(255,255,255,.94); box-shadow: var(--shadow); }
+    .access-mark { display: grid; width: 44px; height: 44px; place-items: center; margin-bottom: 20px; border-radius: 12px; color: #063d31; background: var(--cyan); font-size: 18px; font-weight: 950; }
+    .access-gate h2 { margin: 0; font-size: clamp(21px, 4vw, 28px); letter-spacing: -.025em; }
+    .access-copy { margin: 8px 0 22px; color: var(--muted); }
+    .access-form { display: grid; gap: 14px; }
+    .field { display: grid; gap: 6px; }
+    .field label { color: #31444a; font-size: 12px; font-weight: 800; }
+    .field input { width: 100%; min-height: 48px; border: 1px solid #bdc9cc; border-radius: 9px; padding: 0 12px; color: var(--ink); background: #fff; }
+    .field input:focus { outline: 0; border-color: #187482; box-shadow: 0 0 0 3px rgba(105,212,223,.24); }
+    .primary-button { min-height: 48px; border: 0; border-radius: 9px; padding: 0 18px; color: #fff; background: var(--navy); font-weight: 850; cursor: pointer; }
+    .primary-button:hover { background: var(--navy-2); }
+    .primary-button:disabled { opacity: .58; cursor: wait; }
+    .access-status { min-height: 21px; margin: 15px 0 0; color: var(--muted); font-size: 12px; font-weight: 700; }
+    .access-status[data-tone="error"] { color: var(--stop); }
+    .access-status[data-tone="warning"] { color: var(--warn); }
+
+    .scan-station { position: relative; overflow: hidden; margin-bottom: 14px; padding: clamp(18px, 3vw, 30px); border-radius: 18px; color: #fff; background: linear-gradient(135deg, var(--navy), var(--navy-2)); box-shadow: var(--shadow); }
+    .scan-station::after { content: ""; position: absolute; right: -80px; top: -130px; width: 310px; height: 310px; border-radius: 50%; border: 58px solid rgba(105,212,223,.09); pointer-events: none; }
+    .scan-heading { position: relative; z-index: 1; display: flex; align-items: end; justify-content: space-between; gap: 16px; margin-bottom: 12px; }
+    .scan-heading h2 { margin: 0; font-size: 18px; letter-spacing: -.01em; }
+    .scan-hint { margin: 4px 0 0; color: #b9c9cd; font-size: 12px; }
+    .queue-pill { flex: 0 0 auto; border: 1px solid rgba(255,255,255,.16); border-radius: 999px; padding: 5px 10px; color: #d9e6e8; background: rgba(255,255,255,.06); font-size: 11px; font-weight: 750; }
+    .scan-row { position: relative; z-index: 1; display: grid; grid-template-columns: 1fr auto; gap: 9px; }
+    #scanInput { min-width: 0; width: 100%; height: 58px; border: 3px solid transparent; border-radius: 11px; padding: 0 16px; color: #0f2227; background: #fff; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: clamp(18px, 3vw, 24px); font-weight: 750; letter-spacing: .035em; box-shadow: inset 0 0 0 1px rgba(16,39,45,.12); }
+    #scanInput:focus { outline: 0; border-color: var(--cyan); box-shadow: 0 0 0 4px rgba(105,212,223,.18); }
+    #scanInput:disabled { color: #718087; background: #d9e1e4; cursor: not-allowed; }
+    .ready-flag { display: grid; place-items: center; min-width: 92px; border-radius: 11px; padding: 0 15px; color: #063d31; background: var(--cyan); font-size: 12px; font-weight: 900; letter-spacing: .07em; text-transform: uppercase; }
+    .ready-flag[data-ready="false"] { color: #46575d; background: #c9d4d7; }
+    .current-status { position: relative; z-index: 1; min-height: 21px; margin-top: 9px; color: #c3d2d5; font-size: 12px; font-weight: 650; }
+    .decision { position: relative; z-index: 1; min-height: 78px; margin-top: 12px; border: 1px solid rgba(255,255,255,.12); border-radius: 12px; padding: 13px 15px; background: rgba(4,18,22,.38); }
+    .decision[data-kind="success"] { border-color: rgba(88,214,160,.55); background: rgba(4,88,58,.48); }
+    .decision[data-kind="duplicate"] { border-color: rgba(245,190,76,.6); background: rgba(108,66,0,.50); }
+    .decision[data-kind="stop"] { border-color: rgba(255,125,111,.72); background: rgba(142,24,16,.70); }
+    .decision-kicker { margin-bottom: 2px; color: #bad0d4; font-size: 10px; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; }
+    .decision-title { font-size: clamp(17px, 2.7vw, 23px); font-weight: 900; letter-spacing: -.01em; }
+    .decision-detail { margin-top: 2px; color: #d7e2e4; font-size: 12px; }
+
+    .summary { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; margin-bottom: 14px; }
+    .metric { min-width: 0; border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; background: rgba(255,255,255,.9); }
+    .metric-value { font-size: 25px; font-weight: 850; letter-spacing: -.03em; }
+    .metric-label { overflow: hidden; margin-top: 1px; color: var(--muted); font-size: 10px; font-weight: 800; letter-spacing: .07em; text-overflow: ellipsis; text-transform: uppercase; white-space: nowrap; }
+    .metric[data-tone="go"] .metric-value { color: var(--go); }
+    .metric[data-tone="stop"] .metric-value { color: var(--stop); }
+    .metric[data-tone="warn"] .metric-value { color: var(--warn); }
+
+    .content-grid { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(300px, .55fr); gap: 14px; align-items: start; }
+    .stack { display: grid; gap: 14px; min-width: 0; }
+    section { min-width: 0; border: 1px solid var(--line); border-radius: 13px; padding: 14px; background: var(--paper); }
+    .section-head { display: flex; align-items: start; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+    section h2 { margin: 0; font-size: 14px; line-height: 1.3; }
+    .section-note { margin: 3px 0 0; color: var(--muted); font-size: 11px; }
+    .count { flex: 0 0 auto; border-radius: 999px; padding: 2px 9px; color: #3e5056; background: #edf1f2; font-size: 11px; font-weight: 800; }
+    .table-wrap { max-width: 100%; overflow-x: auto; border-radius: 8px; -webkit-overflow-scrolling: touch; }
+    table { width: 100%; min-width: 590px; border-collapse: collapse; font-size: 12px; }
+    th { padding: 7px 8px; border-bottom: 1px solid var(--line); color: var(--muted); font-size: 9px; font-weight: 850; letter-spacing: .07em; text-align: left; text-transform: uppercase; white-space: nowrap; }
+    td { padding: 9px 8px; border-bottom: 1px solid #eef2f3; vertical-align: top; }
+    tbody tr:last-child td { border-bottom: 0; }
+    tr.is-scanned { background: var(--go-bg); }
+    tr.is-stop { background: var(--stop-bg); }
+    tr.is-overdue td[data-cell="age"] { color: var(--stop); font-weight: 800; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-weight: 650; }
+    .muted { color: var(--muted); }
+    .badge { display: inline-flex; align-items: center; border-radius: 999px; padding: 3px 7px; font-size: 10px; font-weight: 850; white-space: nowrap; }
+    .badge.open { color: #714a00; background: var(--warn-bg); }
+    .badge.scanned { color: #075d41; background: #ccebdd; }
+    .badge.stop { color: #8e1d14; background: #ffd8d3; }
+    .badge.later { margin-left: 4px; color: #315582; background: #e5effc; }
+    .empty { padding: 13px 3px; color: #89969b; font-size: 12px; font-style: italic; }
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; clip-path: inset(50%); }
+
+    @media (max-width: 900px) {
+      .summary { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .content-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 560px) {
+      .shell { width: min(100% - 20px, 1180px); padding-top: 15px; }
+      .topbar { align-items: flex-start; gap: 12px; }
+      .utility-zone { flex-direction: column-reverse; align-items: flex-end; }
+      .session-label { display: none; }
+      .access-gate { margin-top: 22px; padding: 22px 18px; }
+      .subtitle { font-size: 12px; }
+      .healthbar { align-items: flex-start; }
+      .health-actions { flex-direction: column; }
+      .scan-station { margin-left: -2px; margin-right: -2px; padding: 16px 12px; border-radius: 14px; }
+      .scan-heading { align-items: start; }
+      .scan-row { grid-template-columns: 1fr; }
+      .ready-flag { min-height: 34px; }
+      .summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .metric:last-child { grid-column: span 2; }
+      section { padding: 12px 10px; }
+    }
+  </style>
 </head>
 <body>
+  <main class="shell">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow" id="txtEyebrow">Warehouse control</p>
+        <h1 id="txtTitle">Ampere scan station</h1>
+        <p class="subtitle" id="txtSubtitle">Start. Scan. Next. Every parcel gets a live, fail-closed decision.</p>
+      </div>
+      <div class="utility-zone">
+        <div class="session-utility" id="sessionUtility" hidden>
+          <span class="session-label" id="sessionLabel"></span>
+          <button class="ghost-button" id="logoutButton" type="button">Sign out</button>
+        </div>
+        <div class="lang-switch" id="langSwitch" aria-label="Language">
+          <button type="button" data-lang="nl" tabindex="3" aria-pressed="true">NL</button>
+          <button type="button" data-lang="en" tabindex="3" aria-pressed="false">EN</button>
+          <button type="button" data-lang="es" tabindex="3" aria-pressed="false">ES</button>
+        </div>
+      </div>
+    </header>
 
-<div class="topbar">
-  <div>
-    <h1 id="txt-title">Ampère hand-off — scan controle</h1>
-    <div class="sub" id="txt-subtitle">Bankhoesdiscounter live via bol.com &middot; cutoff 16:00 (CEST, aanname zomertijd)</div>
-  </div>
-  <div class="lang-switch" id="langSwitch">
-    <button data-lang="nl">NL</button>
-    <button data-lang="en">EN</button>
-    <button data-lang="es">ES</button>
-  </div>
-</div>
-<div id="status">Laden...</div>
+    <section class="access-gate" id="accessGate" data-testid="access-gate" aria-labelledby="accessTitle">
+      <div class="access-mark" aria-hidden="true">A</div>
+      <h2 id="accessTitle">Open scan station</h2>
+      <p class="access-copy" id="accessCopy">Enter the warehouse password to open the scan station.</p>
+      <form class="access-form" id="accessForm" data-testid="access-form" novalidate hidden>
+        <div class="field">
+          <label for="stationId" id="stationIdLabel">Station ID</label>
+          <input id="stationId" name="stationId" type="text" required maxlength="64" autocomplete="off" autocapitalize="characters" spellcheck="false">
+        </div>
+        <div class="field">
+          <label for="operatorLabel" id="operatorLabelLabel">Operator label</label>
+          <input id="operatorLabel" name="operatorLabel" type="text" required maxlength="64" autocomplete="off" spellcheck="false">
+        </div>
+        <div class="field">
+          <label for="warehousePassword" id="passwordLabel">Warehouse password</label>
+          <input id="warehousePassword" name="password" type="password" required maxlength="256" autocomplete="current-password">
+        </div>
+        <button class="primary-button" id="loginButton" type="submit">Open station</button>
+      </form>
+      <button class="primary-button" id="retryLogoutButton" data-testid="retry-logout" type="button" hidden>Retry sign out</button>
+      <p class="access-status" id="accessStatus" data-testid="auth-status" data-tone="neutral" role="status" aria-live="polite">Checking station access…</p>
+    </section>
 
-<div class="scan-box">
-  <label id="txt-scanLabel">Scan hier (scanner typt automatisch de track &amp; trace + Enter)</label>
-  <input id="scanInput" autocomplete="off" placeholder="Scan track & trace...">
-  <div id="scanFeedback"></div>
-</div>
+    <div id="operationalSurface" data-testid="operational-surface" hidden>
+    <div class="healthbar" id="healthbar" data-state="loading" data-testid="data-status" role="status" aria-live="polite">
+      <div class="health-copy">
+        <span class="health-dot" aria-hidden="true"></span>
+        <span class="health-text" id="healthText">Loading complete shipment data…</span>
+      </div>
+      <div class="health-actions">
+        <button class="ghost-button" id="retryButton" data-testid="retry-data" type="button" tabindex="2" hidden>Retry</button>
+        <button class="ghost-button" id="refreshButton" data-testid="refresh-data" type="button" tabindex="2" hidden>Refresh data</button>
+      </div>
+    </div>
 
-<div class="summary" id="summary"></div>
+    <section class="scan-station" aria-labelledby="scanTitle">
+      <div class="scan-heading">
+        <div>
+          <h2 id="scanTitle">Ready for scanner</h2>
+          <p class="scan-hint" id="scanHint">Scan the tracking code; Enter advances automatically.</p>
+        </div>
+        <div class="queue-pill"><span id="queueLabel">Queue</span>: <span data-testid="scan-queue-depth" id="queueDepth">0</span></div>
+      </div>
+      <label class="sr-only" id="scanLabel" for="scanInput">Tracking code</label>
+      <div class="scan-row">
+        <input id="scanInput" type="text" inputmode="text" enterkeyhint="done" autocomplete="off" autocapitalize="characters" spellcheck="false" tabindex="1" aria-describedby="scanHint" placeholder="Scan tracking code…" disabled>
+        <div class="ready-flag" id="readyFlag" data-ready="false">WAIT</div>
+      </div>
+      <div class="current-status" id="currentStatus" aria-live="polite">Waiting for a complete data snapshot.</div>
+      <div class="decision" id="scanFeedback" data-testid="scan-feedback" data-kind="idle" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="decision-kicker" id="decisionKicker">Last decision</div>
+        <div class="decision-title" id="decisionTitle">No parcel scanned yet</div>
+        <div class="decision-detail" id="decisionDetail">The result remains here while the next scan is checked.</div>
+      </div>
+    </section>
 
-<section>
-  <h2><span id="txt-hNoLabel">Nog geen label — moet nog geprint worden</span> <span class="count" id="cnt-nolabel">0</span></h2>
-  <div id="tbl-nolabel"></div>
-  <div class="note" id="txt-noteNoLabel"></div>
-</section>
+    <div class="summary" id="summary">
+      <div class="metric"><div class="metric-value" id="totalCount">0</div><div class="metric-label" id="totalLabel">Total today</div></div>
+      <div class="metric" data-tone="go"><div class="metric-value" id="scannedCount" data-testid="scanned-count">0</div><div class="metric-label" id="scannedLabel">Scanned</div></div>
+      <div class="metric" data-tone="stop"><div class="metric-value" id="openCount">0</div><div class="metric-label" id="openLabel">Still open</div></div>
+      <div class="metric" data-tone="warn"><div class="metric-value" id="noLabelCount">0</div><div class="metric-label" id="noLabelLabel">No label</div></div>
+      <div class="metric"><div class="metric-value" id="tomorrowCount">0</div><div class="metric-label" id="tomorrowLabel">After cutoff</div></div>
+    </div>
 
-<section>
-  <h2><span id="txt-hShipped">Al verzonden — wachten op scan bevestiging (Bankhoesdiscounter)</span> <span class="count" id="cnt-shipped">0</span></h2>
-  <div id="tbl-shipped"></div>
-</section>
+    <div class="content-grid">
+      <div class="stack">
+        <section aria-labelledby="shippedTitle">
+          <div class="section-head">
+            <div><h2 id="shippedTitle">Shipments awaiting scan</h2><p class="section-note" id="shippedNote">Current complete shipment window.</p></div>
+            <span class="count" id="shippedCount">0/0</span>
+          </div>
+          <div id="shipmentList" data-testid="shipment-list"></div>
+        </section>
+        <section aria-labelledby="noLabelTitle">
+          <div class="section-head"><div><h2 id="noLabelTitle">Orders before 16:00 without label</h2><p class="section-note" id="noLabelNote">Needs a label or manual review.</p></div><span class="count" id="beforeCount">0</span></div>
+          <div id="ordersBefore" data-testid="orders-before-cutoff"></div>
+        </section>
+        <section aria-labelledby="tomorrowTitle">
+          <div class="section-head"><div><h2 id="tomorrowTitle">Orders after 16:00</h2><p class="section-note" id="tomorrowNote">Next Amsterdam cutoff window.</p></div><span class="count" id="afterCount">0</span></div>
+          <div id="ordersAfter" data-testid="orders-after-cutoff"></div>
+        </section>
+      </div>
+      <div class="stack">
+        <section aria-labelledby="cancelledTitle">
+          <div class="section-head"><div><h2 id="cancelledTitle">STOP — cancelled</h2><p class="section-note" id="cancelledNote">Remove these parcels from dispatch.</p></div><span class="count" id="cancelledCount">0</span></div>
+          <div id="cancelledList"></div>
+        </section>
+        <section aria-labelledby="stopTitle">
+          <div class="section-head"><div><h2 id="stopTitle">STOP — needs review</h2><p class="section-note" id="stopNote">Unknown or unverifiable scans never count as complete.</p></div><span class="count" id="stopCount">0</span></div>
+          <div id="stopList" data-testid="stop-list"></div>
+        </section>
+      </div>
+    </div>
+    </div>
+  </main>
 
-<!-- Muisstil section removed for now — no API access yet. Re-add once the Muisstil bol
-     credentials are available (was: manual order/track&trace entry list, localStorage-backed). -->
+  <script>
+  (() => {
+    'use strict';
 
-<section>
-  <h2><span id="txt-hTomorrow">Al klaar voor morgen (na 16:00 besteld, wacht nog op label)</span> <span class="count" id="cnt-tomorrow">0</span></h2>
-  <div id="tbl-tomorrow"></div>
-</section>
+    const ZONE = 'Europe/Amsterdam';
+    const MAX_PAGES = 100;
+    const MAX_SNAPSHOT_AGE_MS = 30 * 60 * 1000;
+    const REFRESH_INTERVAL_MS = 5 * 60 * 1000;
+    const LANGUAGE_KEY = 'ampere_language_v2';
+    const LOGOUT_PENDING_KEY = 'ampere_logout_pending_v1';
 
-<section>
-  <h2><span id="txt-hCancelled">⛔ Geannuleerd na label — NIET verzenden</span> <span class="count" id="cnt-cancelled">0</span></h2>
-  <div id="tbl-cancelled"></div>
-  <div class="note" id="txt-noteCancelled">Bij elke scan wordt de actuele status van de order live bij bol opgevraagd. Staat een order hier, dan is hij na het aanmaken van het label geannuleerd door de klant — haal het pakket eruit.</div>
-</section>
+    const TEXT = {
+      nl: {
+        locale: 'nl-NL', eyebrow: 'Magazijncontrole', title: 'Ampere scanstation', subtitle: 'Start. Scan. Volgende. Elk pakket krijgt live een veilige beslissing.',
+        scanTitle: 'Klaar voor scanner', scanHint: 'Scan de track & trace; Enter gaat automatisch door.', scanLabel: 'Track & trace', placeholder: 'Scan track & trace…', queue: 'Wachtrij', ready: 'KLAAR', wait: 'WACHT',
+        loading: 'Volledige verzenddata laden…', loadingOrders: p => `Open orders laden · pagina ${p}`, loadingShipments: p => `Verzendingen laden · pagina ${p}`, loadingDetails: (n, total) => `Verzenddetails laden · ${n}/${total}`, refreshing: 'Data verversen; bestaande scans blijven actief.', readyData: t => `Data compleet · bijgewerkt ${t}`, warningData: () => 'Verversen mislukt; de laatste complete snapshot blijft actief.', errorData: () => 'Scannen gepauzeerd — de verzendlijst is niet compleet. Probeer opnieuw.', retry: 'Opnieuw', refresh: 'Data verversen',
+        idleStatus: 'Scanner klaar. Focus blijft op het invoerveld.', checking: order => `Live annulering controleren · order ${order}`, refreshingUnknown: 'Code niet gevonden; volledige data één keer verversen…', queued: n => n ? `${n} scan${n === 1 ? '' : 's'} wacht${n === 1 ? '' : 'en'}.` : 'Scanner klaar voor de volgende code.', blocked: 'Wacht op een volledige, gezonde datasnapshot.',
+        lastDecision: 'Laatste beslissing', idleTitle: 'Nog geen pakket gescand', idleDetail: 'Het resultaat blijft staan terwijl de volgende scan wordt gecontroleerd.', successKicker: 'GO · verzenden', duplicateKicker: 'DUBBEL · niet opnieuw tellen', stopKicker: 'STOP · niet verzenden',
+        successTitle: o => `Order ${o} vrijgegeven`, successDetail: c => `${c} is live gecontroleerd en geteld. Scan de volgende.`, duplicateTitle: o => `Order ${o} was al gescand`, duplicateDetail: c => `${c} is niet opnieuw geteld. Scan de volgende.`, pendingDuplicateTitle: 'Scan al in de wachtrij', pendingDuplicateDetail: c => `${c} wordt maar één keer live gecontroleerd.`, cancelledDecisionTitle: o => `Order ${o} is geannuleerd`, cancelledDetail: c => `${c} is geblokkeerd en telt niet mee. Haal het pakket eruit.`, unknownTitle: 'Onbekende code', unknownDetail: c => `${c} bleef onbekend na verversen. Handmatig controleren.`, unverifiedTitle: o => o ? `Order ${o} kon niet worden geverifieerd` : 'Code kon niet worden geverifieerd', unverifiedDetail: c => `${c} telt niet mee. Controleer handmatig voordat het pakket vertrekt.`,
+        total: 'Totaal vandaag', scanned: 'Gescand', open: 'Nog open', noLabel: 'Geen label', afterCutoff: 'Na cutoff', shippedTitle: 'Verzendingen wachten op scan', shippedNote: 'Volledig huidig verzendvenster.', noLabelTitle: 'Orders voor 16:00 zonder label', noLabelNote: 'Label maken of handmatig beoordelen.', tomorrowTitle: 'Orders na 16:00', tomorrowNote: 'Volgend Amsterdams cutoffvenster.', cancelledTitle: 'STOP — geannuleerd', cancelledNote: 'Haal deze pakketten uit de verzending.', stopTitle: 'STOP — controle nodig', stopNote: 'Onbekende of onbevestigde scans tellen nooit mee.',
+        thOrder: 'Order', thTrack: 'Track & trace', thPlaced: 'Geplaatst', thShipped: 'Verzonden', thItems: 'Items', thStatus: 'Status', thAge: 'Leeftijd', thExpected: 'Verwacht', thFound: 'Gevonden', thReason: 'Reden', openBadge: 'Open', scannedBadge: t => `Gescand ${t}`, laterBadge: 'later', unknownValue: 'onbekend', emptyShipments: 'Geen verzendingen in dit venster.', emptyOrders: 'Geen orders in deze groep.', emptyCancelled: 'Geen geannuleerde pakketten gevonden.', emptyStops: 'Geen scans die handmatige controle nodig hebben.', reasonUnknown: 'Onbekend na verversen', reasonUnverified: 'Live controle mislukt', age: (h,m) => h < 1 ? `${m}m` : `${h}u ${m}m`
+      },
+      en: {
+        locale: 'en-GB', eyebrow: 'Warehouse control', title: 'Ampere scan station', subtitle: 'Start. Scan. Next. Every parcel gets a live, fail-closed decision.',
+        scanTitle: 'Ready for scanner', scanHint: 'Scan the tracking code; Enter advances automatically.', scanLabel: 'Scan tracking code', placeholder: 'Scan tracking code…', queue: 'Queue', ready: 'READY', wait: 'WAIT',
+        loading: 'Loading complete shipment data…', loadingOrders: p => `Loading open orders · page ${p}`, loadingShipments: p => `Loading shipments · page ${p}`, loadingDetails: (n, total) => `Loading shipment details · ${n}/${total}`, refreshing: 'Refreshing data; existing scan flow remains active.', readyData: t => `Data complete · updated ${t}`, warningData: () => 'Refresh failed; the last complete snapshot remains active.', errorData: () => 'Scanning paused — the shipment list is incomplete. Retry before continuing.', retry: 'Retry', refresh: 'Refresh data',
+        idleStatus: 'Scanner ready. Focus stays on the input.', checking: order => `Live cancellation check · order ${order}`, refreshingUnknown: 'Code not found; refreshing all data once…', queued: n => n ? `${n} scan${n === 1 ? '' : 's'} waiting.` : 'Scanner ready for the next code.', blocked: 'Waiting for a complete, healthy data snapshot.',
+        lastDecision: 'Last decision', idleTitle: 'No parcel scanned yet', idleDetail: 'The result remains here while the next scan is checked.', successKicker: 'GO · dispatch', duplicateKicker: 'DUPLICATE · not counted twice', stopKicker: 'STOP · do not dispatch',
+        successTitle: o => `Order ${o} cleared`, successDetail: c => `${c} was live checked and counted. Scan the next parcel.`, duplicateTitle: o => `Order ${o} was already scanned`, duplicateDetail: c => `${c} was not counted twice. Scan the next parcel.`, pendingDuplicateTitle: 'Scan already queued', pendingDuplicateDetail: c => `${c} will only be live checked once.`, cancelledDecisionTitle: o => `Order ${o} is cancelled`, cancelledDetail: c => `${c} is blocked and not counted. Remove the parcel.`, unknownTitle: 'Unknown code', unknownDetail: c => `${c} remained unknown after refresh. Review it manually.`, unverifiedTitle: o => o ? `Order ${o} could not be verified` : 'Code could not be verified', unverifiedDetail: c => `${c} is not counted. Review it before dispatch.`,
+        total: 'Total today', scanned: 'Scanned', open: 'Still open', noLabel: 'No label', afterCutoff: 'After cutoff', shippedTitle: 'Shipments awaiting scan', shippedNote: 'Current complete shipment window.', noLabelTitle: 'Orders before 16:00 without label', noLabelNote: 'Create a label or review manually.', tomorrowTitle: 'Orders after 16:00', tomorrowNote: 'Next Amsterdam cutoff window.', cancelledTitle: 'STOP — cancelled', cancelledNote: 'Remove these parcels from dispatch.', stopTitle: 'STOP — needs review', stopNote: 'Unknown or unverifiable scans never count as complete.',
+        thOrder: 'Order', thTrack: 'Tracking', thPlaced: 'Placed', thShipped: 'Shipped', thItems: 'Items', thStatus: 'Status', thAge: 'Age', thExpected: 'Expected', thFound: 'Found', thReason: 'Reason', openBadge: 'Open', scannedBadge: t => `Scanned ${t}`, laterBadge: 'later', unknownValue: 'unknown', emptyShipments: 'No shipments in this window.', emptyOrders: 'No orders in this group.', emptyCancelled: 'No cancelled parcels found.', emptyStops: 'No scans need manual review.', reasonUnknown: 'Unknown after refresh', reasonUnverified: 'Live check failed', age: (h,m) => h < 1 ? `${m}m` : `${h}h ${m}m`
+      },
+      es: {
+        locale: 'es-ES', eyebrow: 'Control de almacén', title: 'Estación de escaneo Ampere', subtitle: 'Inicio. Escaneo. Siguiente. Cada paquete recibe una decisión segura en vivo.',
+        scanTitle: 'Listo para escanear', scanHint: 'Escanea el seguimiento; Enter avanza automáticamente.', scanLabel: 'Código de seguimiento', placeholder: 'Escanea el seguimiento…', queue: 'Cola', ready: 'LISTO', wait: 'ESPERA',
+        loading: 'Cargando datos completos de envíos…', loadingOrders: p => `Cargando pedidos · página ${p}`, loadingShipments: p => `Cargando envíos · página ${p}`, loadingDetails: (n, total) => `Cargando detalles · ${n}/${total}`, refreshing: 'Actualizando datos; el escaneo existente sigue activo.', readyData: t => `Datos completos · actualizados ${t}`, warningData: () => 'Falló la actualización; se mantiene la última lista completa.', errorData: () => 'Escaneo pausado — la lista de envíos está incompleta. Reintenta.', retry: 'Reintentar', refresh: 'Actualizar datos',
+        idleStatus: 'Escáner listo. El foco permanece en la entrada.', checking: order => `Comprobación de cancelación · pedido ${order}`, refreshingUnknown: 'Código no encontrado; actualizando todos los datos una vez…', queued: n => n ? `${n} escaneo${n === 1 ? '' : 's'} en espera.` : 'Escáner listo para el siguiente código.', blocked: 'Esperando datos completos y sanos.',
+        lastDecision: 'Última decisión', idleTitle: 'Aún no se escaneó ningún paquete', idleDetail: 'El resultado permanece visible mientras se comprueba el siguiente.', successKicker: 'ADELANTE · enviar', duplicateKicker: 'DUPLICADO · no contar dos veces', stopKicker: 'PARADA · no enviar',
+        successTitle: o => `Pedido ${o} aprobado`, successDetail: c => `${c} fue comprobado y contado. Escanea el siguiente.`, duplicateTitle: o => `Pedido ${o} ya estaba escaneado`, duplicateDetail: c => `${c} no se contó dos veces. Escanea el siguiente.`, pendingDuplicateTitle: 'Escaneo ya en cola', pendingDuplicateDetail: c => `${c} solo se comprobará una vez.`, cancelledDecisionTitle: o => `Pedido ${o} cancelado`, cancelledDetail: c => `${c} está bloqueado y no cuenta. Retira el paquete.`, unknownTitle: 'Código desconocido', unknownDetail: c => `${c} siguió desconocido tras actualizar. Revísalo manualmente.`, unverifiedTitle: o => o ? `No se pudo verificar el pedido ${o}` : 'No se pudo verificar el código', unverifiedDetail: c => `${c} no cuenta. Revísalo antes del envío.`,
+        total: 'Total de hoy', scanned: 'Escaneados', open: 'Pendientes', noLabel: 'Sin etiqueta', afterCutoff: 'Tras el corte', shippedTitle: 'Envíos pendientes de escaneo', shippedNote: 'Ventana completa de envíos actual.', noLabelTitle: 'Pedidos antes de las 16:00 sin etiqueta', noLabelNote: 'Crear etiqueta o revisar.', tomorrowTitle: 'Pedidos después de las 16:00', tomorrowNote: 'Siguiente ventana de Ámsterdam.', cancelledTitle: 'PARADA — cancelado', cancelledNote: 'Retira estos paquetes.', stopTitle: 'PARADA — revisar', stopNote: 'Los escaneos desconocidos o no verificables nunca cuentan.',
+        thOrder: 'Pedido', thTrack: 'Seguimiento', thPlaced: 'Realizado', thShipped: 'Enviado', thItems: 'Artículos', thStatus: 'Estado', thAge: 'Edad', thExpected: 'Previsto', thFound: 'Detectado', thReason: 'Motivo', openBadge: 'Pendiente', scannedBadge: t => `Escaneado ${t}`, laterBadge: 'posterior', unknownValue: 'desconocido', emptyShipments: 'No hay envíos en esta ventana.', emptyOrders: 'No hay pedidos en este grupo.', emptyCancelled: 'No se encontraron paquetes cancelados.', emptyStops: 'Ningún escaneo necesita revisión.', reasonUnknown: 'Desconocido tras actualizar', reasonUnverified: 'Falló el control en vivo', age: (h,m) => h < 1 ? `${m}m` : `${h}h ${m}m`
+      }
+    };
 
-<section>
-  <h2><span id="txt-hUnmatched">⛔ Onbekende scans — behandel als STOP</span> <span class="count" id="cnt-unmatched">0</span></h2>
-  <div id="tbl-unmatched"></div>
-  <div class="note" id="txt-noteUnmatched">Kan een Muisstil-order zijn die nog niet is toegevoegd — maar kan ook een order zijn die geannuleerd is vóórdat bol een verzendbevestiging kreeg. Die orders staan nergens (niet open, geen shipment), dus deze scan-lijst is de enige plek waar ze opvallen. Zoek de order op in bol.com voordat je 'm laat gaan.</div>
-</section>
+    const ACCESS_TEXT = {
+      nl: {
+        title: 'Scanstation openen', copy: 'Voer het magazijnwachtwoord in om het scanstation te openen.', station: 'Station-ID', operator: 'Operatorlabel', password: 'Magazijnwachtwoord', submit: 'Station openen', submitting: 'Toegang controleren…', checking: 'Toegang tot station controleren…', invalid: 'Toegang niet geaccepteerd. Controleer het wachtwoord en probeer opnieuw.', locked: 'Toegang is tijdelijk geblokkeerd. Wacht en probeer het opnieuw.', setup: 'De installatie van het station is niet compleet. Neem contact op met de eigenaar voordat je scant.', database: 'Toegang is gepauzeerd omdat de gedeelde stationstatus niet beschikbaar is. Probeer opnieuw.', expired: 'De toegang tot het station is verlopen. Log opnieuw in om door te gaan.', pausedScans: n => `${n} scan${n === 1 ? '' : 's'} wacht${n === 1 ? '' : 'en'} en gaat na het inloggen automatisch verder.`, logoutFailed: 'Uitloggen kon niet worden bevestigd. Dit station blijft geblokkeerd totdat uitloggen opnieuw lukt.', retryLogout: 'Uitloggen opnieuw proberen', required: 'Vul station, operator en wachtwoord in.', logout: 'Uitloggen', shared: 'Scannen gepauzeerd — gedeelde stationstatus is niet beschikbaar. Probeer opnieuw voordat je doorgaat.'
+      },
+      en: {
+        title: 'Open scan station', copy: 'Enter the warehouse password to open the scan station.', station: 'Station ID', operator: 'Operator label', password: 'Warehouse password', submit: 'Open station', submitting: 'Checking access…', checking: 'Checking station access…', invalid: 'Access not accepted. Check the password and try again.', locked: 'Access is temporarily locked. Wait, then try again.', setup: 'Station setup is incomplete. Contact the station owner before scanning.', database: 'Access is paused because shared station state is unavailable. Retry before continuing.', expired: 'Station access expired. Sign in again to continue.', pausedScans: n => `${n} scan${n === 1 ? '' : 's'} ${n === 1 ? 'is' : 'are'} paused and will resume automatically after sign-in.`, logoutFailed: 'Sign-out could not be confirmed. This station stays locked until sign-out is retried successfully.', retryLogout: 'Retry sign out', required: 'Enter the station, operator, and password.', logout: 'Sign out', shared: 'Scanning paused — shared station state is unavailable. Retry before continuing.'
+      },
+      es: {
+        title: 'Abrir estación de escaneo', copy: 'Introduce la contraseña del almacén para abrir la estación.', station: 'ID de estación', operator: 'Operador', password: 'Contraseña del almacén', submit: 'Abrir estación', submitting: 'Comprobando acceso…', checking: 'Comprobando acceso a la estación…', invalid: 'Acceso no aceptado. Comprueba la contraseña e inténtalo de nuevo.', locked: 'El acceso está bloqueado temporalmente. Espera y vuelve a intentarlo.', setup: 'La configuración de la estación está incompleta. Contacta con el responsable antes de escanear.', database: 'El acceso está pausado porque el estado compartido no está disponible. Vuelve a intentarlo.', expired: 'El acceso a la estación ha caducado. Inicia sesión de nuevo.', pausedScans: n => `${n} escaneo${n === 1 ? '' : 's'} ${n === 1 ? 'está' : 'están'} en pausa y continuará${n === 1 ? '' : 'n'} automáticamente al iniciar sesión.`, logoutFailed: 'No se pudo confirmar el cierre de sesión. La estación seguirá bloqueada hasta reintentar el cierre correctamente.', retryLogout: 'Reintentar cierre de sesión', required: 'Introduce la estación, el operador y la contraseña.', logout: 'Cerrar sesión', shared: 'Escaneo pausado: el estado compartido no está disponible. Reintenta antes de continuar.'
+      }
+    };
 
-<script>
-const TOOL_DATA = "mcp__3bd27b79-868e-4c4b-9c30-1811c8456fa7__get_bol_retailer_data";
-const TOOL_RAW = "mcp__3bd27b79-868e-4c4b-9c30-1811c8456fa7__bol_retailer_api_request";
-const AMS_OFFSET = "+02:00"; // CEST. Change to +01:00 after the winter-time switch.
+    const el = id => document.getElementById(id);
+    const now = () => new Date();
+    const storedLanguage = safeLanguageGet();
+    let language = ['nl', 'en', 'es'].includes(storedLanguage) ? storedLanguage : 'nl';
+    const tx = () => TEXT[language];
+    const accessTx = () => ACCESS_TEXT[language];
 
-// ---------- i18n ----------
-const I18N = {
-  nl: {
-    locale: 'nl-NL',
-    title: "Ampère hand-off — scan controle",
-    subtitle: "Bankhoesdiscounter live via bol.com · cutoff 16:00 (CEST, aanname zomertijd)",
-    scanLabel: "Scan hier (scanner typt automatisch de track & trace + Enter)",
-    scanPlaceholder: "Scan track & trace...",
-    cardTotal: "Totaal vandaag", cardScanned: "Gescand", cardOpen: "Nog open",
-    cardNoLabel: "Nog geen label", cardTomorrow: "Klaar voor morgen",
-    hNoLabel: "Nog geen label — moet nog geprint worden",
-    hShipped: "Al verzonden — wachten op scan bevestiging (Bankhoesdiscounter)",
-    hMuisstil: "Muisstil — handmatig",
-    hTomorrow: "Al klaar voor morgen (na 16:00 besteld, wacht nog op label)",
-    hCancelled: "⛔ Geannuleerd na label — NIET verzenden",
-    hUnmatched: "⛔ Onbekende scans — behandel als STOP",
-    thOrder: "Order", thPlaced: "Geplaatst", thAge: "Leeftijd", thItems: "Items",
-    thExpected: "Verwachte levering*", thTrack: "Track & trace", thShippedAt: "Verzonden", thStatus: "Status",
-    thCode: "Code", thTime: "Tijd", thFound: "Gevonden", thAction: "",
-    emptyNoLabel: "Niets — alles heeft al een label.",
-    emptyShipped: "Nog geen verzendingen in het venster.",
-    emptyMuisstil: "Nog geen Muisstil-orders toegevoegd.",
-    emptyTomorrow: "Nog niets voor morgen.",
-    emptyCancelled: "Geen geannuleerde orders gevonden bij het scannen.",
-    emptyUnmatched: "Geen onbekende scans.",
-    badgeScanned: t => `Gescand ${t}`,
-    badgeOpen: "Open",
-    badgeLater: "later venster",
-    orderPlaceholder: "Ordernummer",
-    trackPlaceholder: "Track & trace",
-    addBtn: "Toevoegen",
-    deleteLink: "verwijder",
-    noteMuisstil: "Muisstil-orders komen niet uit een API — voeg ze hier zelf toe zodra je ze weet. Blijft bewaard in deze browser.",
-    noteCancelled: "Bij elke scan wordt de actuele status van de order live bij bol opgevraagd. Staat een order hier, dan is hij na het aanmaken van het label geannuleerd door de klant — haal het pakket eruit.",
-    noteUnmatched: "Kan een Muisstil-order zijn die nog niet is toegevoegd — maar kan ook een order zijn die geannuleerd is vóórdat bol een verzendbevestiging kreeg. Die orders staan nergens (niet open, geen shipment), dus deze scan-lijst is de enige plek waar ze opvallen. Zoek de order op in bol.com voordat je 'm laat gaan.",
-    noteNoLabel: "* \"Verwachte levering\" komt rechtstreeks van bol, maar is vóór verzending onbetrouwbaar (we hebben dit geverifieerd) — een latere datum is dus geen garantie dat de order pas later mag, alleen een signaal om even te checken. Bij twijfel: order opzoeken in bol.com.",
-    statusLoading: "Bezig met laden van bol.com data...",
-    statusLoadingShipments: n => `Details ophalen voor ${n} verzendingen...`,
-    statusLastUpdate: t => `Laatste update: ${t}`,
-    statusError: m => `Fout bij laden: ${m}`,
-    fbUnknown: code => `⛔ ONBEKENDE CODE: ${code} — staat nergens op de lijst. Dit kan een order zijn die geannuleerd is vóórdat bol een verzendbevestiging kreeg (zoals C000CF8J8M op 4 aug) — die orders zijn nergens anders zichtbaar. NIET verzenden zonder deze order handmatig op te zoeken in bol.com.`,
-    fbAlreadyScanned: (orderId, t) => `Al eerder gescand: order ${orderId} (${t}).`,
-    fbStopCancelled: orderId => `⛔ STOP — order ${orderId} is geannuleerd. NIET verzenden.`,
-    fbChecking: orderId => `Bezig met live check van order ${orderId} bij bol...`,
-    fbStopLive: orderId => `⛔ STOP — order ${orderId} is geannuleerd bij bol. NIET verzenden!`,
-    fbCouldNotCheck: orderId => `Kon annulering niet live checken voor order ${orderId} — afgevinkt, maar controleer handmatig indien twijfel.`,
-    fbOk: orderId => `OK — order ${orderId} afgevinkt (live gecheckt, niet geannuleerd).`,
-    fbOkMuisstil: orderId => `OK — order ${orderId} afgevinkt (Muisstil, geen live check mogelijk).`,
-    ageFmt: (h,m) => h < 1 ? `${m}m` : `${h}u ${m}m`,
-  },
-  en: {
-    locale: 'en-GB',
-    title: "Ampère hand-off — scan check",
-    subtitle: "Bankhoesdiscounter live via bol.com · cutoff 16:00 (CEST, assuming summer time)",
-    scanLabel: "Scan here (scanner types the track & trace automatically + Enter)",
-    scanPlaceholder: "Scan track & trace...",
-    cardTotal: "Total today", cardScanned: "Scanned", cardOpen: "Still open",
-    cardNoLabel: "No label yet", cardTomorrow: "Ready for tomorrow",
-    hNoLabel: "No label yet — still needs to be printed",
-    hShipped: "Already shipped — waiting on scan confirmation (Bankhoesdiscounter)",
-    hMuisstil: "Muisstil — manual",
-    hTomorrow: "Already set for tomorrow (ordered after 16:00, waiting for label)",
-    hCancelled: "⛔ Cancelled after label — DO NOT ship",
-    hUnmatched: "⛔ Unknown scans — treat as STOP",
-    thOrder: "Order", thPlaced: "Placed", thAge: "Age", thItems: "Items",
-    thExpected: "Expected delivery*", thTrack: "Track & trace", thShippedAt: "Shipped", thStatus: "Status",
-    thCode: "Code", thTime: "Time", thFound: "Found", thAction: "",
-    emptyNoLabel: "Nothing here — everything already has a label.",
-    emptyShipped: "No shipments in this window yet.",
-    emptyMuisstil: "No Muisstil orders added yet.",
-    emptyTomorrow: "Nothing for tomorrow yet.",
-    emptyCancelled: "No cancelled orders found while scanning.",
-    emptyUnmatched: "No unknown scans.",
-    badgeScanned: t => `Scanned ${t}`,
-    badgeOpen: "Open",
-    badgeLater: "later window",
-    orderPlaceholder: "Order number",
-    trackPlaceholder: "Track & trace",
-    addBtn: "Add",
-    deleteLink: "remove",
-    noteMuisstil: "Muisstil orders don't come from an API — add them here yourself as you learn them. This stays saved in this browser.",
-    noteCancelled: "Every scan triggers a live check of the order's current status with bol. If an order shows up here, the customer cancelled it after the label was created — pull the parcel back out.",
-    noteUnmatched: "Could be a Muisstil order that hasn't been added yet — but could also be an order that was cancelled before bol ever registered a shipment confirmation. Those orders don't show up anywhere else (not in open orders, not in shipments), so this scan list is the only place they surface. Look the order up in bol.com before letting it go.",
-    noteNoLabel: "* \"Expected delivery\" comes straight from bol, but is unreliable before an order ships (we've verified this) — a later date is not a guarantee that the order can wait, just a signal to double-check. If in doubt, look the order up in bol.com.",
-    statusLoading: "Loading bol.com data...",
-    statusLoadingShipments: n => `Fetching details for ${n} shipments...`,
-    statusLastUpdate: t => `Last update: ${t}`,
-    statusError: m => `Error while loading: ${m}`,
-    fbUnknown: code => `⛔ UNKNOWN CODE: ${code} — not on any list. This can be an order that was cancelled before bol ever got a shipment confirmation (like C000CF8J8M on Aug 4) — those orders aren't visible anywhere else. DO NOT ship without looking this order up manually in bol.com.`,
-    fbAlreadyScanned: (orderId, t) => `Already scanned: order ${orderId} (${t}).`,
-    fbStopCancelled: orderId => `⛔ STOP — order ${orderId} is cancelled. DO NOT ship.`,
-    fbChecking: orderId => `Live-checking order ${orderId} with bol...`,
-    fbStopLive: orderId => `⛔ STOP — order ${orderId} is cancelled at bol. DO NOT ship!`,
-    fbCouldNotCheck: orderId => `Could not live-check cancellation for order ${orderId} — marked as scanned, but verify manually if in doubt.`,
-    fbOk: orderId => `OK — order ${orderId} checked off (live checked, not cancelled).`,
-    fbOkMuisstil: orderId => `OK — order ${orderId} checked off (Muisstil, no live check possible).`,
-    ageFmt: (h,m) => h < 1 ? `${m}m` : `${h}h ${m}m`,
-  },
-  es: {
-    locale: 'es-ES',
-    title: "Entrega a Ampère — control de escaneo",
-    subtitle: "Bankhoesdiscounter en vivo vía bol.com · corte 16:00 (CEST, suponiendo horario de verano)",
-    scanLabel: "Escanea aquí (el escáner escribe el track & trace automáticamente + Enter)",
-    scanPlaceholder: "Escanea el track & trace...",
-    cardTotal: "Total de hoy", cardScanned: "Escaneados", cardOpen: "Pendientes",
-    cardNoLabel: "Sin etiqueta aún", cardTomorrow: "Listos para mañana",
-    hNoLabel: "Sin etiqueta aún — falta imprimir",
-    hShipped: "Ya enviados — a la espera de confirmación de escaneo (Bankhoesdiscounter)",
-    hMuisstil: "Muisstil — manual",
-    hTomorrow: "Ya listos para mañana (pedidos después de las 16:00, esperando etiqueta)",
-    hCancelled: "⛔ Cancelado después de la etiqueta — NO enviar",
-    hUnmatched: "⛔ Escaneos desconocidos — tratar como PARADA",
-    thOrder: "Pedido", thPlaced: "Realizado", thAge: "Antigüedad", thItems: "Artículos",
-    thExpected: "Entrega prevista*", thTrack: "Track & trace", thShippedAt: "Enviado", thStatus: "Estado",
-    thCode: "Código", thTime: "Hora", thFound: "Detectado", thAction: "",
-    emptyNoLabel: "Nada por aquí — todo tiene ya su etiqueta.",
-    emptyShipped: "Todavía no hay envíos en esta franja.",
-    emptyMuisstil: "Aún no se han añadido pedidos de Muisstil.",
-    emptyTomorrow: "Todavía nada para mañana.",
-    emptyCancelled: "No se ha encontrado ningún pedido cancelado al escanear.",
-    emptyUnmatched: "No hay escaneos desconocidos.",
-    badgeScanned: t => `Escaneado ${t}`,
-    badgeOpen: "Pendiente",
-    badgeLater: "ventana posterior",
-    orderPlaceholder: "Número de pedido",
-    trackPlaceholder: "Track & trace",
-    addBtn: "Añadir",
-    deleteLink: "eliminar",
-    noteMuisstil: "Los pedidos de Muisstil no vienen de ninguna API — añádelos aquí a mano en cuanto los conozcas. Se guardan en este navegador.",
-    noteCancelled: "Cada escaneo consulta en vivo el estado actual del pedido en bol. Si un pedido aparece aquí, el cliente lo canceló después de crearse la etiqueta — saca el paquete.",
-    noteUnmatched: "Puede ser un pedido de Muisstil que aún no se ha añadido — pero también puede ser un pedido cancelado antes de que bol registrara una confirmación de envío. Esos pedidos no aparecen en ningún otro sitio (ni en pedidos abiertos, ni en envíos), así que esta lista de escaneos es el único lugar donde salen a la luz. Búscalo en bol.com antes de dejarlo pasar.",
-    noteNoLabel: "* La \"entrega prevista\" viene directamente de bol, pero no es fiable antes de que el pedido se envíe (lo hemos comprobado) — una fecha más lejana no garantiza que el pedido pueda esperar, es solo una señal para revisarlo. Si tienes dudas, búscalo en bol.com.",
-    statusLoading: "Cargando datos de bol.com...",
-    statusLoadingShipments: n => `Obteniendo detalles de ${n} envíos...`,
-    statusLastUpdate: t => `Última actualización: ${t}`,
-    statusError: m => `Error al cargar: ${m}`,
-    fbUnknown: code => `⛔ CÓDIGO DESCONOCIDO: ${code} — no está en ninguna lista. Puede tratarse de un pedido cancelado antes de que bol registrara la confirmación de envío (como el C000CF8J8M del 4 de agosto) — esos pedidos no son visibles en ningún otro sitio. NO lo envíes sin buscar antes este pedido a mano en bol.com.`,
-    fbAlreadyScanned: (orderId, t) => `Ya escaneado antes: pedido ${orderId} (${t}).`,
-    fbStopCancelled: orderId => `⛔ PARADA — el pedido ${orderId} está cancelado. NO enviar.`,
-    fbChecking: orderId => `Comprobando en vivo el pedido ${orderId} con bol...`,
-    fbStopLive: orderId => `⛔ PARADA — el pedido ${orderId} está cancelado en bol. ¡NO enviar!`,
-    fbCouldNotCheck: orderId => `No se pudo comprobar en vivo la cancelación del pedido ${orderId} — marcado como escaneado, pero verifícalo a mano si tienes dudas.`,
-    fbOk: orderId => `OK — pedido ${orderId} marcado (comprobado en vivo, no cancelado).`,
-    fbOkMuisstil: orderId => `OK — pedido ${orderId} marcado (Muisstil, no se puede comprobar en vivo).`,
-    ageFmt: (h,m) => h < 1 ? `${m}m` : `${h}h ${m}m`,
-  },
-};
+    const app = {
+      accessPhase: 'checking', accessReason: '', session: null, sessionGeneration: 0,
+      phase: 'loading', progress: '', snapshot: null, lastLoadError: null, refreshPromise: null, stateHealthy: false,
+      queue: [], pausedQueue: [], refreshInterruptedJob: null, pendingCodes: new Set(), draining: false, currentCheck: null, decision: null,
+      state: null, activeVerifiers: 0, maxActiveVerifiers: 0
+    };
 
-let lang = localStorage.getItem('lang_v1') || 'nl';
-function t() { return I18N[lang]; }
+    function safeLanguageGet() { try { return localStorage.getItem(LANGUAGE_KEY); } catch (_) { return null; } }
+    function safeLanguageSet(value) { try { localStorage.setItem(LANGUAGE_KEY, value); } catch (_) {} }
+    function safeLogoutPendingGet() { try { return sessionStorage.getItem(LOGOUT_PENDING_KEY) === '1'; } catch (_) { return false; } }
+    function safeLogoutPendingSet(value) { try { if (value) sessionStorage.setItem(LOGOUT_PENDING_KEY, '1'); else sessionStorage.removeItem(LOGOUT_PENDING_KEY); } catch (_) {} }
+    function canonicalCode(value) { return String(value == null ? '' : value).trim().toUpperCase().slice(0, 256); }
+    function validIso(value) { return typeof value === 'string' && Number.isFinite(new Date(value).getTime()); }
+    function plainText(value, fallback = '') { return value == null ? fallback : String(value); }
 
-function applyStaticText() {
-  const d = t();
-  document.getElementById('txt-title').textContent = d.title;
-  document.getElementById('txt-subtitle').textContent = d.subtitle;
-  document.getElementById('txt-scanLabel').textContent = d.scanLabel;
-  document.getElementById('scanInput').placeholder = d.scanPlaceholder;
-  document.getElementById('txt-hNoLabel').textContent = d.hNoLabel;
-  document.getElementById('txt-hShipped').textContent = d.hShipped;
-  document.getElementById('txt-hTomorrow').textContent = d.hTomorrow;
-  document.getElementById('txt-hCancelled').textContent = d.hCancelled;
-  document.getElementById('txt-hUnmatched').textContent = d.hUnmatched;
-  document.getElementById('txt-noteCancelled').textContent = d.noteCancelled;
-  document.getElementById('txt-noteUnmatched').textContent = d.noteUnmatched;
-  document.getElementById('txt-noteNoLabel').textContent = d.noteNoLabel;
-  document.querySelectorAll('#langSwitch button').forEach(b => b.classList.toggle('active', b.dataset.lang === lang));
-}
-
-function setLang(l) {
-  lang = l;
-  localStorage.setItem('lang_v1', l);
-  applyStaticText();
-  render();
-}
-document.getElementById('langSwitch').addEventListener('click', (e) => {
-  const btn = e.target.closest('button[data-lang]');
-  if (btn) setLang(btn.dataset.lang);
-});
-
-// ---------- state ----------
-let openOrders = [];
-let shipments = []; // enriched {orderId, trackAndTrace, transporterCode, items, shipmentDateTime, placedAt}
-let scannedMap = JSON.parse(localStorage.getItem('scanned_map_v1') || '{}'); // trackAndTrace -> iso timestamp
-let cancelledList = JSON.parse(localStorage.getItem('cancelled_list_v1') || '[]'); // [{orderId, trackAndTrace, foundAt}]
-let unmatched = [];
-
-function saveScanned() { localStorage.setItem('scanned_map_v1', JSON.stringify(scannedMap)); }
-function saveCancelled() { localStorage.setItem('cancelled_list_v1', JSON.stringify(cancelledList)); }
-
-async function checkLiveCancellation(orderId) {
-  // Live re-check with bol at the moment of scanning — catches orders cancelled
-  // after the label/shipment was already created.
-  try {
-    const resp = await callTool(TOOL_RAW, {path: `/orders/${orderId}`});
-    const items = (resp.data && resp.data.orderItems) || [];
-    return items.some(i => i.cancellationRequested === true || (i.quantityCancelled || 0) > 0);
-  } catch (e) {
-    // Order not found via /orders/{id} at all can also mean it's fully cancelled/removed —
-    // treat lookup failure as "could not verify", not as cancelled, to avoid false stops.
-    console.warn('Could not live-check cancellation for', orderId, e.message);
-    return null; // unknown
-  }
-}
-
-async function callTool(name, args) {
-  const r = await window.cowork.callMcpTool(name, args);
-  if (r.isError) throw new Error(JSON.stringify(r.content));
-  return r.structuredContent ?? JSON.parse(r.content[0].text);
-}
-
-function amsToday() {
-  return new Intl.DateTimeFormat('en-CA', {timeZone:'Europe/Amsterdam', year:'numeric', month:'2-digit', day:'2-digit'}).format(new Date());
-}
-function cutoffToday() { return new Date(`${amsToday()}T16:00:00${AMS_OFFSET}`); }
-function cutoffYesterday() { const d = new Date(cutoffToday()); d.setDate(d.getDate()-1); return d; }
-
-function fmtAge(ms) {
-  const h = Math.floor(ms / 3600000);
-  const m = Math.floor((ms % 3600000) / 60000);
-  return t().ageFmt(h, m);
-}
-function fmtTime(iso) {
-  return new Date(iso).toLocaleString(t().locale, {timeZone:'Europe/Amsterdam', day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'});
-}
-function fmtDate(iso) {
-  if (!iso) return '';
-  return new Date(iso).toLocaleDateString(t().locale, {timeZone:'Europe/Amsterdam', day:'2-digit', month:'2-digit'});
-}
-function shortItems(items) {
-  return items.map(i => (i.productTitle || i.ean || '').split('–')[0].trim()).join(', ').slice(0, 90);
-}
-// Earliest exactDeliveryDate across an order's items — the pre-shipment "afgeefmoment"
-// signal bol gives us. Verified unreliable as an absolute predictor (a same-day, routine
-// order can show a date 4-5 days out), but still useful as a relative signal to a human.
-function earliestExpected(order) {
-  // Field name is inconsistent per order/offer: usually exactDeliveryDate, sometimes only
-  // latestDeliveryDate is populated. Take whichever is present.
-  const dates = (order.orderItems || [])
-    .map(i => i.exactDeliveryDate || i.latestDeliveryDate)
-    .filter(Boolean).map(d => new Date(d));
-  if (!dates.length) return null;
-  return new Date(Math.min(...dates));
-}
-
-async function loadData() {
-  document.getElementById('status').textContent = t().statusLoading;
-
-  // Each stage below is wrapped so a single transient failure (rate limit, timeout on one
-  // of the many per-order/per-shipment detail calls) degrades that stage gracefully instead
-  // of blanking the whole dashboard with a generic error.
-  try {
-    const ordersResp = await callTool(TOOL_DATA, {resource: 'orders', query: 'page=1'});
-    openOrders = (ordersResp.data && ordersResp.data.orders) || [];
-  } catch (e) {
-    console.warn('Could not fetch open orders list', e.message);
-    openOrders = [];
-  }
-
-  // The /orders list view does NOT include exactDeliveryDate — only /orders/{id} detail
-  // does. Fetch detail per open order so the "no label" table can show it (verified live:
-  // list-view items only carry quantity/quantityShipped/cancellationRequested/fulfilmentStatus;
-  // exactDeliveryDate, expiryDate and timeFrameType only appear on the detail endpoint).
-  for (const o of openOrders) {
-    try {
-      const detail = await callTool(TOOL_RAW, {path: `/orders/${o.orderId}`});
-      o.orderItems = (detail.data && detail.data.orderItems) || o.orderItems;
-    } catch (e) {
-      console.warn('Could not fetch order detail for', o.orderId, e.message);
+    function zonedParts(date) {
+      const values = {};
+      for (const part of new Intl.DateTimeFormat('en-CA', {
+        timeZone: ZONE, year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23'
+      }).formatToParts(date)) if (part.type !== 'literal') values[part.type] = Number(part.value);
+      return values;
     }
-  }
 
-  let ship1 = [], ship2 = [];
-  try {
-    const r1 = await callTool(TOOL_DATA, {resource: 'shipments', query: 'page=1'});
-    ship1 = (r1.data && r1.data.shipments) || [];
-  } catch(e) { console.warn('Could not fetch shipments page 1', e.message); }
-  try {
-    const r2 = await callTool(TOOL_DATA, {resource: 'shipments', query: 'page=2'});
-    ship2 = (r2.data && r2.data.shipments) || [];
-  } catch(e) { console.warn('Could not fetch shipments page 2', e.message); }
+    function offsetAt(date) {
+      const p = zonedParts(date);
+      const localAsUtc = Date.UTC(p.year, p.month - 1, p.day, p.hour, p.minute, p.second);
+      return localAsUtc - Math.floor(date.getTime() / 1000) * 1000;
+    }
 
-  const windowStart = cutoffYesterday();
-  const recent = [...ship1, ...ship2].filter(s => new Date(s.shipmentDateTime) >= windowStart);
+    function zonedDateTime(year, month, day, hour, minute = 0, second = 0) {
+      const target = Date.UTC(year, month - 1, day, hour, minute, second);
+      let guess = target;
+      for (let i = 0; i < 4; i += 1) {
+        const adjusted = target - offsetAt(new Date(guess));
+        if (adjusted === guess) break;
+        guess = adjusted;
+      }
+      return new Date(guess);
+    }
 
-  document.getElementById('status').textContent = t().statusLoadingShipments(recent.length);
+    function shiftCalendarDate(parts, days) {
+      const shifted = new Date(Date.UTC(parts.year, parts.month - 1, parts.day + days));
+      return { year: shifted.getUTCFullYear(), month: shifted.getUTCMonth() + 1, day: shifted.getUTCDate() };
+    }
 
-  const enriched = [];
-  for (const s of recent) {
-    try {
-      const detail = await callTool(TOOL_RAW, {path: `/shipments/${s.shipmentId}`});
-      const d = detail.data;
-      enriched.push({
-        orderId: d.order.orderId,
-        placedAt: d.order.orderPlacedDateTime,
-        shipmentDateTime: d.shipmentDateTime,
-        trackAndTrace: d.transport && d.transport.trackAndTrace,
-        transporterCode: d.transport && d.transport.transporterCode,
-        items: d.shipmentItems || []
+    function amsterdamWindow(reference = now()) {
+      const ref = reference instanceof Date ? reference : new Date(reference);
+      const p = zonedParts(ref);
+      const previous = shiftCalendarDate(p, -1);
+      return {
+        todayCutoffIso: zonedDateTime(p.year, p.month, p.day, 16).toISOString(),
+        previousCutoffIso: zonedDateTime(previous.year, previous.month, previous.day, 16).toISOString()
+      };
+    }
+
+    function scannerWorkdayKey(reference = now()) {
+      const p = zonedParts(reference);
+      const keyDate = p.hour >= 16 ? shiftCalendarDate(p, 1) : p;
+      return `${keyDate.year}-${String(keyDate.month).padStart(2, '0')}-${String(keyDate.day).padStart(2, '0')}`;
+    }
+
+    function blankWorkState(workday = scannerWorkdayKey()) { return { workday, scanned: {}, cancelled: [], stops: [] }; }
+
+    function normalizeSharedState(payload) {
+      const raw = payload && payload.state ? payload.state : payload;
+      if (!raw || typeof raw !== 'object') throw new Error('Shared state was incomplete');
+      const workday = typeof raw.workday === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(raw.workday) ? raw.workday : scannerWorkdayKey();
+      const next = blankWorkState(workday);
+      if (raw.scanned && typeof raw.scanned === 'object' && !Array.isArray(raw.scanned)) {
+        for (const [key, value] of Object.entries(raw.scanned)) {
+          const code = canonicalCode(key);
+          const time = typeof value === 'string' ? value : value && (value.recordedAt || value.time);
+          if (code && validIso(time)) next.scanned[code] = time;
+        }
+      }
+      const records = Array.isArray(raw.records) ? raw.records : Array.isArray(raw.packages) ? raw.packages : [];
+      for (const record of records) {
+        const code = canonicalCode(record && (record.trackingCode || record.tracking_code || record.code));
+        const outcome = plainText(record && (record.outcome || record.result || record.state)).toLowerCase();
+        const time = record && (record.recordedAt || record.updatedAt || record.createdAt || record.time);
+        const orderId = plainText(record && (record.orderId || record.order_id)).slice(0, 128);
+        if (!code || !validIso(time)) continue;
+        if (outcome === 'success' || outcome === 'accepted') next.scanned[code] = time;
+        else if (outcome === 'cancelled') next.cancelled.push({ code, orderId, time });
+        else if (outcome === 'unknown' || outcome === 'unverified') next.stops.push({ code, orderId, reason: outcome, time });
+      }
+      const cancelled = Array.isArray(raw.cancelled) ? raw.cancelled : [];
+      for (const item of cancelled) {
+        const code = canonicalCode(item && (item.trackingCode || item.code));
+        const time = item && (item.recordedAt || item.time);
+        if (code && validIso(time) && !next.cancelled.some(entry => entry.code === code)) next.cancelled.push({ code, orderId: plainText(item.orderId).slice(0, 128), time });
+      }
+      const stops = Array.isArray(raw.stops) ? raw.stops : [];
+      for (const item of stops) {
+        const code = canonicalCode(item && (item.trackingCode || item.code));
+        const reason = plainText(item && (item.outcome || item.reason)).toLowerCase();
+        const time = item && (item.recordedAt || item.time);
+        if (code && ['unknown', 'unverified'].includes(reason) && validIso(time) && !next.stops.some(entry => entry.code === code && entry.reason === reason)) next.stops.push({ code, orderId: plainText(item.orderId).slice(0, 128), reason, time });
+      }
+      next.cancelled = next.cancelled.slice(0, 500);
+      next.stops = next.stops.slice(0, 500);
+      return next;
+    }
+
+    function ensureWorkday() { if (!app.state) app.state = blankWorkState(); }
+
+    class RequestError extends Error {
+      constructor(status, code) { super(code || `Request failed (${status})`); this.status = status; this.code = code || ''; }
+    }
+
+    async function requestJson(path, options = {}) {
+      const init = { method: options.method || 'GET', credentials: 'same-origin', headers: { Accept: 'application/json' } };
+      if (options.body !== undefined) {
+        init.headers['Content-Type'] = 'application/json';
+        init.body = JSON.stringify(options.body);
+      }
+      const response = await fetch(path, init);
+      let payload = null;
+      try { payload = await response.json(); } catch (_) {}
+      if (!response.ok) {
+        const error = payload && payload.error;
+        throw new RequestError(response.status, plainText(error && (error.code || error.type) || payload && payload.code));
+      }
+      if (!payload || typeof payload !== 'object') throw new Error('Response was incomplete');
+      return payload;
+    }
+
+    function unwrapPayload(payload) { return payload && payload.data && typeof payload.data === 'object' ? payload.data : payload; }
+
+    function pageMeta(payload) {
+      const root = payload && payload.data ? payload.data : payload || {};
+      const value = root.totalPages ?? payload.totalPages;
+      return Number.isFinite(Number(value)) ? Number(value) : null;
+    }
+
+    async function pagedResource(resource) {
+      const all = [];
+      for (let page = 1; page <= MAX_PAGES; page += 1) {
+        app.progress = resource === 'orders' ? tx().loadingOrders(page) : tx().loadingShipments(page);
+        renderHealth();
+        const payload = await requestJson(`/api/retailer?resource=${resource}&page=${page}`);
+        const data = unwrapPayload(payload);
+        const rows = Array.isArray(data[resource]) ? data[resource] : null;
+        if (!rows) throw new Error(`${resource} page ${page} was incomplete`);
+        all.push(...rows);
+        const pages = pageMeta(payload);
+        if (rows.length === 0 || (pages != null && page >= pages)) return all;
+      }
+      throw new Error(`${resource} pagination exceeded safety limit`);
+    }
+
+    async function buildSnapshot() {
+      const loadedAt = now();
+      const window = amsterdamWindow(loadedAt);
+      const orders = await pagedResource('orders');
+      const detailedOrders = [];
+      for (let i = 0; i < orders.length; i += 1) {
+        const order = orders[i];
+        const orderId = plainText(order.orderId);
+        if (!orderId) throw new Error('Open order without orderId');
+        app.progress = tx().loadingDetails(i + 1, orders.length);
+        renderHealth();
+        const detail = unwrapPayload(await requestJson(`/api/retailer?resource=order&id=${encodeURIComponent(orderId)}`));
+        if (!detail || !Array.isArray(detail.orderItems)) throw new Error(`Order ${orderId} detail was incomplete`);
+        detailedOrders.push({ ...order, ...detail, orderId, orderItems: detail.orderItems });
+      }
+
+      const listedShipments = await pagedResource('shipments');
+      const recent = listedShipments.filter(item => validIso(item.shipmentDateTime) && new Date(item.shipmentDateTime) >= new Date(window.previousCutoffIso));
+      const shipments = [];
+      for (let i = 0; i < recent.length; i += 1) {
+        const listed = recent[i];
+        const shipmentId = plainText(listed.shipmentId);
+        if (!shipmentId) throw new Error('Shipment without shipmentId');
+        app.progress = tx().loadingDetails(i + 1, recent.length);
+        renderHealth();
+        const data = unwrapPayload(await requestJson(`/api/retailer?resource=shipment&id=${encodeURIComponent(shipmentId)}`));
+        const orderId = plainText(data && data.order && data.order.orderId);
+        const items = data && Array.isArray(data.shipmentItems) ? data.shipmentItems : null;
+        if (!data || !orderId || !items || !validIso(data.shipmentDateTime)) throw new Error(`Shipment ${shipmentId} detail was incomplete`);
+        shipments.push({
+          shipmentId, orderId,
+          placedAt: plainText(data.order.orderPlacedDateTime || listed.order && listed.order.orderPlacedDateTime),
+          shipmentDateTime: data.shipmentDateTime,
+          trackAndTrace: canonicalCode(data.transport && data.transport.trackAndTrace),
+          transporterCode: plainText(data.transport && data.transport.transporterCode),
+          items
+        });
+      }
+      shipments.sort((a, b) => new Date(a.placedAt || a.shipmentDateTime) - new Date(b.placedAt || b.shipmentDateTime));
+      const trackIndex = new Map();
+      for (const shipment of shipments) if (shipment.trackAndTrace) {
+        if (trackIndex.has(shipment.trackAndTrace)) throw new Error(`Duplicate tracking code ${shipment.trackAndTrace}`);
+        trackIndex.set(shipment.trackAndTrace, shipment);
+      }
+      return { loadedAt: loadedAt.toISOString(), orders: detailedOrders, shipments, trackIndex };
+    }
+
+    function snapshotFresh() { return app.snapshot && now().getTime() - new Date(app.snapshot.loadedAt).getTime() <= MAX_SNAPSHOT_AGE_MS; }
+    function sessionExpired() { return Boolean(app.session && (!validIso(app.session.expiresAt) || new Date(app.session.expiresAt).getTime() <= now().getTime())); }
+    function canScan() { return Boolean(app.session && !sessionExpired() && app.stateHealthy && app.snapshot && snapshotFresh() && app.phase !== 'error'); }
+
+    async function fetchSharedState() {
+      const next = normalizeSharedState(await requestJson('/api/state'));
+      app.state = next;
+      app.stateHealthy = true;
+      return next;
+    }
+
+    function pauseForReauthentication(activeJob = null) {
+      const active = activeJob ? [{ ...activeJob }] : [];
+      const alreadyPaused = app.pausedQueue.map(job => ({ ...job }));
+      const queued = app.queue.splice(0).map(job => ({ ...job }));
+      app.pausedQueue = [...active, ...alreadyPaused, ...queued];
+    }
+
+    function restorePausedQueue() {
+      if (!canScan() || !app.pausedQueue.length) return;
+      const paused = app.pausedQueue.splice(0);
+      for (const job of paused) {
+        if (!job.queuedDuplicate) app.pendingCodes.add(job.code);
+        app.queue.push(job);
+      }
+      renderRuntime();
+    }
+
+    async function refreshSnapshot(options = {}) {
+      if (options.interruptedJob) app.refreshInterruptedJob = { ...options.interruptedJob };
+      if (app.refreshPromise) return app.refreshPromise;
+      if (!app.session) return false;
+      const sessionGeneration = app.sessionGeneration;
+      const hadSnapshot = Boolean(app.snapshot);
+      app.phase = hadSnapshot ? 'refreshing' : 'loading';
+      app.progress = tx().loading;
+      app.lastLoadError = null;
+      renderHealth();
+      renderRuntime();
+      let refreshTask;
+      refreshTask = (async () => {
+        try {
+          const [nextSnapshot, nextState] = await Promise.all([buildSnapshot(), requestJson('/api/state').then(normalizeSharedState)]);
+          if (!app.session || app.sessionGeneration !== sessionGeneration) return false;
+          app.snapshot = nextSnapshot;
+          app.state = nextState;
+          app.stateHealthy = true;
+          app.phase = 'ready';
+          app.progress = '';
+          app.lastLoadError = null;
+          render();
+          restorePausedQueue();
+          if (app.queue.length) window.setTimeout(() => void drainQueue(), 0);
+          return true;
+        } catch (error) {
+          if (!app.session || app.sessionGeneration !== sessionGeneration) return false;
+          if (error instanceof RequestError && error.status === 401) {
+            pauseForReauthentication(app.refreshInterruptedJob);
+            expireSession('expired', { preservePausedQueue: app.pausedQueue.length > 0 });
+            return false;
+          }
+          app.lastLoadError = error instanceof Error ? error.message : String(error);
+          const sharedFailure = error instanceof RequestError && ['database_unavailable', 'shared_state_unavailable', 'session_store_unavailable'].includes(error.code);
+          if (sharedFailure) { app.stateHealthy = false; app.lastLoadError = 'shared'; }
+          app.phase = hadSnapshot && snapshotFresh() && app.stateHealthy ? 'warning' : 'error';
+          app.progress = '';
+          render();
+          return false;
+        } finally {
+          if (app.refreshPromise === refreshTask) {
+            app.refreshPromise = null;
+            app.refreshInterruptedJob = null;
+            renderHealth();
+            if (!options.silentFocus) focusScanner();
+          }
+        }
+      })();
+      app.refreshPromise = refreshTask;
+      renderHealth();
+      return refreshTask;
+    }
+
+    function recordedCancellation(code) { return app.state.cancelled.find(item => item.code === code); }
+
+    function decide(kind, reason, code, orderId = '') {
+      app.decision = { kind, reason, code, orderId: plainText(orderId), time: now().toISOString() };
+      playTone(kind);
+      render();
+      focusScanner();
+    }
+
+    async function processScan(job) {
+      ensureWorkday();
+      const code = job.code;
+      if (job.queuedDuplicate) {
+        const shipment = app.snapshot && app.snapshot.trackIndex.get(code);
+        decide('duplicate', 'pending', code, shipment && shipment.orderId);
+        return;
+      }
+
+      let shipment = app.snapshot.trackIndex.get(code);
+      let verificationIncomplete = false;
+      if (!shipment) {
+        app.currentCheck = { kind: 'refreshingUnknown', code };
+        renderRuntime();
+        const refreshed = await refreshSnapshot({ silentFocus: true, interruptedJob: job });
+        if (!app.session) return;
+        if (refreshed) shipment = app.snapshot.trackIndex.get(code);
+        else verificationIncomplete = true;
+      }
+
+      app.currentCheck = { kind: 'checking', orderId: shipment ? shipment.orderId : '', code };
+      renderRuntime();
+      app.activeVerifiers += 1;
+      app.maxActiveVerifiers = Math.max(app.maxActiveVerifiers, app.activeVerifiers);
+      try {
+        const body = { trackingCode: code };
+        if (shipment) body.shipmentId = shipment.shipmentId;
+        else if (verificationIncomplete) body.verificationIncomplete = true;
+        const response = await requestJson('/api/scan', { method: 'POST', body });
+        const outcome = plainText(response.outcome).toLowerCase();
+        if (!['success', 'duplicate', 'cancelled', 'unknown', 'unverified'].includes(outcome)) throw new Error('Scan decision was incomplete');
+        if (!shipment && outcome === 'success') throw new Error('Unknown code cannot be accepted');
+        app.state = response.state ? normalizeSharedState(response.state) : await fetchSharedState();
+        app.stateHealthy = true;
+        const orderId = shipment ? shipment.orderId : plainText(response.orderId);
+        if (outcome === 'success') decide('success', 'verified', code, orderId);
+        else if (outcome === 'duplicate') decide('duplicate', 'scanned', code, orderId);
+        else decide('stop', outcome, code, orderId);
+      } catch (error) {
+        if (error instanceof RequestError && error.status === 401) {
+          pauseForReauthentication(job);
+          el('scanInput').value = '';
+          expireSession('expired', { preservePausedQueue: app.pausedQueue.length > 0 });
+          return;
+        }
+        app.stateHealthy = false;
+        app.phase = 'error';
+        app.lastLoadError = 'shared';
+        decide('stop', 'unverified', code, shipment && shipment.orderId);
+      } finally {
+        app.activeVerifiers -= 1;
+      }
+    }
+
+    async function drainQueue() {
+      if (app.draining) return;
+      app.draining = true;
+      try {
+        while (app.queue.length) {
+          if (!canScan()) break;
+          const job = app.queue.shift();
+          renderRuntime();
+          try { await processScan(job); }
+          finally {
+            if (!job.queuedDuplicate) app.pendingCodes.delete(job.code);
+            app.currentCheck = null;
+            renderRuntime();
+            focusScanner();
+          }
+          if (!canScan()) break;
+        }
+      } finally {
+        app.draining = false;
+        app.currentCheck = null;
+        renderRuntime();
+        focusScanner();
+      }
+    }
+
+    function acceptScan(raw) {
+      const code = canonicalCode(raw);
+      if (!code || !canScan()) return;
+      primeAudio();
+      const queuedDuplicate = app.pendingCodes.has(code);
+      if (!queuedDuplicate) app.pendingCodes.add(code);
+      app.queue.push({ code, queuedDuplicate });
+      renderRuntime();
+      void drainQueue();
+    }
+
+    let audioContext = null;
+    function primeAudio() {
+      try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        if (!audioContext) audioContext = new AudioCtx();
+        if (audioContext.state === 'suspended') void audioContext.resume();
+      } catch (_) {}
+    }
+    function tone(frequency, start, duration) {
+      if (!audioContext) return;
+      try {
+        const oscillator = audioContext.createOscillator();
+        const gain = audioContext.createGain();
+        oscillator.frequency.value = frequency;
+        gain.gain.setValueAtTime(.0001, audioContext.currentTime + start);
+        gain.gain.exponentialRampToValueAtTime(.12, audioContext.currentTime + start + .01);
+        gain.gain.exponentialRampToValueAtTime(.0001, audioContext.currentTime + start + duration);
+        oscillator.connect(gain).connect(audioContext.destination);
+        oscillator.start(audioContext.currentTime + start);
+        oscillator.stop(audioContext.currentTime + start + duration + .02);
+      } catch (_) {}
+    }
+    function playTone(kind) {
+      if (kind === 'success') tone(880, 0, .11);
+      else if (kind === 'duplicate') tone(560, 0, .14);
+      else { tone(220, 0, .16); tone(180, .19, .2); }
+    }
+
+    function clear(node) { while (node.firstChild) node.removeChild(node.firstChild); }
+    function node(tag, className, text) {
+      const item = document.createElement(tag);
+      if (className) item.className = className;
+      if (text != null) item.textContent = plainText(text);
+      return item;
+    }
+    function badge(text, kind) { return node('span', `badge ${kind}`, text); }
+    function displayValue(value, className = '') { return node('span', className, value); }
+    function empty(container, text) { clear(container); container.appendChild(node('div', 'empty', text)); }
+
+    function table(container, headers, rows) {
+      clear(container);
+      if (!rows.length) return false;
+      const wrap = node('div', 'table-wrap');
+      const tableEl = node('table');
+      const thead = node('thead');
+      const headRow = node('tr');
+      headers.forEach(header => headRow.appendChild(node('th', '', header)));
+      thead.appendChild(headRow);
+      const tbody = node('tbody');
+      rows.forEach(spec => {
+        const row = node('tr', spec.className || '');
+        if (spec.orderId) row.dataset.orderId = plainText(spec.orderId);
+        if (spec.trackCode) row.dataset.trackCode = canonicalCode(spec.trackCode);
+        spec.cells.forEach((cell, index) => {
+          const td = node('td', cell.className || '');
+          if (cell.cellName) td.dataset.cell = cell.cellName;
+          td.appendChild(cell.content instanceof Node ? cell.content : document.createTextNode(plainText(cell.content)));
+          row.appendChild(td);
+        });
+        tbody.appendChild(row);
       });
-    } catch (e) {
-      enriched.push({ orderId: s.order.orderId, placedAt: s.order.orderPlacedDateTime, shipmentDateTime: s.shipmentDateTime, trackAndTrace: null, items: s.shipmentItems || [] });
+      tableEl.append(thead, tbody);
+      wrap.appendChild(tableEl);
+      container.appendChild(wrap);
+      return true;
     }
-  }
-  enriched.sort((a,b) => new Date(a.placedAt) - new Date(b.placedAt));
-  shipments = enriched;
-  document.getElementById('status').textContent = t().statusLastUpdate(new Date().toLocaleTimeString(t().locale, {timeZone:'Europe/Amsterdam'}));
-  render();
-}
 
-function render() {
-  const d = t();
-  const cutoff = cutoffToday();
-  const nolabel = openOrders.filter(o => new Date(o.orderPlacedDateTime) < cutoff)
-    .sort((a,b) => new Date(a.orderPlacedDateTime) - new Date(b.orderPlacedDateTime));
-  const tomorrow = openOrders.filter(o => new Date(o.orderPlacedDateTime) >= cutoff);
+    function formatTime(iso) {
+      if (!validIso(iso)) return '—';
+      return new Intl.DateTimeFormat(tx().locale, { timeZone: ZONE, day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }).format(new Date(iso));
+    }
+    function formatDate(iso) {
+      if (!validIso(iso)) return '—';
+      return new Intl.DateTimeFormat(tx().locale, { timeZone: ZONE, day: '2-digit', month: '2-digit' }).format(new Date(iso));
+    }
+    function formatAge(iso) {
+      const ms = Math.max(0, now().getTime() - new Date(iso).getTime());
+      return tx().age(Math.floor(ms / 3600000), Math.floor((ms % 3600000) / 60000));
+    }
+    function itemSummary(items) { return items.map(item => plainText(item.productTitle || item.ean)).filter(Boolean).join(', ').slice(0, 120) || '—'; }
+    function expectedDate(order) {
+      const times = (order.orderItems || []).map(item => item.exactDeliveryDate || item.latestDeliveryDate).filter(validIso).map(value => new Date(value).getTime());
+      return times.length ? new Date(Math.min(...times)).toISOString() : '';
+    }
+    function orderBeforeCutoff(order) {
+      if (!validIso(order.orderPlacedDateTime)) return true;
+      return new Date(order.orderPlacedDateTime) < new Date(amsterdamWindow(now()).todayCutoffIso);
+    }
 
-  // no-label table — includes bol's own "expected delivery" signal per order (unreliable
-  // pre-shipment, but shown so a human can judge whether something looks like a longer-lead
-  // item rather than assuming every row here is equally overdue).
-  const tblNoLabel = document.getElementById('tbl-nolabel');
-  if (nolabel.length === 0) {
-    tblNoLabel.innerHTML = `<div class="empty">${d.emptyNoLabel}</div>`;
-  } else {
-    tblNoLabel.innerHTML = `<table><tr><th>${d.thOrder}</th><th>${d.thPlaced}</th><th>${d.thAge}</th><th>${d.thExpected}</th><th>${d.thItems}</th></tr>` +
-      nolabel.map(o => {
-        const age = Date.now() - new Date(o.orderPlacedDateTime).getTime();
-        const overdue = age > 22*3600000;
-        const items = (o.orderItems||[]).map(i => i.ean).join(', ');
-        const exp = earliestExpected(o);
-        const daysOut = exp ? Math.round((exp - Date.now()) / 86400000) : null;
-        const expCell = exp
-          ? `${fmtDate(exp)} ${daysOut >= 3 ? `<span class="badge later">${d.badgeLater}</span>` : ''}`
-          : '<span class="muted">—</span>';
-        return `<tr class="${overdue?'overdue':''}"><td>${o.orderId}</td><td>${fmtTime(o.orderPlacedDateTime)}</td><td class="age">${fmtAge(age)}</td><td class="muted">${expCell}</td><td class="muted">${items}</td></tr>`;
-      }).join('') + `</table>`;
-  }
-  document.getElementById('cnt-nolabel').textContent = nolabel.length;
+    function renderHealth() {
+      const d = tx();
+      const health = el('healthbar');
+      const stale = app.snapshot && !snapshotFresh();
+      let state = app.phase;
+      if (stale) state = 'error';
+      health.dataset.state = state === 'ready' || state === 'warning' || state === 'refreshing' ? 'ready' : state;
+      if (app.phase === 'loading') el('healthText').textContent = app.progress || d.loading;
+      else if (app.phase === 'refreshing') el('healthText').textContent = app.progress || d.refreshing;
+      else if (app.phase === 'warning') el('healthText').textContent = d.warningData(app.lastLoadError || 'unknown error');
+      else if (app.phase === 'error' || stale) el('healthText').textContent = app.lastLoadError === 'shared' ? accessTx().shared : d.errorData(stale ? 'snapshot expired' : app.lastLoadError || 'unknown error');
+      else el('healthText').textContent = d.readyData(formatTime(app.snapshot.loadedAt));
+      el('retryButton').hidden = !(app.phase === 'error' || stale);
+      el('refreshButton').hidden = !app.snapshot;
+      el('retryButton').disabled = Boolean(app.refreshPromise);
+      el('refreshButton').disabled = Boolean(app.refreshPromise);
+      el('retryButton').textContent = d.retry;
+      el('refreshButton').textContent = d.refresh;
+    }
 
-  // tomorrow table
-  const tblTomorrow = document.getElementById('tbl-tomorrow');
-  if (tomorrow.length === 0) {
-    tblTomorrow.innerHTML = `<div class="empty">${d.emptyTomorrow}</div>`;
-  } else {
-    tblTomorrow.innerHTML = `<table><tr><th>${d.thOrder}</th><th>${d.thPlaced}</th><th>${d.thItems}</th></tr>` +
-      tomorrow.map(o => `<tr><td>${o.orderId}</td><td>${fmtTime(o.orderPlacedDateTime)}</td><td class="muted">${(o.orderItems||[]).map(i=>i.ean).join(', ')}</td></tr>`).join('') +
-      `</table>`;
-  }
-  document.getElementById('cnt-tomorrow').textContent = tomorrow.length;
+    function renderRuntime() {
+      const d = tx();
+      const ready = canScan();
+      el('scanInput').disabled = !ready;
+      el('readyFlag').dataset.ready = String(ready);
+      el('readyFlag').textContent = ready ? d.ready : d.wait;
+      el('queueDepth').textContent = String(app.queue.length + (app.currentCheck ? 1 : 0));
+      let status = ready ? d.queued(app.queue.length) : d.blocked;
+      if (app.currentCheck && app.currentCheck.kind === 'checking') status = d.checking(app.currentCheck.orderId);
+      if (app.currentCheck && app.currentCheck.kind === 'refreshingUnknown') status = d.refreshingUnknown;
+      el('currentStatus').textContent = status;
+    }
 
-  // shipped table
-  const tblShipped = document.getElementById('tbl-shipped');
-  const sortedShipped = [...shipments].sort((a,b) => {
-    const aS = a.trackAndTrace && scannedMap[a.trackAndTrace] ? 1 : 0;
-    const bS = b.trackAndTrace && scannedMap[b.trackAndTrace] ? 1 : 0;
-    if (aS !== bS) return aS - bS;
-    return new Date(a.placedAt) - new Date(b.placedAt);
-  });
-  if (sortedShipped.length === 0) {
-    tblShipped.innerHTML = `<div class="empty">${d.emptyShipped}</div>`;
-  } else {
-    tblShipped.innerHTML = `<table><tr><th>${d.thOrder}</th><th>${d.thTrack}</th><th>${d.thShippedAt}</th><th>${d.thItems}</th><th>${d.thStatus}</th></tr>` +
-      sortedShipped.map(s => {
-        const scannedAt = s.trackAndTrace ? scannedMap[s.trackAndTrace] : null;
-        return `<tr class="${scannedAt ? 'scanned':''}">
-          <td>${s.orderId}</td>
-          <td class="tt">${s.trackAndTrace || `<span class="muted">${lang==='nl'?'onbekend':lang==='es'?'desconocido':'unknown'}</span>`}</td>
-          <td class="muted">${fmtTime(s.shipmentDateTime)}</td>
-          <td class="muted">${shortItems(s.items)}</td>
-          <td>${scannedAt ? `<span class="badge scanned">${d.badgeScanned(fmtTime(scannedAt))}</span>` : `<span class="badge open">${d.badgeOpen}</span>`}</td>
-        </tr>`;
-      }).join('') + `</table>`;
-  }
-  const shippedOpen = shipments.filter(s => !(s.trackAndTrace && scannedMap[s.trackAndTrace])).length;
-  document.getElementById('cnt-shipped').textContent = `${shipments.length - shippedOpen}/${shipments.length}`;
+    function renderDecision() {
+      const d = tx();
+      const decision = app.decision;
+      el('decisionKicker').textContent = d.lastDecision;
+      el('scanFeedback').dataset.kind = decision ? decision.kind : 'idle';
+      if (!decision) {
+        el('decisionTitle').textContent = d.idleTitle;
+        el('decisionDetail').textContent = d.idleDetail;
+        return;
+      }
+      if (decision.kind === 'success') {
+        el('decisionKicker').textContent = d.successKicker;
+        el('decisionTitle').textContent = d.successTitle(decision.orderId);
+        el('decisionDetail').textContent = d.successDetail(decision.code);
+      } else if (decision.kind === 'duplicate') {
+        el('decisionKicker').textContent = d.duplicateKicker;
+        el('decisionTitle').textContent = decision.reason === 'pending' ? d.pendingDuplicateTitle : d.duplicateTitle(decision.orderId || '—');
+        el('decisionDetail').textContent = decision.reason === 'pending' ? d.pendingDuplicateDetail(decision.code) : d.duplicateDetail(decision.code);
+      } else {
+        el('decisionKicker').textContent = d.stopKicker;
+        if (decision.reason === 'cancelled') {
+          el('decisionTitle').textContent = d.cancelledDecisionTitle(decision.orderId);
+          el('decisionDetail').textContent = d.cancelledDetail(decision.code);
+        } else if (decision.reason === 'unknown') {
+          el('decisionTitle').textContent = d.unknownTitle;
+          el('decisionDetail').textContent = d.unknownDetail(decision.code);
+        } else {
+          el('decisionTitle').textContent = d.unverifiedTitle(decision.orderId);
+          el('decisionDetail').textContent = d.unverifiedDetail(decision.code);
+        }
+      }
+    }
 
-  // cancelled
-  const tblC = document.getElementById('tbl-cancelled');
-  if (cancelledList.length === 0) {
-    tblC.innerHTML = `<div class="empty">${d.emptyCancelled}</div>`;
-  } else {
-    tblC.innerHTML = `<table><tr><th>${d.thOrder}</th><th>${d.thTrack}</th><th>${d.thFound}</th></tr>` +
-      cancelledList.map(c => `<tr class="cancelled-row"><td>${c.orderId}</td><td class="tt">${c.trackAndTrace}</td><td class="muted">${fmtTime(c.foundAt)}</td></tr>`).join('') + `</table>`;
-  }
-  document.getElementById('cnt-cancelled').textContent = cancelledList.length;
+    function renderShipments() {
+      const d = tx();
+      const shipments = app.snapshot ? [...app.snapshot.shipments] : [];
+      shipments.sort((a, b) => Number(Boolean(app.state.scanned[a.trackAndTrace])) - Number(Boolean(app.state.scanned[b.trackAndTrace])) || new Date(a.placedAt || a.shipmentDateTime) - new Date(b.placedAt || b.shipmentDateTime));
+      const rows = shipments.map(shipment => {
+        const scannedAt = app.state.scanned[shipment.trackAndTrace];
+        const cancelled = recordedCancellation(shipment.trackAndTrace);
+        return {
+          className: cancelled ? 'is-stop' : scannedAt ? 'is-scanned' : '', orderId: shipment.orderId, trackCode: shipment.trackAndTrace,
+          cells: [
+            { content: shipment.orderId },
+            { content: displayValue(shipment.trackAndTrace || d.unknownValue, 'mono') },
+            { content: formatTime(shipment.shipmentDateTime), className: 'muted' },
+            { content: itemSummary(shipment.items), className: 'muted' },
+            { content: cancelled ? badge(d.stopKicker, 'stop') : scannedAt ? badge(d.scannedBadge(formatTime(scannedAt)), 'scanned') : badge(d.openBadge, 'open') }
+          ]
+        };
+      });
+      if (!table(el('shipmentList'), [d.thOrder, d.thTrack, d.thShipped, d.thItems, d.thStatus], rows)) empty(el('shipmentList'), d.emptyShipments);
+      const scanned = shipments.filter(item => app.state.scanned[item.trackAndTrace]).length;
+      el('shippedCount').textContent = `${scanned}/${shipments.length}`;
+    }
 
-  // unmatched
-  const tblU = document.getElementById('tbl-unmatched');
-  if (unmatched.length === 0) {
-    tblU.innerHTML = `<div class="empty">${d.emptyUnmatched}</div>`;
-  } else {
-    tblU.innerHTML = `<table><tr><th>${d.thCode}</th><th>${d.thTime}</th></tr>` +
-      unmatched.slice(0,20).map(u => `<tr class="cancelled-row"><td class="tt">${u.code}</td><td class="muted">${fmtTime(u.time)}</td></tr>`).join('') + `</table>`;
-  }
-  document.getElementById('cnt-unmatched').textContent = unmatched.length;
+    function renderOrders() {
+      const d = tx();
+      const orders = app.snapshot ? app.snapshot.orders : [];
+      const before = orders.filter(orderBeforeCutoff).sort((a,b) => new Date(a.orderPlacedDateTime) - new Date(b.orderPlacedDateTime));
+      const after = orders.filter(order => !orderBeforeCutoff(order)).sort((a,b) => new Date(a.orderPlacedDateTime) - new Date(b.orderPlacedDateTime));
+      const beforeRows = before.map(order => {
+        const expected = expectedDate(order);
+        const expectedNode = displayValue(formatDate(expected), 'muted');
+        if (expected && new Date(expected).getTime() - now().getTime() >= 3 * 86400000) expectedNode.appendChild(badge(d.laterBadge, 'later'));
+        const ageMs = now().getTime() - new Date(order.orderPlacedDateTime).getTime();
+        return { className: ageMs > 22 * 3600000 ? 'is-overdue' : '', orderId: order.orderId, cells: [
+          { content: order.orderId }, { content: formatTime(order.orderPlacedDateTime), className: 'muted' }, { content: formatAge(order.orderPlacedDateTime), cellName: 'age' }, { content: expectedNode }, { content: itemSummary(order.orderItems), className: 'muted' }
+        ] };
+      });
+      const afterRows = after.map(order => ({ orderId: order.orderId, cells: [
+        { content: order.orderId }, { content: formatTime(order.orderPlacedDateTime), className: 'muted' }, { content: itemSummary(order.orderItems), className: 'muted' }
+      ] }));
+      if (!table(el('ordersBefore'), [d.thOrder, d.thPlaced, d.thAge, d.thExpected, d.thItems], beforeRows)) empty(el('ordersBefore'), d.emptyOrders);
+      if (!table(el('ordersAfter'), [d.thOrder, d.thPlaced, d.thItems], afterRows)) empty(el('ordersAfter'), d.emptyOrders);
+      el('beforeCount').textContent = String(before.length);
+      el('afterCount').textContent = String(after.length);
+      return { before, after };
+    }
 
-  // summary
-  const totalNeeded = nolabel.length + shipments.length;
-  const totalScanned = shipments.filter(s => s.trackAndTrace && scannedMap[s.trackAndTrace]).length;
-  const totalOpen = totalNeeded - totalScanned;
-  document.getElementById('summary').innerHTML = `
-    <div class="card"><div class="num">${totalNeeded}</div><div class="lbl">${d.cardTotal}</div></div>
-    <div class="card green"><div class="num">${totalScanned}</div><div class="lbl">${d.cardScanned}</div></div>
-    <div class="card red"><div class="num">${totalOpen}</div><div class="lbl">${d.cardOpen}</div></div>
-    <div class="card amber"><div class="num">${nolabel.length}</div><div class="lbl">${d.cardNoLabel}</div></div>
-    <div class="card"><div class="num">${tomorrow.length}</div><div class="lbl">${d.cardTomorrow}</div></div>
-  `;
-}
+    function renderStops() {
+      const d = tx();
+      const cancelledRows = app.state.cancelled.map(item => ({ className: 'is-stop', orderId: item.orderId, trackCode: item.code, cells: [
+        { content: item.orderId }, { content: displayValue(item.code, 'mono') }, { content: formatTime(item.time), className: 'muted' }
+      ] }));
+      if (!table(el('cancelledList'), [d.thOrder, d.thTrack, d.thFound], cancelledRows)) empty(el('cancelledList'), d.emptyCancelled);
+      const stopRows = app.state.stops.map(item => ({ className: 'is-stop', orderId: item.orderId, trackCode: item.code, cells: [
+        { content: displayValue(item.code, 'mono') }, { content: item.orderId || '—' }, { content: item.reason === 'unknown' ? d.reasonUnknown : d.reasonUnverified }, { content: formatTime(item.time), className: 'muted' }
+      ] }));
+      if (!table(el('stopList'), [d.thTrack, d.thOrder, d.thReason, d.thFound], stopRows)) empty(el('stopList'), d.emptyStops);
+      el('cancelledCount').textContent = String(app.state.cancelled.length);
+      el('stopCount').textContent = String(app.state.stops.length);
+    }
 
-function findByTrack(code) {
-  const norm = code.trim().toUpperCase();
-  const s = shipments.find(x => x.trackAndTrace && x.trackAndTrace.toUpperCase() === norm);
-  if (s) return {type:'bhd', orderId: s.orderId, trackAndTrace: s.trackAndTrace};
-  return null;
-}
+    function renderSummary(groups) {
+      const shipments = app.snapshot ? app.snapshot.shipments : [];
+      const scanned = shipments.filter(item => app.state.scanned[item.trackAndTrace]).length;
+      const total = groups.before.length + shipments.length;
+      el('totalCount').textContent = String(total);
+      el('scannedCount').textContent = String(scanned);
+      el('openCount').textContent = String(total - scanned);
+      el('noLabelCount').textContent = String(groups.before.length);
+      el('tomorrowCount').textContent = String(groups.after.length);
+    }
 
-async function handleScan(rawCode) {
-  const d = t();
-  const code = rawCode.trim();
-  if (!code) return;
-  const match = findByTrack(code);
-  const fb = document.getElementById('scanFeedback');
-  fb.className = '';
+    function clearOperationalMemory() {
+      app.snapshot = null;
+      app.state = blankWorkState();
+      app.stateHealthy = false;
+      app.queue.length = 0;
+      app.pendingCodes.clear();
+      app.draining = false;
+      app.currentCheck = null;
+      app.decision = null;
+      app.refreshPromise = null;
+      app.refreshInterruptedJob = null;
+      app.phase = 'loading';
+      app.progress = '';
+      app.lastLoadError = null;
+    }
 
-  if (!match) {
-    unmatched.unshift({code, time: new Date().toISOString()});
-    fb.className = 'fb-stop';
-    fb.textContent = d.fbUnknown(code);
+    function expireSession(reason = 'expired', { preservePausedQueue = false } = {}) {
+      app.sessionGeneration += 1;
+      app.session = null;
+      app.accessPhase = 'signedOut';
+      app.accessReason = reason;
+      if (!preservePausedQueue) app.pausedQueue.length = 0;
+      clearOperationalMemory();
+      render();
+      window.setTimeout(focusAccess, 0);
+    }
+
+    function focusAccess() {
+      if (app.session || app.accessPhase === 'checking') return;
+      const target = app.accessReason === 'logoutFailed'
+        ? el('retryLogoutButton')
+        : !el('stationId').value ? el('stationId') : !el('operatorLabel').value ? el('operatorLabel') : el('warehousePassword');
+      try { target.focus({ preventScroll: true }); } catch (_) { target.focus(); }
+    }
+
+    function sessionFromPayload(payload) {
+      if (!payload || payload.authenticated !== true || !payload.session) return null;
+      const stationId = plainText(payload.session.stationId).trim().slice(0, 64);
+      const operatorLabel = plainText(payload.session.operatorLabel).trim().slice(0, 64);
+      const expiresAt = plainText(payload.session.expiresAt);
+      if (!stationId || !operatorLabel || !validIso(expiresAt) || new Date(expiresAt).getTime() <= now().getTime()) return null;
+      return { stationId, operatorLabel, expiresAt };
+    }
+
+    async function openAuthenticatedStation() {
+      app.phase = 'loading';
+      app.progress = tx().loading;
+      app.stateHealthy = false;
+      render();
+      await refreshSnapshot();
+    }
+
+    async function checkSession() {
+      app.accessPhase = 'checking';
+      app.accessReason = '';
+      render();
+      if (safeLogoutPendingGet()) { expireSession('logoutFailed'); return; }
+      try {
+        const payload = await requestJson('/api/session');
+        if (payload.logoutPending === true) { safeLogoutPendingSet(true); expireSession('logoutFailed'); return; }
+        const session = sessionFromPayload(payload);
+        if (!session) { expireSession('signedOut'); return; }
+        app.sessionGeneration += 1;
+        app.session = session;
+        app.accessPhase = 'authenticated';
+        app.accessReason = '';
+        await openAuthenticatedStation();
+      } catch (error) {
+        if (error instanceof RequestError && error.status === 401) expireSession('signedOut');
+        else if (error instanceof RequestError && ['configuration_unavailable', 'config_unavailable'].includes(error.code)) expireSession('setup');
+        else expireSession('database');
+      }
+    }
+
+    async function signIn(event) {
+      event.preventDefault();
+      if (app.accessPhase === 'submitting') return;
+      const stationId = el('stationId').value.trim();
+      const operatorLabel = el('operatorLabel').value.trim();
+      const password = el('warehousePassword').value;
+      if (!stationId || !operatorLabel || !password) {
+        app.accessReason = 'required';
+        renderAccess();
+        focusAccess();
+        return;
+      }
+      app.accessPhase = 'submitting';
+      app.accessReason = '';
+      renderAccess();
+      try {
+        const payload = await requestJson('/api/session', { method: 'POST', body: { stationId, operatorLabel, password } });
+        const session = sessionFromPayload(payload);
+        if (!session) throw new Error('Session response was incomplete');
+        el('warehousePassword').value = '';
+        app.sessionGeneration += 1;
+        app.session = session;
+        app.accessPhase = 'authenticated';
+        await openAuthenticatedStation();
+      } catch (error) {
+        el('warehousePassword').value = '';
+        app.accessPhase = 'signedOut';
+        if (error instanceof RequestError && error.status === 423) app.accessReason = 'locked';
+        else if (error instanceof RequestError && ['configuration_unavailable', 'config_unavailable'].includes(error.code)) app.accessReason = 'setup';
+        else if (error instanceof RequestError && ['database_unavailable', 'shared_state_unavailable', 'session_store_unavailable'].includes(error.code)) app.accessReason = 'database';
+        else app.accessReason = 'invalid';
+        render();
+        window.setTimeout(focusAccess, 0);
+      }
+    }
+
+    async function signOut() {
+      el('logoutButton').disabled = true;
+      el('retryLogoutButton').disabled = true;
+      let reason = 'signedOut';
+      safeLogoutPendingSet(true);
+      try {
+        await requestJson('/api/session', { method: 'DELETE' });
+        safeLogoutPendingSet(false);
+      }
+      catch (_) { reason = 'logoutFailed'; }
+      finally {
+        el('logoutButton').disabled = false;
+        el('retryLogoutButton').disabled = false;
+        expireSession(reason);
+      }
+    }
+
+    function renderAccess() {
+      const d = accessTx();
+      const authenticated = Boolean(app.session);
+      const logoutPending = app.accessReason === 'logoutFailed';
+      el('accessGate').hidden = authenticated;
+      el('operationalSurface').hidden = !authenticated;
+      el('sessionUtility').hidden = !authenticated;
+      el('accessForm').hidden = app.accessPhase === 'checking' || logoutPending;
+      el('retryLogoutButton').hidden = !logoutPending;
+      el('accessTitle').textContent = d.title;
+      el('accessCopy').textContent = d.copy;
+      el('stationIdLabel').textContent = d.station;
+      el('operatorLabelLabel').textContent = d.operator;
+      el('passwordLabel').textContent = d.password;
+      el('loginButton').textContent = app.accessPhase === 'submitting' ? d.submitting : d.submit;
+      el('loginButton').disabled = app.accessPhase === 'submitting';
+      el('logoutButton').textContent = d.logout;
+      el('retryLogoutButton').textContent = d.retryLogout;
+      el('sessionLabel').textContent = authenticated ? `${app.session.stationId} · ${app.session.operatorLabel}` : '';
+      const reasons = { checking: d.checking, invalid: d.invalid, locked: d.locked, setup: d.setup, database: d.database, expired: d.expired, logoutFailed: d.logoutFailed, required: d.required, signedOut: '' };
+      let reason = app.accessPhase === 'submitting' ? d.submitting : reasons[app.accessReason || app.accessPhase] || '';
+      if (app.accessReason === 'expired' && app.pausedQueue.length) reason = `${reason} ${d.pausedScans(app.pausedQueue.length)}`;
+      el('accessStatus').textContent = reason;
+      el('accessStatus').dataset.tone = ['invalid', 'setup', 'database', 'logoutFailed', 'required'].includes(app.accessReason) ? 'error' : app.accessReason === 'locked' || app.accessReason === 'expired' ? 'warning' : 'neutral';
+    }
+
+    function renderStaticText() {
+      const d = tx();
+      document.documentElement.lang = language;
+      el('txtEyebrow').textContent = d.eyebrow; el('txtTitle').textContent = d.title; el('txtSubtitle').textContent = d.subtitle;
+      el('scanTitle').textContent = d.scanTitle; el('scanHint').textContent = d.scanHint; el('scanLabel').textContent = d.scanLabel; el('scanInput').placeholder = d.placeholder; el('queueLabel').textContent = d.queue;
+      el('totalLabel').textContent = d.total; el('scannedLabel').textContent = d.scanned; el('openLabel').textContent = d.open; el('noLabelLabel').textContent = d.noLabel; el('tomorrowLabel').textContent = d.afterCutoff;
+      el('shippedTitle').textContent = d.shippedTitle; el('shippedNote').textContent = d.shippedNote; el('noLabelTitle').textContent = d.noLabelTitle; el('noLabelNote').textContent = d.noLabelNote; el('tomorrowTitle').textContent = d.tomorrowTitle; el('tomorrowNote').textContent = d.tomorrowNote;
+      el('cancelledTitle').textContent = d.cancelledTitle; el('cancelledNote').textContent = d.cancelledNote; el('stopTitle').textContent = d.stopTitle; el('stopNote').textContent = d.stopNote;
+      document.querySelectorAll('#langSwitch button').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.lang === language)));
+      renderAccess();
+    }
+
+    function render() {
+      ensureWorkday();
+      renderStaticText(); renderHealth(); renderRuntime(); renderDecision();
+      const groups = renderOrders(); renderShipments(); renderStops(); renderSummary(groups);
+    }
+
+    function focusScanner() {
+      if (!el('scanInput').disabled && document.visibilityState !== 'hidden') {
+        try { el('scanInput').focus({ preventScroll: true }); } catch (_) { el('scanInput').focus(); }
+      }
+    }
+
+    el('scanInput').addEventListener('keydown', event => {
+      if (event.key !== 'Enter' || event.isComposing || event.repeat) return;
+      event.preventDefault();
+      if (sessionExpired()) {
+        expireSession('expired');
+        return;
+      }
+      if (!canScan()) {
+        render();
+        return;
+      }
+      const value = event.currentTarget.value;
+      event.currentTarget.value = '';
+      acceptScan(value);
+    });
+    el('langSwitch').addEventListener('click', event => {
+      const button = event.target.closest('button[data-lang]');
+      if (!button || !TEXT[button.dataset.lang]) return;
+      language = button.dataset.lang;
+      safeLanguageSet(language);
+      render();
+      if (app.session) focusScanner();
+      else focusAccess();
+    });
+    el('retryButton').addEventListener('click', () => void refreshSnapshot());
+    el('refreshButton').addEventListener('click', () => void refreshSnapshot());
+    el('accessForm').addEventListener('submit', event => void signIn(event));
+    el('logoutButton').addEventListener('click', () => void signOut());
+    el('retryLogoutButton').addEventListener('click', () => void signOut());
+    window.addEventListener('focus', () => { if (sessionExpired()) expireSession('expired'); else { render(); if (app.session) focusScanner(); } });
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState !== 'visible') return;
+      if (sessionExpired()) { expireSession('expired'); return; }
+      render();
+      if (!app.session) return;
+      if (!snapshotFresh()) void refreshSnapshot();
+      else focusScanner();
+    });
+
+    app.state = blankWorkState();
+    if (window.__apiMock) {
+      window.__scannerTest = Object.freeze({
+        getState: () => ({
+          accessPhase: app.accessPhase, authenticated: Boolean(app.session), stateHealthy: app.stateHealthy,
+          phase: app.phase, canScan: canScan(), queueDepth: app.queue.length, pausedQueueDepth: app.pausedQueue.length, pendingCodes: [...app.pendingCodes],
+          verifierActive: app.activeVerifiers, maxActiveVerifiers: app.maxActiveVerifiers,
+          workday: app.state.workday, scanned: { ...app.state.scanned }, cancelled: app.state.cancelled.map(item => ({ ...item })), stops: app.state.stops.map(item => ({ ...item })),
+          shipmentCount: app.snapshot ? app.snapshot.shipments.length : 0, orderCount: app.snapshot ? app.snapshot.orders.length : 0,
+          decision: app.decision ? { ...app.decision } : null
+        }),
+        amsterdamWindow: iso => amsterdamWindow(iso ? new Date(iso) : now()),
+        scannerWorkdayKey: iso => scannerWorkdayKey(iso ? new Date(iso) : now()),
+        refresh: () => refreshSnapshot({ silentFocus: true })
+      });
+    }
+
     render();
-    return;
-  }
-  if (scannedMap[match.trackAndTrace]) {
-    fb.className = 'fb-warn';
-    fb.textContent = d.fbAlreadyScanned(match.orderId, fmtTime(scannedMap[match.trackAndTrace]));
-    render();
-    return;
-  }
-  if (cancelledList.some(c => c.trackAndTrace === match.trackAndTrace)) {
-    fb.className = 'fb-stop';
-    fb.textContent = d.fbStopCancelled(match.orderId);
-    return;
-  }
-
-  // Live re-check with bol before accepting the scan.
-  fb.className = 'fb-warn';
-  fb.textContent = d.fbChecking(match.orderId);
-  const isCancelled = await checkLiveCancellation(match.orderId);
-  if (isCancelled === true) {
-    cancelledList.unshift({orderId: match.orderId, trackAndTrace: match.trackAndTrace, foundAt: new Date().toISOString()});
-    saveCancelled();
-    fb.className = 'fb-stop';
-    fb.textContent = d.fbStopLive(match.orderId);
-    render();
-    return;
-  }
-  if (isCancelled === null) {
-    fb.className = 'fb-warn';
-    fb.textContent = d.fbCouldNotCheck(match.orderId);
-  } else {
-    fb.className = 'fb-ok';
-    fb.textContent = d.fbOk(match.orderId);
-  }
-
-  scannedMap[match.trackAndTrace] = new Date().toISOString();
-  saveScanned();
-  render();
-}
-
-const scanInput = document.getElementById('scanInput');
-scanInput.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') {
-    handleScan(scanInput.value);
-    scanInput.value = '';
-  }
-});
-scanInput.focus();
-document.body.addEventListener('click', () => scanInput.focus());
-
-applyStaticText();
-loadData().catch(e => {
-  document.getElementById('status').textContent = t().statusError(e.message);
-  console.error(e);
-});
-</script>
+    void checkSession();
+    window.setInterval(() => {
+      if (!app.session || document.visibilityState !== 'visible') return;
+      if (sessionExpired()) expireSession('expired');
+      else void refreshSnapshot({ silentFocus: true });
+    }, REFRESH_INTERVAL_MS);
+  })();
+  </script>
 </body>
 </html>
