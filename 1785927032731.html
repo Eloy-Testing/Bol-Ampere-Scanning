@@ -1,0 +1,663 @@
+<!doctype html>
+<script type="application/json" id="cowork-artifact-meta">
+{
+  "name": "Ampere Scan Dashboard",
+  "schemaVersion": 1,
+  "description": "Live scan-controle dashboard: haalt Bankhoesdiscounter bol.com orders/verzendingen live op, laat je Muisstil-orders handmatig toevoegen (geen API-toegang), en vinkt orders automatisch af zodra de bijbehorende track & trace gescand wordt.",
+  "mcpTools": [
+    "mcp__3bd27b79-868e-4c4b-9c30-1811c8456fa7__get_bol_retailer_data",
+    "mcp__3bd27b79-868e-4c4b-9c30-1811c8456fa7__bol_retailer_api_request"
+  ],
+  "mcpServerNames": [
+    "Bankhoes BI Warehouse",
+    "Bankhoes BI Warehouse"
+  ]
+}
+</script>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 20px; background: #f8fafc; color: #111827;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+    font-size: 14px;
+  }
+  .topbar { display:flex; align-items:flex-start; justify-content:space-between; gap: 12px; flex-wrap:wrap; }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  .sub { color: #6b7280; font-size: 12px; margin-bottom: 16px; }
+  .lang-switch { display:flex; gap:4px; background:#f3f4f6; border-radius:8px; padding:3px; }
+  .lang-switch button {
+    border:none; background:transparent; padding:5px 10px; font-size:12px; font-weight:600;
+    border-radius:6px; cursor:pointer; color:#6b7280;
+  }
+  .lang-switch button.active { background:#111827; color:#fff; }
+  .scan-box {
+    background: #111827; border-radius: 10px; padding: 16px; margin-bottom: 16px;
+  }
+  .scan-box label { color: #d1d5db; font-size: 12px; display:block; margin-bottom:6px; }
+  #scanInput {
+    width: 100%; font-size: 20px; padding: 12px 14px; border-radius: 8px;
+    border: 2px solid #374151; background:#fff; color:#111827; letter-spacing: 0.5px;
+  }
+  #scanInput:focus { outline: none; border-color:#3b82f6; }
+  #scanFeedback { margin-top: 10px; font-size: 14px; font-weight: 600; min-height: 20px; }
+  .fb-ok { color: #22c55e; }
+  .fb-warn { color: #f59e0b; }
+  .fb-err { color: #f87171; }
+  .summary { display:flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
+  .card {
+    background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 12px 16px;
+    min-width: 130px;
+  }
+  .card .num { font-size: 22px; font-weight: 700; }
+  .card .lbl { font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: .04em; }
+  .card.red .num { color:#dc2626; }
+  .card.green .num { color:#16a34a; }
+  .card.amber .num { color:#d97706; }
+  section { background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 14px 16px; margin-bottom: 16px; }
+  section h2 { font-size: 14px; margin: 0 0 10px; display:flex; align-items:center; gap:8px; }
+  section h2 .count { background:#f3f4f6; border-radius: 999px; padding: 1px 9px; font-size: 12px; color:#374151; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align:left; color:#6b7280; font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:.03em; padding: 6px 8px; border-bottom: 1px solid #e5e7eb; }
+  td { padding: 7px 8px; border-bottom: 1px solid #f3f4f6; vertical-align: top; }
+  tr.scanned { background: #f0fdf4; }
+  tr.overdue td.age { color:#dc2626; font-weight:600; }
+  .badge { display:inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight:600; }
+  .badge.open { background:#fef3c7; color:#92400e; }
+  .badge.scanned { background:#dcfce7; color:#166534; }
+  .badge.nolabel { background:#fee2e2; color:#991b1b; }
+  .badge.cancelled { background:#dc2626; color:#fff; }
+  .badge.later { background:#e0e7ff; color:#3730a3; }
+  tr.cancelled-row { background: #fef2f2; }
+  #scanFeedback.fb-stop { color:#fff; background:#dc2626; padding:10px 12px; border-radius:8px; font-size:16px; }
+  .muted { color:#9ca3af; }
+  .tt { font-family: "SF Mono", Menlo, Consolas, monospace; font-size:12.5px; }
+  .add-form { display:flex; gap:8px; margin-top: 10px; flex-wrap:wrap; }
+  .add-form input { flex:1; min-width:160px; padding:7px 10px; border:1px solid #d1d5db; border-radius:6px; font-size:13px; }
+  .add-form button { padding: 7px 14px; border-radius:6px; border:none; background:#111827; color:#fff; font-size:13px; cursor:pointer; }
+  .add-form button:hover { background:#1f2937; }
+  .empty { color:#9ca3af; font-style:italic; padding: 8px 0; }
+  .note { font-size:11px; color:#9ca3af; margin-top:8px; }
+  .del { color:#9ca3af; cursor:pointer; font-size:12px; }
+  .del:hover { color:#dc2626; }
+  #status { font-size:12px; color:#6b7280; margin-bottom:10px; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div>
+    <h1 id="txt-title">Ampère hand-off — scan controle</h1>
+    <div class="sub" id="txt-subtitle">Bankhoesdiscounter live via bol.com &middot; Muisstil handmatig (geen API-toegang) &middot; cutoff 16:00 (CEST, aanname zomertijd)</div>
+  </div>
+  <div class="lang-switch" id="langSwitch">
+    <button data-lang="nl">NL</button>
+    <button data-lang="en">EN</button>
+    <button data-lang="es">ES</button>
+  </div>
+</div>
+<div id="status">Laden...</div>
+
+<div class="scan-box">
+  <label id="txt-scanLabel">Scan hier (scanner typt automatisch de track &amp; trace + Enter)</label>
+  <input id="scanInput" autocomplete="off" placeholder="Scan track & trace...">
+  <div id="scanFeedback"></div>
+</div>
+
+<div class="summary" id="summary"></div>
+
+<section>
+  <h2><span id="txt-hNoLabel">Nog geen label — moet nog geprint worden</span> <span class="count" id="cnt-nolabel">0</span></h2>
+  <div id="tbl-nolabel"></div>
+  <div class="note" id="txt-noteNoLabel"></div>
+</section>
+
+<section>
+  <h2><span id="txt-hShipped">Al verzonden — wachten op scan bevestiging (Bankhoesdiscounter)</span> <span class="count" id="cnt-shipped">0</span></h2>
+  <div id="tbl-shipped"></div>
+</section>
+
+<section>
+  <h2><span id="txt-hMuisstil">Muisstil — handmatig</span> <span class="count" id="cnt-muisstil">0</span></h2>
+  <div id="tbl-muisstil"></div>
+  <div class="add-form">
+    <input id="mOrder" placeholder="Ordernummer">
+    <input id="mTrack" placeholder="Track & trace">
+    <button id="btnAddMuisstil" onclick="addMuisstil()">Toevoegen</button>
+  </div>
+  <div class="note" id="txt-noteMuisstil">Muisstil-orders komen niet uit een API — voeg ze hier zelf toe zodra je ze weet. Blijft bewaard in deze browser.</div>
+</section>
+
+<section>
+  <h2><span id="txt-hTomorrow">Al klaar voor morgen (na 16:00 besteld, wacht nog op label)</span> <span class="count" id="cnt-tomorrow">0</span></h2>
+  <div id="tbl-tomorrow"></div>
+</section>
+
+<section>
+  <h2><span id="txt-hCancelled">⛔ Geannuleerd na label — NIET verzenden</span> <span class="count" id="cnt-cancelled">0</span></h2>
+  <div id="tbl-cancelled"></div>
+  <div class="note" id="txt-noteCancelled">Bij elke scan wordt de actuele status van de order live bij bol opgevraagd. Staat een order hier, dan is hij na het aanmaken van het label geannuleerd door de klant — haal het pakket eruit.</div>
+</section>
+
+<section>
+  <h2><span id="txt-hUnmatched">⛔ Onbekende scans — behandel als STOP</span> <span class="count" id="cnt-unmatched">0</span></h2>
+  <div id="tbl-unmatched"></div>
+  <div class="note" id="txt-noteUnmatched">Kan een Muisstil-order zijn die nog niet is toegevoegd — maar kan ook een order zijn die geannuleerd is vóórdat bol een verzendbevestiging kreeg. Die orders staan nergens (niet open, geen shipment), dus deze scan-lijst is de enige plek waar ze opvallen. Zoek de order op in bol.com voordat je 'm laat gaan.</div>
+</section>
+
+<script>
+const TOOL_DATA = "mcp__3bd27b79-868e-4c4b-9c30-1811c8456fa7__get_bol_retailer_data";
+const TOOL_RAW = "mcp__3bd27b79-868e-4c4b-9c30-1811c8456fa7__bol_retailer_api_request";
+const AMS_OFFSET = "+02:00"; // CEST. Change to +01:00 after the winter-time switch.
+
+// ---------- i18n ----------
+const I18N = {
+  nl: {
+    locale: 'nl-NL',
+    title: "Ampère hand-off — scan controle",
+    subtitle: "Bankhoesdiscounter live via bol.com · Muisstil handmatig (geen API-toegang) · cutoff 16:00 (CEST, aanname zomertijd)",
+    scanLabel: "Scan hier (scanner typt automatisch de track & trace + Enter)",
+    scanPlaceholder: "Scan track & trace...",
+    cardTotal: "Totaal vandaag", cardScanned: "Gescand", cardOpen: "Nog open",
+    cardNoLabel: "Nog geen label", cardTomorrow: "Klaar voor morgen",
+    hNoLabel: "Nog geen label — moet nog geprint worden",
+    hShipped: "Al verzonden — wachten op scan bevestiging (Bankhoesdiscounter)",
+    hMuisstil: "Muisstil — handmatig",
+    hTomorrow: "Al klaar voor morgen (na 16:00 besteld, wacht nog op label)",
+    hCancelled: "⛔ Geannuleerd na label — NIET verzenden",
+    hUnmatched: "⛔ Onbekende scans — behandel als STOP",
+    thOrder: "Order", thPlaced: "Geplaatst", thAge: "Leeftijd", thItems: "Items",
+    thExpected: "Verwachte levering*", thTrack: "Track & trace", thShippedAt: "Verzonden", thStatus: "Status",
+    thCode: "Code", thTime: "Tijd", thFound: "Gevonden", thAction: "",
+    emptyNoLabel: "Niets — alles heeft al een label.",
+    emptyShipped: "Nog geen verzendingen in het venster.",
+    emptyMuisstil: "Nog geen Muisstil-orders toegevoegd.",
+    emptyTomorrow: "Nog niets voor morgen.",
+    emptyCancelled: "Geen geannuleerde orders gevonden bij het scannen.",
+    emptyUnmatched: "Geen onbekende scans.",
+    badgeScanned: t => `Gescand ${t}`,
+    badgeOpen: "Open",
+    badgeLater: "later venster",
+    orderPlaceholder: "Ordernummer",
+    trackPlaceholder: "Track & trace",
+    addBtn: "Toevoegen",
+    deleteLink: "verwijder",
+    noteMuisstil: "Muisstil-orders komen niet uit een API — voeg ze hier zelf toe zodra je ze weet. Blijft bewaard in deze browser.",
+    noteCancelled: "Bij elke scan wordt de actuele status van de order live bij bol opgevraagd. Staat een order hier, dan is hij na het aanmaken van het label geannuleerd door de klant — haal het pakket eruit.",
+    noteUnmatched: "Kan een Muisstil-order zijn die nog niet is toegevoegd — maar kan ook een order zijn die geannuleerd is vóórdat bol een verzendbevestiging kreeg. Die orders staan nergens (niet open, geen shipment), dus deze scan-lijst is de enige plek waar ze opvallen. Zoek de order op in bol.com voordat je 'm laat gaan.",
+    noteNoLabel: "* \"Verwachte levering\" komt rechtstreeks van bol, maar is vóór verzending onbetrouwbaar (we hebben dit geverifieerd) — een latere datum is dus geen garantie dat de order pas later mag, alleen een signaal om even te checken. Bij twijfel: order opzoeken in bol.com.",
+    statusLoading: "Bezig met laden van bol.com data...",
+    statusLoadingShipments: n => `Details ophalen voor ${n} verzendingen...`,
+    statusLastUpdate: t => `Laatste update: ${t}`,
+    statusError: m => `Fout bij laden: ${m}`,
+    fbUnknown: code => `⛔ ONBEKENDE CODE: ${code} — staat nergens op de lijst. Dit kan een order zijn die geannuleerd is vóórdat bol een verzendbevestiging kreeg (zoals C000CF8J8M op 4 aug) — die orders zijn nergens anders zichtbaar. NIET verzenden zonder deze order handmatig op te zoeken in bol.com.`,
+    fbAlreadyScanned: (orderId, t) => `Al eerder gescand: order ${orderId} (${t}).`,
+    fbStopCancelled: orderId => `⛔ STOP — order ${orderId} is geannuleerd. NIET verzenden.`,
+    fbChecking: orderId => `Bezig met live check van order ${orderId} bij bol...`,
+    fbStopLive: orderId => `⛔ STOP — order ${orderId} is geannuleerd bij bol. NIET verzenden!`,
+    fbCouldNotCheck: orderId => `Kon annulering niet live checken voor order ${orderId} — afgevinkt, maar controleer handmatig indien twijfel.`,
+    fbOk: orderId => `OK — order ${orderId} afgevinkt (live gecheckt, niet geannuleerd).`,
+    fbOkMuisstil: orderId => `OK — order ${orderId} afgevinkt (Muisstil, geen live check mogelijk).`,
+    ageFmt: (h,m) => h < 1 ? `${m}m` : `${h}u ${m}m`,
+  },
+  en: {
+    locale: 'en-GB',
+    title: "Ampère hand-off — scan check",
+    subtitle: "Bankhoesdiscounter live via bol.com · Muisstil manual (no API access) · cutoff 16:00 (CEST, assuming summer time)",
+    scanLabel: "Scan here (scanner types the track & trace automatically + Enter)",
+    scanPlaceholder: "Scan track & trace...",
+    cardTotal: "Total today", cardScanned: "Scanned", cardOpen: "Still open",
+    cardNoLabel: "No label yet", cardTomorrow: "Ready for tomorrow",
+    hNoLabel: "No label yet — still needs to be printed",
+    hShipped: "Already shipped — waiting on scan confirmation (Bankhoesdiscounter)",
+    hMuisstil: "Muisstil — manual",
+    hTomorrow: "Already set for tomorrow (ordered after 16:00, waiting for label)",
+    hCancelled: "⛔ Cancelled after label — DO NOT ship",
+    hUnmatched: "⛔ Unknown scans — treat as STOP",
+    thOrder: "Order", thPlaced: "Placed", thAge: "Age", thItems: "Items",
+    thExpected: "Expected delivery*", thTrack: "Track & trace", thShippedAt: "Shipped", thStatus: "Status",
+    thCode: "Code", thTime: "Time", thFound: "Found", thAction: "",
+    emptyNoLabel: "Nothing here — everything already has a label.",
+    emptyShipped: "No shipments in this window yet.",
+    emptyMuisstil: "No Muisstil orders added yet.",
+    emptyTomorrow: "Nothing for tomorrow yet.",
+    emptyCancelled: "No cancelled orders found while scanning.",
+    emptyUnmatched: "No unknown scans.",
+    badgeScanned: t => `Scanned ${t}`,
+    badgeOpen: "Open",
+    badgeLater: "later window",
+    orderPlaceholder: "Order number",
+    trackPlaceholder: "Track & trace",
+    addBtn: "Add",
+    deleteLink: "remove",
+    noteMuisstil: "Muisstil orders don't come from an API — add them here yourself as you learn them. This stays saved in this browser.",
+    noteCancelled: "Every scan triggers a live check of the order's current status with bol. If an order shows up here, the customer cancelled it after the label was created — pull the parcel back out.",
+    noteUnmatched: "Could be a Muisstil order that hasn't been added yet — but could also be an order that was cancelled before bol ever registered a shipment confirmation. Those orders don't show up anywhere else (not in open orders, not in shipments), so this scan list is the only place they surface. Look the order up in bol.com before letting it go.",
+    noteNoLabel: "* \"Expected delivery\" comes straight from bol, but is unreliable before an order ships (we've verified this) — a later date is not a guarantee that the order can wait, just a signal to double-check. If in doubt, look the order up in bol.com.",
+    statusLoading: "Loading bol.com data...",
+    statusLoadingShipments: n => `Fetching details for ${n} shipments...`,
+    statusLastUpdate: t => `Last update: ${t}`,
+    statusError: m => `Error while loading: ${m}`,
+    fbUnknown: code => `⛔ UNKNOWN CODE: ${code} — not on any list. This can be an order that was cancelled before bol ever got a shipment confirmation (like C000CF8J8M on Aug 4) — those orders aren't visible anywhere else. DO NOT ship without looking this order up manually in bol.com.`,
+    fbAlreadyScanned: (orderId, t) => `Already scanned: order ${orderId} (${t}).`,
+    fbStopCancelled: orderId => `⛔ STOP — order ${orderId} is cancelled. DO NOT ship.`,
+    fbChecking: orderId => `Live-checking order ${orderId} with bol...`,
+    fbStopLive: orderId => `⛔ STOP — order ${orderId} is cancelled at bol. DO NOT ship!`,
+    fbCouldNotCheck: orderId => `Could not live-check cancellation for order ${orderId} — marked as scanned, but verify manually if in doubt.`,
+    fbOk: orderId => `OK — order ${orderId} checked off (live checked, not cancelled).`,
+    fbOkMuisstil: orderId => `OK — order ${orderId} checked off (Muisstil, no live check possible).`,
+    ageFmt: (h,m) => h < 1 ? `${m}m` : `${h}h ${m}m`,
+  },
+  es: {
+    locale: 'es-ES',
+    title: "Entrega a Ampère — control de escaneo",
+    subtitle: "Bankhoesdiscounter en vivo vía bol.com · Muisstil manual (sin acceso a la API) · corte 16:00 (CEST, suponiendo horario de verano)",
+    scanLabel: "Escanea aquí (el escáner escribe el track & trace automáticamente + Enter)",
+    scanPlaceholder: "Escanea el track & trace...",
+    cardTotal: "Total de hoy", cardScanned: "Escaneados", cardOpen: "Pendientes",
+    cardNoLabel: "Sin etiqueta aún", cardTomorrow: "Listos para mañana",
+    hNoLabel: "Sin etiqueta aún — falta imprimir",
+    hShipped: "Ya enviados — a la espera de confirmación de escaneo (Bankhoesdiscounter)",
+    hMuisstil: "Muisstil — manual",
+    hTomorrow: "Ya listos para mañana (pedidos después de las 16:00, esperando etiqueta)",
+    hCancelled: "⛔ Cancelado después de la etiqueta — NO enviar",
+    hUnmatched: "⛔ Escaneos desconocidos — tratar como PARADA",
+    thOrder: "Pedido", thPlaced: "Realizado", thAge: "Antigüedad", thItems: "Artículos",
+    thExpected: "Entrega prevista*", thTrack: "Track & trace", thShippedAt: "Enviado", thStatus: "Estado",
+    thCode: "Código", thTime: "Hora", thFound: "Detectado", thAction: "",
+    emptyNoLabel: "Nada por aquí — todo tiene ya su etiqueta.",
+    emptyShipped: "Todavía no hay envíos en esta franja.",
+    emptyMuisstil: "Aún no se han añadido pedidos de Muisstil.",
+    emptyTomorrow: "Todavía nada para mañana.",
+    emptyCancelled: "No se ha encontrado ningún pedido cancelado al escanear.",
+    emptyUnmatched: "No hay escaneos desconocidos.",
+    badgeScanned: t => `Escaneado ${t}`,
+    badgeOpen: "Pendiente",
+    badgeLater: "ventana posterior",
+    orderPlaceholder: "Número de pedido",
+    trackPlaceholder: "Track & trace",
+    addBtn: "Añadir",
+    deleteLink: "eliminar",
+    noteMuisstil: "Los pedidos de Muisstil no vienen de ninguna API — añádelos aquí a mano en cuanto los conozcas. Se guardan en este navegador.",
+    noteCancelled: "Cada escaneo consulta en vivo el estado actual del pedido en bol. Si un pedido aparece aquí, el cliente lo canceló después de crearse la etiqueta — saca el paquete.",
+    noteUnmatched: "Puede ser un pedido de Muisstil que aún no se ha añadido — pero también puede ser un pedido cancelado antes de que bol registrara una confirmación de envío. Esos pedidos no aparecen en ningún otro sitio (ni en pedidos abiertos, ni en envíos), así que esta lista de escaneos es el único lugar donde salen a la luz. Búscalo en bol.com antes de dejarlo pasar.",
+    noteNoLabel: "* La \"entrega prevista\" viene directamente de bol, pero no es fiable antes de que el pedido se envíe (lo hemos comprobado) — una fecha más lejana no garantiza que el pedido pueda esperar, es solo una señal para revisarlo. Si tienes dudas, búscalo en bol.com.",
+    statusLoading: "Cargando datos de bol.com...",
+    statusLoadingShipments: n => `Obteniendo detalles de ${n} envíos...`,
+    statusLastUpdate: t => `Última actualización: ${t}`,
+    statusError: m => `Error al cargar: ${m}`,
+    fbUnknown: code => `⛔ CÓDIGO DESCONOCIDO: ${code} — no está en ninguna lista. Puede tratarse de un pedido cancelado antes de que bol registrara la confirmación de envío (como el C000CF8J8M del 4 de agosto) — esos pedidos no son visibles en ningún otro sitio. NO lo envíes sin buscar antes este pedido a mano en bol.com.`,
+    fbAlreadyScanned: (orderId, t) => `Ya escaneado antes: pedido ${orderId} (${t}).`,
+    fbStopCancelled: orderId => `⛔ PARADA — el pedido ${orderId} está cancelado. NO enviar.`,
+    fbChecking: orderId => `Comprobando en vivo el pedido ${orderId} con bol...`,
+    fbStopLive: orderId => `⛔ PARADA — el pedido ${orderId} está cancelado en bol. ¡NO enviar!`,
+    fbCouldNotCheck: orderId => `No se pudo comprobar en vivo la cancelación del pedido ${orderId} — marcado como escaneado, pero verifícalo a mano si tienes dudas.`,
+    fbOk: orderId => `OK — pedido ${orderId} marcado (comprobado en vivo, no cancelado).`,
+    fbOkMuisstil: orderId => `OK — pedido ${orderId} marcado (Muisstil, no se puede comprobar en vivo).`,
+    ageFmt: (h,m) => h < 1 ? `${m}m` : `${h}h ${m}m`,
+  },
+};
+
+let lang = localStorage.getItem('lang_v1') || 'nl';
+function t() { return I18N[lang]; }
+
+function applyStaticText() {
+  const d = t();
+  document.getElementById('txt-title').textContent = d.title;
+  document.getElementById('txt-subtitle').textContent = d.subtitle;
+  document.getElementById('txt-scanLabel').textContent = d.scanLabel;
+  document.getElementById('scanInput').placeholder = d.scanPlaceholder;
+  document.getElementById('txt-hNoLabel').textContent = d.hNoLabel;
+  document.getElementById('txt-hShipped').textContent = d.hShipped;
+  document.getElementById('txt-hMuisstil').textContent = d.hMuisstil;
+  document.getElementById('txt-hTomorrow').textContent = d.hTomorrow;
+  document.getElementById('txt-hCancelled').textContent = d.hCancelled;
+  document.getElementById('txt-hUnmatched').textContent = d.hUnmatched;
+  document.getElementById('txt-noteMuisstil').textContent = d.noteMuisstil;
+  document.getElementById('txt-noteCancelled').textContent = d.noteCancelled;
+  document.getElementById('txt-noteUnmatched').textContent = d.noteUnmatched;
+  document.getElementById('txt-noteNoLabel').textContent = d.noteNoLabel;
+  document.getElementById('mOrder').placeholder = d.orderPlaceholder;
+  document.getElementById('mTrack').placeholder = d.trackPlaceholder;
+  document.getElementById('btnAddMuisstil').textContent = d.addBtn;
+  document.querySelectorAll('#langSwitch button').forEach(b => b.classList.toggle('active', b.dataset.lang === lang));
+}
+
+function setLang(l) {
+  lang = l;
+  localStorage.setItem('lang_v1', l);
+  applyStaticText();
+  render();
+}
+document.getElementById('langSwitch').addEventListener('click', (e) => {
+  const btn = e.target.closest('button[data-lang]');
+  if (btn) setLang(btn.dataset.lang);
+});
+
+// ---------- state ----------
+let openOrders = [];
+let shipments = []; // enriched {orderId, trackAndTrace, transporterCode, items, shipmentDateTime, placedAt}
+let muisstil = JSON.parse(localStorage.getItem('muisstil_v1') || '[]');
+let scannedMap = JSON.parse(localStorage.getItem('scanned_map_v1') || '{}'); // trackAndTrace -> iso timestamp
+let cancelledList = JSON.parse(localStorage.getItem('cancelled_list_v1') || '[]'); // [{orderId, trackAndTrace, foundAt}]
+let unmatched = [];
+
+function saveMuisstil() { localStorage.setItem('muisstil_v1', JSON.stringify(muisstil)); }
+function saveScanned() { localStorage.setItem('scanned_map_v1', JSON.stringify(scannedMap)); }
+function saveCancelled() { localStorage.setItem('cancelled_list_v1', JSON.stringify(cancelledList)); }
+
+async function checkLiveCancellation(orderId) {
+  // Live re-check with bol at the moment of scanning — catches orders cancelled
+  // after the label/shipment was already created.
+  try {
+    const resp = await callTool(TOOL_RAW, {path: `/orders/${orderId}`});
+    const items = (resp.data && resp.data.orderItems) || [];
+    return items.some(i => i.cancellationRequested === true || (i.quantityCancelled || 0) > 0);
+  } catch (e) {
+    // Order not found via /orders/{id} at all can also mean it's fully cancelled/removed —
+    // treat lookup failure as "could not verify", not as cancelled, to avoid false stops.
+    console.warn('Could not live-check cancellation for', orderId, e.message);
+    return null; // unknown
+  }
+}
+
+async function callTool(name, args) {
+  const r = await window.cowork.callMcpTool(name, args);
+  if (r.isError) throw new Error(JSON.stringify(r.content));
+  return r.structuredContent ?? JSON.parse(r.content[0].text);
+}
+
+function amsToday() {
+  return new Intl.DateTimeFormat('en-CA', {timeZone:'Europe/Amsterdam', year:'numeric', month:'2-digit', day:'2-digit'}).format(new Date());
+}
+function cutoffToday() { return new Date(`${amsToday()}T16:00:00${AMS_OFFSET}`); }
+function cutoffYesterday() { const d = new Date(cutoffToday()); d.setDate(d.getDate()-1); return d; }
+
+function fmtAge(ms) {
+  const h = Math.floor(ms / 3600000);
+  const m = Math.floor((ms % 3600000) / 60000);
+  return t().ageFmt(h, m);
+}
+function fmtTime(iso) {
+  return new Date(iso).toLocaleString(t().locale, {timeZone:'Europe/Amsterdam', day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'});
+}
+function fmtDate(iso) {
+  if (!iso) return '';
+  return new Date(iso).toLocaleDateString(t().locale, {timeZone:'Europe/Amsterdam', day:'2-digit', month:'2-digit'});
+}
+function shortItems(items) {
+  return items.map(i => (i.productTitle || i.ean || '').split('–')[0].trim()).join(', ').slice(0, 90);
+}
+// Earliest exactDeliveryDate across an order's items — the pre-shipment "afgeefmoment"
+// signal bol gives us. Verified unreliable as an absolute predictor (a same-day, routine
+// order can show a date 4-5 days out), but still useful as a relative signal to a human.
+function earliestExpected(order) {
+  const dates = (order.orderItems || []).map(i => i.exactDeliveryDate).filter(Boolean).map(d => new Date(d));
+  if (!dates.length) return null;
+  return new Date(Math.min(...dates));
+}
+
+async function loadData() {
+  document.getElementById('status').textContent = t().statusLoading;
+  const ordersResp = await callTool(TOOL_DATA, {resource: 'orders', query: 'page=1'});
+  openOrders = (ordersResp.data && ordersResp.data.orders) || [];
+
+  let ship1 = [], ship2 = [];
+  try {
+    const r1 = await callTool(TOOL_DATA, {resource: 'shipments', query: 'page=1'});
+    ship1 = (r1.data && r1.data.shipments) || [];
+  } catch(e) {}
+  try {
+    const r2 = await callTool(TOOL_DATA, {resource: 'shipments', query: 'page=2'});
+    ship2 = (r2.data && r2.data.shipments) || [];
+  } catch(e) {}
+
+  const windowStart = cutoffYesterday();
+  const recent = [...ship1, ...ship2].filter(s => new Date(s.shipmentDateTime) >= windowStart);
+
+  document.getElementById('status').textContent = t().statusLoadingShipments(recent.length);
+
+  const enriched = [];
+  for (const s of recent) {
+    try {
+      const detail = await callTool(TOOL_RAW, {path: `/shipments/${s.shipmentId}`});
+      const d = detail.data;
+      enriched.push({
+        orderId: d.order.orderId,
+        placedAt: d.order.orderPlacedDateTime,
+        shipmentDateTime: d.shipmentDateTime,
+        trackAndTrace: d.transport && d.transport.trackAndTrace,
+        transporterCode: d.transport && d.transport.transporterCode,
+        items: d.shipmentItems || []
+      });
+    } catch (e) {
+      enriched.push({ orderId: s.order.orderId, placedAt: s.order.orderPlacedDateTime, shipmentDateTime: s.shipmentDateTime, trackAndTrace: null, items: s.shipmentItems || [] });
+    }
+  }
+  enriched.sort((a,b) => new Date(a.placedAt) - new Date(b.placedAt));
+  shipments = enriched;
+  document.getElementById('status').textContent = t().statusLastUpdate(new Date().toLocaleTimeString(t().locale, {timeZone:'Europe/Amsterdam'}));
+  render();
+}
+
+function render() {
+  const d = t();
+  const cutoff = cutoffToday();
+  const nolabel = openOrders.filter(o => new Date(o.orderPlacedDateTime) < cutoff)
+    .sort((a,b) => new Date(a.orderPlacedDateTime) - new Date(b.orderPlacedDateTime));
+  const tomorrow = openOrders.filter(o => new Date(o.orderPlacedDateTime) >= cutoff);
+
+  // no-label table — includes bol's own "expected delivery" signal per order (unreliable
+  // pre-shipment, but shown so a human can judge whether something looks like a longer-lead
+  // item rather than assuming every row here is equally overdue).
+  const tblNoLabel = document.getElementById('tbl-nolabel');
+  if (nolabel.length === 0) {
+    tblNoLabel.innerHTML = `<div class="empty">${d.emptyNoLabel}</div>`;
+  } else {
+    tblNoLabel.innerHTML = `<table><tr><th>${d.thOrder}</th><th>${d.thPlaced}</th><th>${d.thAge}</th><th>${d.thExpected}</th><th>${d.thItems}</th></tr>` +
+      nolabel.map(o => {
+        const age = Date.now() - new Date(o.orderPlacedDateTime).getTime();
+        const overdue = age > 22*3600000;
+        const items = (o.orderItems||[]).map(i => i.ean).join(', ');
+        const exp = earliestExpected(o);
+        const daysOut = exp ? Math.round((exp - Date.now()) / 86400000) : null;
+        const expCell = exp
+          ? `${fmtDate(exp)} ${daysOut >= 3 ? `<span class="badge later">${d.badgeLater}</span>` : ''}`
+          : '<span class="muted">—</span>';
+        return `<tr class="${overdue?'overdue':''}"><td>${o.orderId}</td><td>${fmtTime(o.orderPlacedDateTime)}</td><td class="age">${fmtAge(age)}</td><td class="muted">${expCell}</td><td class="muted">${items}</td></tr>`;
+      }).join('') + `</table>`;
+  }
+  document.getElementById('cnt-nolabel').textContent = nolabel.length;
+
+  // tomorrow table
+  const tblTomorrow = document.getElementById('tbl-tomorrow');
+  if (tomorrow.length === 0) {
+    tblTomorrow.innerHTML = `<div class="empty">${d.emptyTomorrow}</div>`;
+  } else {
+    tblTomorrow.innerHTML = `<table><tr><th>${d.thOrder}</th><th>${d.thPlaced}</th><th>${d.thItems}</th></tr>` +
+      tomorrow.map(o => `<tr><td>${o.orderId}</td><td>${fmtTime(o.orderPlacedDateTime)}</td><td class="muted">${(o.orderItems||[]).map(i=>i.ean).join(', ')}</td></tr>`).join('') +
+      `</table>`;
+  }
+  document.getElementById('cnt-tomorrow').textContent = tomorrow.length;
+
+  // shipped table
+  const tblShipped = document.getElementById('tbl-shipped');
+  const sortedShipped = [...shipments].sort((a,b) => {
+    const aS = a.trackAndTrace && scannedMap[a.trackAndTrace] ? 1 : 0;
+    const bS = b.trackAndTrace && scannedMap[b.trackAndTrace] ? 1 : 0;
+    if (aS !== bS) return aS - bS;
+    return new Date(a.placedAt) - new Date(b.placedAt);
+  });
+  if (sortedShipped.length === 0) {
+    tblShipped.innerHTML = `<div class="empty">${d.emptyShipped}</div>`;
+  } else {
+    tblShipped.innerHTML = `<table><tr><th>${d.thOrder}</th><th>${d.thTrack}</th><th>${d.thShippedAt}</th><th>${d.thItems}</th><th>${d.thStatus}</th></tr>` +
+      sortedShipped.map(s => {
+        const scannedAt = s.trackAndTrace ? scannedMap[s.trackAndTrace] : null;
+        return `<tr class="${scannedAt ? 'scanned':''}">
+          <td>${s.orderId}</td>
+          <td class="tt">${s.trackAndTrace || `<span class="muted">${lang==='nl'?'onbekend':lang==='es'?'desconocido':'unknown'}</span>`}</td>
+          <td class="muted">${fmtTime(s.shipmentDateTime)}</td>
+          <td class="muted">${shortItems(s.items)}</td>
+          <td>${scannedAt ? `<span class="badge scanned">${d.badgeScanned(fmtTime(scannedAt))}</span>` : `<span class="badge open">${d.badgeOpen}</span>`}</td>
+        </tr>`;
+      }).join('') + `</table>`;
+  }
+  const shippedOpen = shipments.filter(s => !(s.trackAndTrace && scannedMap[s.trackAndTrace])).length;
+  document.getElementById('cnt-shipped').textContent = `${shipments.length - shippedOpen}/${shipments.length}`;
+
+  // muisstil table
+  const tblM = document.getElementById('tbl-muisstil');
+  if (muisstil.length === 0) {
+    tblM.innerHTML = `<div class="empty">${d.emptyMuisstil}</div>`;
+  } else {
+    tblM.innerHTML = `<table><tr><th>${d.thOrder}</th><th>${d.thTrack}</th><th>${d.thStatus}</th><th></th></tr>` +
+      muisstil.map((m, idx) => {
+        const scannedAt = scannedMap[m.trackAndTrace];
+        return `<tr class="${scannedAt?'scanned':''}">
+          <td>${m.orderId}</td>
+          <td class="tt">${m.trackAndTrace}</td>
+          <td>${scannedAt ? `<span class="badge scanned">${d.badgeScanned(fmtTime(scannedAt))}</span>` : `<span class="badge open">${d.badgeOpen}</span>`}</td>
+          <td><span class="del" onclick="removeMuisstil(${idx})">${d.deleteLink}</span></td>
+        </tr>`;
+      }).join('') + `</table>`;
+  }
+  document.getElementById('cnt-muisstil').textContent = muisstil.length;
+
+  // cancelled
+  const tblC = document.getElementById('tbl-cancelled');
+  if (cancelledList.length === 0) {
+    tblC.innerHTML = `<div class="empty">${d.emptyCancelled}</div>`;
+  } else {
+    tblC.innerHTML = `<table><tr><th>${d.thOrder}</th><th>${d.thTrack}</th><th>${d.thFound}</th></tr>` +
+      cancelledList.map(c => `<tr class="cancelled-row"><td>${c.orderId}</td><td class="tt">${c.trackAndTrace}</td><td class="muted">${fmtTime(c.foundAt)}</td></tr>`).join('') + `</table>`;
+  }
+  document.getElementById('cnt-cancelled').textContent = cancelledList.length;
+
+  // unmatched
+  const tblU = document.getElementById('tbl-unmatched');
+  if (unmatched.length === 0) {
+    tblU.innerHTML = `<div class="empty">${d.emptyUnmatched}</div>`;
+  } else {
+    tblU.innerHTML = `<table><tr><th>${d.thCode}</th><th>${d.thTime}</th></tr>` +
+      unmatched.slice(0,20).map(u => `<tr class="cancelled-row"><td class="tt">${u.code}</td><td class="muted">${fmtTime(u.time)}</td></tr>`).join('') + `</table>`;
+  }
+  document.getElementById('cnt-unmatched').textContent = unmatched.length;
+
+  // summary
+  const totalNeeded = nolabel.length + shipments.length + muisstil.length;
+  const totalScanned = shipments.filter(s => s.trackAndTrace && scannedMap[s.trackAndTrace]).length + muisstil.filter(m => scannedMap[m.trackAndTrace]).length;
+  const totalOpen = totalNeeded - totalScanned;
+  document.getElementById('summary').innerHTML = `
+    <div class="card"><div class="num">${totalNeeded}</div><div class="lbl">${d.cardTotal}</div></div>
+    <div class="card green"><div class="num">${totalScanned}</div><div class="lbl">${d.cardScanned}</div></div>
+    <div class="card red"><div class="num">${totalOpen}</div><div class="lbl">${d.cardOpen}</div></div>
+    <div class="card amber"><div class="num">${nolabel.length}</div><div class="lbl">${d.cardNoLabel}</div></div>
+    <div class="card"><div class="num">${tomorrow.length}</div><div class="lbl">${d.cardTomorrow}</div></div>
+  `;
+}
+
+function findByTrack(code) {
+  const norm = code.trim().toUpperCase();
+  const s = shipments.find(x => x.trackAndTrace && x.trackAndTrace.toUpperCase() === norm);
+  if (s) return {type:'bhd', orderId: s.orderId, trackAndTrace: s.trackAndTrace};
+  const m = muisstil.find(x => x.trackAndTrace && x.trackAndTrace.toUpperCase() === norm);
+  if (m) return {type:'muisstil', orderId: m.orderId, trackAndTrace: m.trackAndTrace};
+  return null;
+}
+
+async function handleScan(rawCode) {
+  const d = t();
+  const code = rawCode.trim();
+  if (!code) return;
+  const match = findByTrack(code);
+  const fb = document.getElementById('scanFeedback');
+  fb.className = '';
+
+  if (!match) {
+    unmatched.unshift({code, time: new Date().toISOString()});
+    fb.className = 'fb-stop';
+    fb.textContent = d.fbUnknown(code);
+    render();
+    return;
+  }
+  if (scannedMap[match.trackAndTrace]) {
+    fb.className = 'fb-warn';
+    fb.textContent = d.fbAlreadyScanned(match.orderId, fmtTime(scannedMap[match.trackAndTrace]));
+    render();
+    return;
+  }
+  if (cancelledList.some(c => c.trackAndTrace === match.trackAndTrace)) {
+    fb.className = 'fb-stop';
+    fb.textContent = d.fbStopCancelled(match.orderId);
+    return;
+  }
+
+  // Bankhoesdiscounter orders: live re-check with bol before accepting the scan.
+  // Muisstil (no API access) can't be checked this way — accept directly.
+  if (match.type === 'bhd') {
+    fb.className = 'fb-warn';
+    fb.textContent = d.fbChecking(match.orderId);
+    const isCancelled = await checkLiveCancellation(match.orderId);
+    if (isCancelled === true) {
+      cancelledList.unshift({orderId: match.orderId, trackAndTrace: match.trackAndTrace, foundAt: new Date().toISOString()});
+      saveCancelled();
+      fb.className = 'fb-stop';
+      fb.textContent = d.fbStopLive(match.orderId);
+      render();
+      return;
+    }
+    if (isCancelled === null) {
+      fb.className = 'fb-warn';
+      fb.textContent = d.fbCouldNotCheck(match.orderId);
+    } else {
+      fb.className = 'fb-ok';
+      fb.textContent = d.fbOk(match.orderId);
+    }
+  } else {
+    fb.className = 'fb-ok';
+    fb.textContent = d.fbOkMuisstil(match.orderId);
+  }
+
+  scannedMap[match.trackAndTrace] = new Date().toISOString();
+  saveScanned();
+  render();
+}
+
+function addMuisstil() {
+  const orderId = document.getElementById('mOrder').value.trim();
+  const trackAndTrace = document.getElementById('mTrack').value.trim();
+  if (!orderId || !trackAndTrace) return;
+  muisstil.push({orderId, trackAndTrace});
+  saveMuisstil();
+  document.getElementById('mOrder').value = '';
+  document.getElementById('mTrack').value = '';
+  render();
+}
+function removeMuisstil(idx) {
+  muisstil.splice(idx, 1);
+  saveMuisstil();
+  render();
+}
+
+const scanInput = document.getElementById('scanInput');
+scanInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    handleScan(scanInput.value);
+    scanInput.value = '';
+  }
+});
+scanInput.focus();
+document.body.addEventListener('click', () => scanInput.focus());
+
+applyStaticText();
+loadData().catch(e => {
+  document.getElementById('status').textContent = t().statusError(e.message);
+  console.error(e);
+});
+</script>
+</body>
+</html>

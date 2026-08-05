@@ -1,0 +1,367 @@
+<!doctype html>
+<script type="application/json" id="cowork-artifact-meta">
+{
+  "name": "Ampere Scan Dashboard",
+  "schemaVersion": 1,
+  "description": "Live scan-controle dashboard: haalt Bankhoesdiscounter bol.com orders/verzendingen live op, laat je Muisstil-orders handmatig toevoegen (geen API-toegang), en vinkt orders automatisch af zodra de bijbehorende track & trace gescand wordt.",
+  "mcpTools": [
+    "mcp__3bd27b79-868e-4c4b-9c30-1811c8456fa7__get_bol_retailer_data",
+    "mcp__3bd27b79-868e-4c4b-9c30-1811c8456fa7__bol_retailer_api_request"
+  ],
+  "mcpServerNames": [
+    "Bankhoes BI Warehouse",
+    "Bankhoes BI Warehouse"
+  ]
+}
+</script>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 20px; background: #f8fafc; color: #111827;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+    font-size: 14px;
+  }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  .sub { color: #6b7280; font-size: 12px; margin-bottom: 16px; }
+  .scan-box {
+    background: #111827; border-radius: 10px; padding: 16px; margin-bottom: 16px;
+  }
+  .scan-box label { color: #d1d5db; font-size: 12px; display:block; margin-bottom:6px; }
+  #scanInput {
+    width: 100%; font-size: 20px; padding: 12px 14px; border-radius: 8px;
+    border: 2px solid #374151; background:#fff; color:#111827; letter-spacing: 0.5px;
+  }
+  #scanInput:focus { outline: none; border-color:#3b82f6; }
+  #scanFeedback { margin-top: 10px; font-size: 14px; font-weight: 600; min-height: 20px; }
+  .fb-ok { color: #22c55e; }
+  .fb-warn { color: #f59e0b; }
+  .fb-err { color: #f87171; }
+  .summary { display:flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
+  .card {
+    background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 12px 16px;
+    min-width: 130px;
+  }
+  .card .num { font-size: 22px; font-weight: 700; }
+  .card .lbl { font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: .04em; }
+  .card.red .num { color:#dc2626; }
+  .card.green .num { color:#16a34a; }
+  .card.amber .num { color:#d97706; }
+  section { background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 14px 16px; margin-bottom: 16px; }
+  section h2 { font-size: 14px; margin: 0 0 10px; display:flex; align-items:center; gap:8px; }
+  section h2 .count { background:#f3f4f6; border-radius: 999px; padding: 1px 9px; font-size: 12px; color:#374151; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align:left; color:#6b7280; font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:.03em; padding: 6px 8px; border-bottom: 1px solid #e5e7eb; }
+  td { padding: 7px 8px; border-bottom: 1px solid #f3f4f6; vertical-align: top; }
+  tr.scanned { background: #f0fdf4; }
+  tr.overdue td.age { color:#dc2626; font-weight:600; }
+  .badge { display:inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight:600; }
+  .badge.open { background:#fef3c7; color:#92400e; }
+  .badge.scanned { background:#dcfce7; color:#166534; }
+  .badge.nolabel { background:#fee2e2; color:#991b1b; }
+  .muted { color:#9ca3af; }
+  .tt { font-family: "SF Mono", Menlo, Consolas, monospace; font-size:12.5px; }
+  .add-form { display:flex; gap:8px; margin-top: 10px; flex-wrap:wrap; }
+  .add-form input { flex:1; min-width:160px; padding:7px 10px; border:1px solid #d1d5db; border-radius:6px; font-size:13px; }
+  .add-form button { padding: 7px 14px; border-radius:6px; border:none; background:#111827; color:#fff; font-size:13px; cursor:pointer; }
+  .add-form button:hover { background:#1f2937; }
+  .empty { color:#9ca3af; font-style:italic; padding: 8px 0; }
+  .note { font-size:11px; color:#9ca3af; margin-top:8px; }
+  .del { color:#9ca3af; cursor:pointer; font-size:12px; }
+  .del:hover { color:#dc2626; }
+  #status { font-size:12px; color:#6b7280; margin-bottom:10px; }
+</style>
+</head>
+<body>
+
+<h1>Ampère hand-off — scan controle</h1>
+<div class="sub">Bankhoesdiscounter live via bol.com &middot; Muisstil handmatig (geen API-toegang) &middot; cutoff 16:00 (CEST, aanname zomertijd)</div>
+<div id="status">Laden...</div>
+
+<div class="scan-box">
+  <label>Scan hier (scanner typt automatisch de track &amp; trace + Enter)</label>
+  <input id="scanInput" autocomplete="off" placeholder="Scan track & trace...">
+  <div id="scanFeedback"></div>
+</div>
+
+<div class="summary" id="summary"></div>
+
+<section>
+  <h2>Nog geen label — moet nog geprint worden <span class="count" id="cnt-nolabel">0</span></h2>
+  <div id="tbl-nolabel"></div>
+</section>
+
+<section>
+  <h2>Al verzonden — wachten op scan bevestiging (Bankhoesdiscounter) <span class="count" id="cnt-shipped">0</span></h2>
+  <div id="tbl-shipped"></div>
+</section>
+
+<section>
+  <h2>Muisstil — handmatig <span class="count" id="cnt-muisstil">0</span></h2>
+  <div id="tbl-muisstil"></div>
+  <div class="add-form">
+    <input id="mOrder" placeholder="Ordernummer">
+    <input id="mTrack" placeholder="Track & trace">
+    <button onclick="addMuisstil()">Toevoegen</button>
+  </div>
+  <div class="note">Muisstil-orders komen niet uit een API — voeg ze hier zelf toe zodra je ze weet. Blijft bewaard in deze browser.</div>
+</section>
+
+<section>
+  <h2>Al klaar voor morgen (na 16:00 besteld, wacht nog op label) <span class="count" id="cnt-tomorrow">0</span></h2>
+  <div id="tbl-tomorrow"></div>
+</section>
+
+<section>
+  <h2>Onbekende scans <span class="count" id="cnt-unmatched">0</span></h2>
+  <div id="tbl-unmatched"></div>
+  <div class="note">Codes die gescand zijn maar niet op de lijst staan — check handmatig (kan een Muisstil-order zijn die nog niet is toegevoegd).</div>
+</section>
+
+<script>
+const TOOL_DATA = "mcp__3bd27b79-868e-4c4b-9c30-1811c8456fa7__get_bol_retailer_data";
+const TOOL_RAW = "mcp__3bd27b79-868e-4c4b-9c30-1811c8456fa7__bol_retailer_api_request";
+const AMS_OFFSET = "+02:00"; // CEST. Pas aan naar +01:00 na de wintertijd-overgang.
+
+let openOrders = [];
+let shipments = []; // enriched {orderId, trackAndTrace, transporterCode, items, shipmentDateTime, placedAt}
+let muisstil = JSON.parse(localStorage.getItem('muisstil_v1') || '[]');
+let scannedMap = JSON.parse(localStorage.getItem('scanned_map_v1') || '{}'); // trackAndTrace -> iso timestamp
+let unmatched = [];
+
+function saveMuisstil() { localStorage.setItem('muisstil_v1', JSON.stringify(muisstil)); }
+function saveScanned() { localStorage.setItem('scanned_map_v1', JSON.stringify(scannedMap)); }
+
+async function callTool(name, args) {
+  const r = await window.cowork.callMcpTool(name, args);
+  if (r.isError) throw new Error(JSON.stringify(r.content));
+  return r.structuredContent ?? JSON.parse(r.content[0].text);
+}
+
+function amsToday() {
+  return new Intl.DateTimeFormat('en-CA', {timeZone:'Europe/Amsterdam', year:'numeric', month:'2-digit', day:'2-digit'}).format(new Date());
+}
+function cutoffToday() { return new Date(`${amsToday()}T16:00:00${AMS_OFFSET}`); }
+function cutoffYesterday() { const d = new Date(cutoffToday()); d.setDate(d.getDate()-1); return d; }
+
+function fmtAge(ms) {
+  const h = Math.floor(ms / 3600000);
+  const m = Math.floor((ms % 3600000) / 60000);
+  if (h < 1) return `${m}m`;
+  return `${h}u ${m}m`;
+}
+function fmtTime(iso) {
+  return new Date(iso).toLocaleString('nl-NL', {timeZone:'Europe/Amsterdam', day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'});
+}
+function shortItems(items) {
+  return items.map(i => (i.productTitle || i.ean || '').split('–')[0].trim()).join(', ').slice(0, 90);
+}
+
+async function loadData() {
+  document.getElementById('status').textContent = 'Bezig met laden van bol.com data...';
+  const ordersResp = await callTool(TOOL_DATA, {resource: 'orders', query: 'page=1'});
+  openOrders = (ordersResp.data && ordersResp.data.orders) || [];
+
+  let ship1 = [], ship2 = [];
+  try {
+    const r1 = await callTool(TOOL_DATA, {resource: 'shipments', query: 'page=1'});
+    ship1 = (r1.data && r1.data.shipments) || [];
+  } catch(e) {}
+  try {
+    const r2 = await callTool(TOOL_DATA, {resource: 'shipments', query: 'page=2'});
+    ship2 = (r2.data && r2.data.shipments) || [];
+  } catch(e) {}
+
+  const windowStart = cutoffYesterday();
+  const recent = [...ship1, ...ship2].filter(s => new Date(s.shipmentDateTime) >= windowStart);
+
+  document.getElementById('status').textContent = `Details ophalen voor ${recent.length} verzendingen...`;
+
+  const enriched = [];
+  for (const s of recent) {
+    try {
+      const detail = await callTool(TOOL_RAW, {path: `/shipments/${s.shipmentId}`});
+      const d = detail.data;
+      enriched.push({
+        orderId: d.order.orderId,
+        placedAt: d.order.orderPlacedDateTime,
+        shipmentDateTime: d.shipmentDateTime,
+        trackAndTrace: d.transport && d.transport.trackAndTrace,
+        transporterCode: d.transport && d.transport.transporterCode,
+        items: d.shipmentItems || []
+      });
+    } catch (e) {
+      enriched.push({ orderId: s.order.orderId, placedAt: s.order.orderPlacedDateTime, shipmentDateTime: s.shipmentDateTime, trackAndTrace: null, items: s.shipmentItems || [] });
+    }
+  }
+  enriched.sort((a,b) => new Date(a.placedAt) - new Date(b.placedAt));
+  shipments = enriched;
+  document.getElementById('status').textContent = `Laatste update: ${new Date().toLocaleTimeString('nl-NL', {timeZone:'Europe/Amsterdam'})}`;
+  render();
+}
+
+function render() {
+  const cutoff = cutoffToday();
+  const nolabel = openOrders.filter(o => new Date(o.orderPlacedDateTime) < cutoff)
+    .sort((a,b) => new Date(a.orderPlacedDateTime) - new Date(b.orderPlacedDateTime));
+  const tomorrow = openOrders.filter(o => new Date(o.orderPlacedDateTime) >= cutoff);
+
+  // no-label table
+  const tblNoLabel = document.getElementById('tbl-nolabel');
+  if (nolabel.length === 0) {
+    tblNoLabel.innerHTML = '<div class="empty">Niets — alles heeft al een label.</div>';
+  } else {
+    tblNoLabel.innerHTML = `<table><tr><th>Order</th><th>Geplaatst</th><th>Leeftijd</th><th>Items</th></tr>` +
+      nolabel.map(o => {
+        const age = Date.now() - new Date(o.orderPlacedDateTime).getTime();
+        const overdue = age > 22*3600000;
+        const items = (o.orderItems||[]).map(i => i.ean).join(', ');
+        return `<tr class="${overdue?'overdue':''}"><td>${o.orderId}</td><td>${fmtTime(o.orderPlacedDateTime)}</td><td class="age">${fmtAge(age)}</td><td class="muted">${items}</td></tr>`;
+      }).join('') + `</table>`;
+  }
+  document.getElementById('cnt-nolabel').textContent = nolabel.length;
+
+  // tomorrow table
+  const tblTomorrow = document.getElementById('tbl-tomorrow');
+  if (tomorrow.length === 0) {
+    tblTomorrow.innerHTML = '<div class="empty">Nog niets voor morgen.</div>';
+  } else {
+    tblTomorrow.innerHTML = `<table><tr><th>Order</th><th>Geplaatst</th><th>Items</th></tr>` +
+      tomorrow.map(o => `<tr><td>${o.orderId}</td><td>${fmtTime(o.orderPlacedDateTime)}</td><td class="muted">${(o.orderItems||[]).map(i=>i.ean).join(', ')}</td></tr>`).join('') +
+      `</table>`;
+  }
+  document.getElementById('cnt-tomorrow').textContent = tomorrow.length;
+
+  // shipped table
+  const tblShipped = document.getElementById('tbl-shipped');
+  const sortedShipped = [...shipments].sort((a,b) => {
+    const aS = a.trackAndTrace && scannedMap[a.trackAndTrace] ? 1 : 0;
+    const bS = b.trackAndTrace && scannedMap[b.trackAndTrace] ? 1 : 0;
+    if (aS !== bS) return aS - bS;
+    return new Date(a.placedAt) - new Date(b.placedAt);
+  });
+  if (sortedShipped.length === 0) {
+    tblShipped.innerHTML = '<div class="empty">Nog geen verzendingen in het venster.</div>';
+  } else {
+    tblShipped.innerHTML = `<table><tr><th>Order</th><th>Track &amp; trace</th><th>Verzonden</th><th>Items</th><th>Status</th></tr>` +
+      sortedShipped.map(s => {
+        const scannedAt = s.trackAndTrace ? scannedMap[s.trackAndTrace] : null;
+        return `<tr class="${scannedAt ? 'scanned':''}">
+          <td>${s.orderId}</td>
+          <td class="tt">${s.trackAndTrace || '<span class="muted">onbekend</span>'}</td>
+          <td class="muted">${fmtTime(s.shipmentDateTime)}</td>
+          <td class="muted">${shortItems(s.items)}</td>
+          <td>${scannedAt ? `<span class="badge scanned">Gescand ${fmtTime(scannedAt)}</span>` : '<span class="badge open">Open</span>'}</td>
+        </tr>`;
+      }).join('') + `</table>`;
+  }
+  const shippedOpen = shipments.filter(s => !(s.trackAndTrace && scannedMap[s.trackAndTrace])).length;
+  document.getElementById('cnt-shipped').textContent = `${shipments.length - shippedOpen}/${shipments.length}`;
+
+  // muisstil table
+  const tblM = document.getElementById('tbl-muisstil');
+  if (muisstil.length === 0) {
+    tblM.innerHTML = '<div class="empty">Nog geen Muisstil-orders toegevoegd.</div>';
+  } else {
+    tblM.innerHTML = `<table><tr><th>Order</th><th>Track &amp; trace</th><th>Status</th><th></th></tr>` +
+      muisstil.map((m, idx) => {
+        const scannedAt = scannedMap[m.trackAndTrace];
+        return `<tr class="${scannedAt?'scanned':''}">
+          <td>${m.orderId}</td>
+          <td class="tt">${m.trackAndTrace}</td>
+          <td>${scannedAt ? `<span class="badge scanned">Gescand ${fmtTime(scannedAt)}</span>` : '<span class="badge open">Open</span>'}</td>
+          <td><span class="del" onclick="removeMuisstil(${idx})">verwijder</span></td>
+        </tr>`;
+      }).join('') + `</table>`;
+  }
+  document.getElementById('cnt-muisstil').textContent = muisstil.length;
+
+  // unmatched
+  const tblU = document.getElementById('tbl-unmatched');
+  if (unmatched.length === 0) {
+    tblU.innerHTML = '<div class="empty">Geen onbekende scans.</div>';
+  } else {
+    tblU.innerHTML = `<table><tr><th>Code</th><th>Tijd</th></tr>` +
+      unmatched.slice(0,20).map(u => `<tr><td class="tt">${u.code}</td><td class="muted">${fmtTime(u.time)}</td></tr>`).join('') + `</table>`;
+  }
+  document.getElementById('cnt-unmatched').textContent = unmatched.length;
+
+  // summary
+  const totalNeeded = nolabel.length + shipments.length + muisstil.length;
+  const totalScanned = shipments.filter(s => s.trackAndTrace && scannedMap[s.trackAndTrace]).length + muisstil.filter(m => scannedMap[m.trackAndTrace]).length;
+  const totalOpen = totalNeeded - totalScanned;
+  document.getElementById('summary').innerHTML = `
+    <div class="card"><div class="num">${totalNeeded}</div><div class="lbl">Totaal vandaag</div></div>
+    <div class="card green"><div class="num">${totalScanned}</div><div class="lbl">Gescand</div></div>
+    <div class="card red"><div class="num">${totalOpen}</div><div class="lbl">Nog open</div></div>
+    <div class="card amber"><div class="num">${nolabel.length}</div><div class="lbl">Nog geen label</div></div>
+    <div class="card"><div class="num">${tomorrow.length}</div><div class="lbl">Klaar voor morgen</div></div>
+  `;
+}
+
+function findByTrack(code) {
+  const norm = code.trim().toUpperCase();
+  const s = shipments.find(x => x.trackAndTrace && x.trackAndTrace.toUpperCase() === norm);
+  if (s) return {type:'bhd', orderId: s.orderId, trackAndTrace: s.trackAndTrace};
+  const m = muisstil.find(x => x.trackAndTrace && x.trackAndTrace.toUpperCase() === norm);
+  if (m) return {type:'muisstil', orderId: m.orderId, trackAndTrace: m.trackAndTrace};
+  return null;
+}
+
+function handleScan(rawCode) {
+  const code = rawCode.trim();
+  if (!code) return;
+  const match = findByTrack(code);
+  const fb = document.getElementById('scanFeedback');
+  if (!match) {
+    unmatched.unshift({code, time: new Date().toISOString()});
+    fb.className = 'fb-err';
+    fb.textContent = `Onbekende code: ${code} — niet op de lijst.`;
+  } else if (scannedMap[match.trackAndTrace]) {
+    fb.className = 'fb-warn';
+    fb.textContent = `Al eerder gescand: order ${match.orderId} (${fmtTime(scannedMap[match.trackAndTrace])}).`;
+  } else {
+    scannedMap[match.trackAndTrace] = new Date().toISOString();
+    saveScanned();
+    fb.className = 'fb-ok';
+    fb.textContent = `OK — order ${match.orderId} afgevinkt.`;
+  }
+  render();
+}
+
+function addMuisstil() {
+  const orderId = document.getElementById('mOrder').value.trim();
+  const trackAndTrace = document.getElementById('mTrack').value.trim();
+  if (!orderId || !trackAndTrace) return;
+  muisstil.push({orderId, trackAndTrace});
+  saveMuisstil();
+  document.getElementById('mOrder').value = '';
+  document.getElementById('mTrack').value = '';
+  render();
+}
+function removeMuisstil(idx) {
+  muisstil.splice(idx, 1);
+  saveMuisstil();
+  render();
+}
+
+const scanInput = document.getElementById('scanInput');
+scanInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    handleScan(scanInput.value);
+    scanInput.value = '';
+  }
+});
+scanInput.focus();
+document.body.addEventListener('click', () => scanInput.focus());
+
+loadData().catch(e => {
+  document.getElementById('status').textContent = 'Fout bij laden: ' + e.message;
+  console.error(e);
+});
+</script>
+</body>
+</html>
