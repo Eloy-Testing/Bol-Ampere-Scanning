@@ -47,11 +47,35 @@ test('complete pagination continues until an explicit empty collection', async (
       if (url.endsWith('/token')) return json({ access_token: 'token-value', expires_in: 299 });
       const page = Number(new URL(url).searchParams.get('page'));
       pages.push(page);
-      return json({ orders: page < 3 ? [{ orderId: `ORDER-${page}`, orderPlacedDateTime: '2026-08-05T10:00:00Z' }] : [] });
+      return json(page < 3 ? { orders: [{ orderId: `ORDER-${page}`, orderPlacedDateTime: '2026-08-05T10:00:00Z' }] } : {});
     },
   });
   assert.deepEqual((await client.getAllOrders()).map((order) => order.orderId), ['ORDER-1', 'ORDER-2']);
   assert.deepEqual(pages, [1, 2, 3]);
+});
+
+test('malformed page envelopes and collection values are rejected rather than normalized', async () => {
+  for (const [resource, body] of [
+    ['orders', null],
+    ['orders', []],
+    ['orders', 'not-a-page'],
+    ['orders', { orders: { orderId: 'NOT-A-COLLECTION' } }],
+    ['shipments', 42],
+    ['shipments', { shipments: 'NOT-A-COLLECTION' }],
+  ]) {
+    const client = new BolClient({
+      clientId: 'client-id',
+      clientSecret: 'client-secret',
+      nodeEnv: 'test',
+      tokenUrl: 'https://bol.test/token',
+      apiBaseUrl: 'https://bol.test/retailer',
+      fetchImpl: async (url) => url.endsWith('/token')
+        ? json({ access_token: 'token-value', expires_in: 299 })
+        : json(body),
+    });
+    const action = resource === 'orders' ? () => client.getOrdersPage(1) : () => client.getShipmentsPage(1);
+    await assert.rejects(action, { code: 'verification_unavailable' });
+  }
 });
 
 test('upstream error bodies and credentials are not exposed', async () => {

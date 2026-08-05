@@ -214,9 +214,11 @@ export class BolClient {
   async getOrdersPage(page) {
     if (!Number.isInteger(page) || page < 1 || page > PAGE_LIMIT) throw new ValidationError();
     const payload = await this.#request(`/orders?page=${page}`);
-    if (!Array.isArray(payload?.orders)) throw new UpstreamError();
+    if (!payload || typeof payload !== 'object' || Array.isArray(payload)) throw new UpstreamError();
+    const orders = payload.orders == null ? [] : payload.orders;
+    if (!Array.isArray(orders)) throw new UpstreamError();
     return compact({
-      orders: payload.orders.map((order) => sanitizeOrder(order)),
+      orders: orders.map((order) => sanitizeOrder(order)),
       page,
     });
   }
@@ -224,9 +226,11 @@ export class BolClient {
   async getShipmentsPage(page) {
     if (!Number.isInteger(page) || page < 1 || page > PAGE_LIMIT) throw new ValidationError();
     const payload = await this.#request(`/shipments?page=${page}`);
-    if (!Array.isArray(payload?.shipments)) throw new UpstreamError();
+    if (!payload || typeof payload !== 'object' || Array.isArray(payload)) throw new UpstreamError();
+    const shipments = payload.shipments == null ? [] : payload.shipments;
+    if (!Array.isArray(shipments)) throw new UpstreamError();
     return compact({
-      shipments: payload.shipments.map((shipment) => sanitizeShipment(shipment)),
+      shipments: shipments.map((shipment) => sanitizeShipment(shipment)),
       page,
     });
   }
