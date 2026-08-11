@@ -1,0 +1,143 @@
+{
+  "schema_version": "visual-outcome-review.v1",
+  "task_id": "2026-08-11-secondary-bol-account",
+  "project_root": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker",
+  "surface_profile": "browser_ui",
+  "review_mode": "main_agent_only",
+  "main_agent_id": "codex-main",
+  "frozen_contract": {
+    "path": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/verification/2026-08-11-secondary-bol-account-visual-contract.md",
+    "sha256": "7d541ce5387ef64094e2c46409e9d7cc1926b6194f51fcac89ef4b9ecbaa4654",
+    "quality_bar": "The production scanner remains legible and operable at desktop and mobile widths while a complete authenticated snapshot combines both approved Bol sources without exposing credentials.",
+    "required_invariants": [
+      "credential-hidden access gate",
+      "visible scan decision path",
+      "complete combined snapshot",
+      "contained mobile overflow",
+      "console-clean production state"
+    ],
+    "browser_routes": ["/"],
+    "browser_viewports": ["desktop", "mobile"],
+    "browser_required_states": [
+      "signed_out_gate",
+      "authenticated_combined_snapshot",
+      "manual_combined_source_refresh",
+      "mobile_ready"
+    ],
+    "shot_or_beat_ids": [],
+    "motion_duration_seconds": null,
+    "audio_required": false
+  },
+  "references": [],
+  "artifact": {
+    "kind": "deployed_url",
+    "path": null,
+    "url": "https://bol-ampere-scanning.vercel.app/",
+    "deployment_identity": "dpl_B3Ka3Es6eyo9qbkoy1bEPstJ8SCU",
+    "sha256": null,
+    "created_at": "2026-08-11T10:39:01.695Z"
+  },
+  "evidence": [
+    {
+      "id": "EV-001",
+      "kind": "browser_screenshot",
+      "path": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/verification/screenshot-evidence/secondary-bol-production-desktop.png",
+      "sha256": "89d2c3b4f29f7071b92b0a4e8b077a8060ee49f9f85862fce0b2eac7170a02f2",
+      "artifact_binding": "dpl_B3Ka3Es6eyo9qbkoy1bEPstJ8SCU",
+      "captured_at": "2026-08-11T10:39:56Z",
+      "coverage": {
+        "viewport": "desktop",
+        "route": "/",
+        "full_surface": true,
+        "notes": "Signed-out production gate."
+      }
+    },
+    {
+      "id": "EV-002",
+      "kind": "browser_screenshot",
+      "path": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/verification/screenshot-evidence/secondary-bol-production-mobile.png",
+      "sha256": "357cfe2c2ade09fa103dbebea9d5e9cf62f3313cd5ea1f1bf6b1a115c3833e87",
+      "artifact_binding": "dpl_B3Ka3Es6eyo9qbkoy1bEPstJ8SCU",
+      "captured_at": "2026-08-11T10:40:05Z",
+      "coverage": {
+        "viewport": "mobile",
+        "route": "/",
+        "full_surface": true,
+        "notes": "Signed-out production gate at 390px width."
+      }
+    },
+    {
+      "id": "EV-003",
+      "kind": "browser_screenshot",
+      "path": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/verification/screenshot-evidence/secondary-bol-production-authenticated-desktop.png",
+      "sha256": "8a04f240a0fece64d6d5036d3c269e6d2313cdc4c9e1d8596af992662d875159",
+      "artifact_binding": "dpl_B3Ka3Es6eyo9qbkoy1bEPstJ8SCU",
+      "captured_at": "2026-08-11T10:46:20Z",
+      "coverage": {
+        "viewport": "desktop",
+        "route": "/",
+        "full_surface": true,
+        "notes": "Authenticated complete combined snapshot and ready scan state."
+      }
+    },
+    {
+      "id": "EV-004",
+      "kind": "browser_screenshot",
+      "path": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/verification/screenshot-evidence/secondary-bol-production-authenticated-mobile.png",
+      "sha256": "deff773bd7380656dfe3ea10fb284bc6b1a2984b5bdb652c7be7bb8527e173f8",
+      "artifact_binding": "dpl_B3Ka3Es6eyo9qbkoy1bEPstJ8SCU",
+      "captured_at": "2026-08-11T10:51:57Z",
+      "coverage": {
+        "viewport": "mobile",
+        "route": "/",
+        "full_surface": true,
+        "notes": "Authenticated complete snapshot at 390px width; tables scroll inside their own containers."
+      }
+    },
+    {
+      "id": "EV-005",
+      "kind": "browser_state",
+      "path": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/verification/2026-08-11-secondary-bol-account-browser-state.json",
+      "sha256": "7e5cfe294afa1db85cec090c0b79dfc06dff721cd42ebba8af6e97f2be049534",
+      "artifact_binding": "dpl_B3Ka3Es6eyo9qbkoy1bEPstJ8SCU",
+      "captured_at": "2026-08-11T10:53:12Z",
+      "coverage": {
+        "routes": ["/"],
+        "states_checked": [
+          "signed_out_gate",
+          "authenticated_combined_snapshot",
+          "manual_combined_source_refresh",
+          "mobile_ready"
+        ],
+        "interactions_checked": true,
+        "scroll_complete": true,
+        "overflow_checked": true,
+        "console_checked": true,
+        "notes": "Manual authenticated refresh received successful account-list and source-scoped retailer responses for both configured accounts."
+      }
+    }
+  ],
+  "review_cycles": [
+    {
+      "cycle": 1,
+      "artifact_binding": "dpl_B3Ka3Es6eyo9qbkoy1bEPstJ8SCU",
+      "inspected_at": "2026-08-11T10:53:17Z",
+      "main_agent": {
+        "inspector_id": "codex-main",
+        "inspection_complete": true,
+        "verdict": "PASS",
+        "evidence_ids": ["EV-001", "EV-002", "EV-003", "EV-004", "EV-005"],
+        "summary": "The signed-out gate, desktop complete snapshot, and 390px mobile ready state were inspected on the exact production deployment. The scan input remains first in the decision path, the page has no horizontal overflow, tables keep their own horizontal scrollers, and no console errors were observed. A manual refresh completed successfully with both configured retailer source keys."
+      },
+      "critic": null,
+      "findings": [],
+      "resolved_finding_ids": [],
+      "advisories": [],
+      "verdict": "PASS"
+    }
+  ],
+  "final_verdict": "PASS",
+  "limits": [
+    "The receipt validates binding, coverage, chronology, and recorded defect resolution; it does not prove taste, semantic honesty, or cryptographic reviewer identity."
+  ]
+}

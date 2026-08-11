@@ -1,0 +1,16 @@
+{
+  "artifact_url": "https://bol-ampere-scanning.vercel.app/",
+  "deployment_identity": "dpl_B3Ka3Es6eyo9qbkoy1bEPstJ8SCU",
+  "routes": ["/"],
+  "states_checked": [
+    "signed_out_gate",
+    "authenticated_combined_snapshot",
+    "manual_combined_source_refresh",
+    "mobile_ready"
+  ],
+  "interactions_checked": true,
+  "scroll_complete": true,
+  "overflow_checked": true,
+  "console_checked": true,
+  "notes": "Authenticated refresh returned HTTP 200 for the account list, primary and secondary orders, shipments, and shipment details. The source keys and credentials stayed server-only. Desktop and mobile ready states were visually inspected; mobile page width matched its viewport and table overflow remained contained."
+}
