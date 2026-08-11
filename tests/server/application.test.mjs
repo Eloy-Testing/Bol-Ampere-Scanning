@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { createApplication, createWebRoute } from '../../server/application.mjs';
 import { DatabaseError } from '../../server/errors.mjs';
-import { hashPassword, signSessionToken } from '../../server/security.mjs';
+import { hashPassword, signSessionToken, tokenHash } from '../../server/security.mjs';
 import { databaseFixture, invoke, mutationHeaders } from './helpers.mjs';
 
 async function configFixture() {
@@ -70,7 +70,7 @@ test('actual handlers sign in, hydrate, read bol, verify a scan, persist it, and
 
   const retailer = await invoke(app.retailer, {
     method: 'GET',
-    url: '/api/retailer?resource=orders&page=1',
+    url: '/api/retailer?resource=orders&account=primary&page=1',
     headers: { cookie },
   });
   assert.equal(retailer.statusCode, 200);
@@ -79,24 +79,35 @@ test('actual handlers sign in, hydrate, read bol, verify a scan, persist it, and
   const accepted = await invoke(app.scan, {
     method: 'POST',
     url: '/api/scan',
-    body: { trackingCode: 'track-1', shipmentId: 'SHIPMENT-1' },
+    body: { trackingCode: 'track-1', shipmentId: 'SHIPMENT-1', account: 'primary' },
     headers: mutationHeaders(cookie),
   });
   assert.equal(accepted.statusCode, 200);
   assert.equal(accepted.body.outcome, 'success');
   assert.equal(accepted.body.counted, true);
+  assert.equal(accepted.body.record.sourceAccount, 'primary');
 
   const duplicate = await invoke(app.scan, {
     method: 'POST',
     url: '/api/scan',
-    body: { trackingCode: 'TRACK-1', shipmentId: 'SHIPMENT-1' },
+    body: { trackingCode: 'TRACK-1', shipmentId: 'SHIPMENT-1', account: 'primary' },
     headers: mutationHeaders(cookie),
   });
   assert.equal(duplicate.body.outcome, 'duplicate');
   assert.equal(duplicate.body.counted, false);
 
+  const unknown = await invoke(app.scan, {
+    method: 'POST',
+    url: '/api/scan',
+    body: { trackingCode: 'UNKNOWN' },
+    headers: mutationHeaders(cookie),
+  });
+  assert.equal(unknown.statusCode, 200);
+  assert.equal(unknown.body.outcome, 'unknown');
+  assert.equal(unknown.body.record.sourceAccount, null);
+
   const hydrated = await invoke(app.state, { method: 'GET', url: '/api/state', headers: { cookie } });
-  assert.equal(hydrated.body.records.length, 1);
+  assert.equal(hydrated.body.records.length, 2);
   assert.ok(hydrated.body.scanned['TRACK-1']);
 
   const logout = await invoke(app.session, {
@@ -197,13 +208,69 @@ test('route allowlists reject unknown query parameters and methods', async () =>
   const cookie = `ampere_session=${signSessionToken(token, config.sessionSecret)}`;
   const invalid = await invoke(app.retailer, {
     method: 'GET',
-    url: '/api/retailer?resource=orders&page=1&path=/orders',
+    url: '/api/retailer?resource=orders&account=primary&page=1&path=/orders',
     headers: { cookie },
   });
   assert.equal(invalid.statusCode, 400);
   const method = await invoke(app.retailer, { method: 'POST', headers: { cookie } });
   assert.equal(method.statusCode, 405);
   assert.equal(method.headers.allow, 'GET');
+});
+
+test('retailer and scan routes keep the configured source key through secondary verification', async (t) => {
+  const { repository } = await databaseFixture(t);
+  const calls = [];
+  const primary = bolFixture();
+  const secondary = {
+    ...bolFixture(),
+    getOrdersPage: async () => ({ orders: [{ orderId: 'SECONDARY-ORDER' }], page: 1 }),
+    getShipment: async (shipmentId) => {
+      calls.push(['shipment', shipmentId]);
+      return {
+        shipmentId,
+        shipmentDateTime: '2026-08-05T09:00:00Z',
+        order: { orderId: 'SECONDARY-ORDER' },
+        transport: { trackAndTrace: 'SECONDARY-TRACK' },
+        shipmentItems: [{ orderItemId: 'SECONDARY-ITEM' }],
+      };
+    },
+    getOrder: async (orderId) => {
+      calls.push(['order', orderId]);
+      return { orderId, orderItems: [{ orderItemId: 'SECONDARY-ITEM', cancellationRequest: false, quantityCancelled: 0 }] };
+    },
+  };
+  const bolClient = {
+    accountKeys: () => ['primary', 'secondary'],
+    get: (account) => {
+      if (account === 'primary') return primary;
+      if (account === 'secondary') return secondary;
+      throw new Error('unknown source');
+    },
+  };
+  const config = await configFixture();
+  const app = createApplication({ config, repository, bolClient, now: () => new Date('2026-08-05T10:00:00.000Z') });
+  const token = 'a'.repeat(43);
+  await repository.createSession({
+    tokenHash: tokenHash(token),
+    stationId: 'PACK-01',
+    operatorLabel: 'Alex',
+    principalId: 'operator-1',
+    sourceKey: 'source',
+    requestId: 'seed-session',
+    now: new Date('2026-08-05T10:00:00.000Z'),
+    expiresAt: new Date('2026-08-05T11:00:00.000Z'),
+  });
+  const cookie = `ampere_session=${signSessionToken(token, config.sessionSecret)}`;
+  const accounts = await invoke(app.retailer, { method: 'GET', url: '/api/retailer?resource=accounts', headers: { cookie } });
+  assert.deepEqual(accounts.body, { accounts: ['primary', 'secondary'] });
+  const accepted = await invoke(app.scan, {
+    method: 'POST',
+    body: { trackingCode: 'SECONDARY-TRACK', shipmentId: 'SECONDARY-SHIPMENT', account: 'secondary' },
+    headers: mutationHeaders(cookie),
+  });
+  assert.equal(accepted.body.outcome, 'success');
+  assert.equal(accepted.body.record.sourceAccount, 'secondary');
+  assert.deepEqual(calls, [['shipment', 'SECONDARY-SHIPMENT'], ['order', 'SECONDARY-ORDER']]);
 });
 
 test('Web Standard adapter preserves status, JSON, and repeated cookies', async () => {

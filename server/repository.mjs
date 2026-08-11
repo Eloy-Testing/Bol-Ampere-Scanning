@@ -14,6 +14,7 @@ function stateRecord(row) {
     trackingCode: String(row.tracking_code),
     shipmentId: nullable(row.shipment_id),
     orderId: nullable(row.order_id),
+    sourceAccount: nullable(row.source_account),
     outcome: String(row.outcome),
     reason: String(row.reason),
     firstSeenAt: String(row.first_seen_at),
@@ -217,7 +218,7 @@ export class ScannerRepository {
 
   async getWorkdayState(workday) {
     const result = await this.#execute({
-      sql: `SELECT workday, tracking_code, shipment_id, order_id, outcome, reason,
+      sql: `SELECT workday, tracking_code, shipment_id, order_id, source_account, outcome, reason,
                    first_seen_at, accepted_at, cancelled_at, updated_at
             FROM ampere_package_state
             WHERE workday = ?
@@ -232,6 +233,7 @@ export class ScannerRepository {
     trackingCode,
     shipmentId,
     orderId,
+    sourceAccount,
     outcome,
     reason,
     stationId,
@@ -245,12 +247,13 @@ export class ScannerRepository {
     const cancelledAt = outcome === 'cancelled' ? timestamp : null;
     const upsert = {
       sql: `INSERT INTO ampere_package_state
-              (workday, tracking_code, shipment_id, order_id, outcome, reason, first_seen_at,
+              (workday, tracking_code, shipment_id, order_id, source_account, outcome, reason, first_seen_at,
                accepted_at, cancelled_at, updated_at, station_id, principal_id, session_token_hash, request_id)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(workday, tracking_code) DO UPDATE SET
               shipment_id = COALESCE(excluded.shipment_id, ampere_package_state.shipment_id),
               order_id = COALESCE(excluded.order_id, ampere_package_state.order_id),
+              source_account = COALESCE(excluded.source_account, ampere_package_state.source_account),
               outcome = excluded.outcome,
               reason = excluded.reason,
               accepted_at = CASE
@@ -271,29 +274,29 @@ export class ScannerRepository {
               OR (excluded.outcome = 'accepted' AND ampere_package_state.outcome IN ('unknown', 'unverified'))
               OR (excluded.outcome IN ('unknown', 'unverified') AND ampere_package_state.outcome IN ('unknown', 'unverified'))`,
       args: [
-        workday, trackingCode, nullable(shipmentId), nullable(orderId), outcome, reason, timestamp,
+        workday, trackingCode, nullable(shipmentId), nullable(orderId), nullable(sourceAccount), outcome, reason, timestamp,
         acceptedAt, cancelledAt, timestamp, stationId, principalId, sessionTokenHash, requestId,
       ],
     };
     const event = {
       sql: `INSERT INTO ampere_scan_events
-              (workday, tracking_code, shipment_id, order_id, attempted_outcome, reason,
+              (workday, tracking_code, shipment_id, order_id, source_account, attempted_outcome, reason,
                effective_outcome, station_id, principal_id, session_token_hash, request_id, occurred_at)
-            SELECT ?, ?, ?, ?, ?, ?, outcome, ?, ?, ?, ?, ?
+            SELECT ?, ?, ?, ?, ?, ?, ?, outcome, ?, ?, ?, ?, ?
             FROM ampere_package_state WHERE workday = ? AND tracking_code = ?`,
       args: [
-        workday, trackingCode, nullable(shipmentId), nullable(orderId), outcome, reason,
+        workday, trackingCode, nullable(shipmentId), nullable(orderId), nullable(sourceAccount), outcome, reason,
         stationId, principalId, sessionTokenHash, requestId, timestamp, workday, trackingCode,
       ],
     };
     const state = {
-      sql: `SELECT workday, tracking_code, shipment_id, order_id, outcome, reason,
+      sql: `SELECT workday, tracking_code, shipment_id, order_id, source_account, outcome, reason,
                    first_seen_at, accepted_at, cancelled_at, updated_at
             FROM ampere_package_state WHERE workday = ? AND tracking_code = ? LIMIT 1`,
       args: [workday, trackingCode],
     };
     const workdayState = {
-      sql: `SELECT workday, tracking_code, shipment_id, order_id, outcome, reason,
+      sql: `SELECT workday, tracking_code, shipment_id, order_id, source_account, outcome, reason,
                    first_seen_at, accepted_at, cancelled_at, updated_at
             FROM ampere_package_state
             WHERE workday = ?

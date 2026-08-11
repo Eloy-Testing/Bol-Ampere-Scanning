@@ -1,24 +1,42 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { readFile } from 'node:fs/promises';
-import { applyMigration, assertAmpereOnly } from '../../scripts/migrate.mjs';
+import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
+import { applyMigration, applyMigrations, assertAmpereOnly, loadMigrations } from '../../scripts/migrate.mjs';
 import { createDatabaseClient } from '../../server/database.mjs';
 import { ScannerRepository } from '../../server/repository.mjs';
 import { databaseFixture, sessionFixture } from './helpers.mjs';
 
 test('migration is idempotent and creates only ampere application objects', async (t) => {
   const { client } = await databaseFixture(t);
-  const source = await readFile(new URL('../../migrations/001_ampere_scanner.sql', import.meta.url), 'utf8');
-  await applyMigration({ client, source });
+  await applyMigrations({ client, migrations: await loadMigrations() });
   const result = await client.execute("SELECT name FROM sqlite_master WHERE name NOT LIKE 'sqlite_%' ORDER BY name");
   assert.ok(result.rows.length >= 10);
   assert.ok(result.rows.every((row) => String(row.name).startsWith('ampere_')));
+  const columns = await client.execute('PRAGMA table_info(ampere_package_state)');
+  assert.ok(columns.rows.some((row) => row.name === 'source_account'));
+});
+
+test('numbered migration upgrades a pre-002 ampere schema exactly once', async (t) => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), 'ampere-pre-002-test-'));
+  const client = createDatabaseClient({ url: `file:${path.join(directory, 'scanner.db')}` });
+  t.after(async () => {
+    client.close();
+    await rm(directory, { recursive: true, force: true });
+  });
+  const source = await readFile(new URL('../../migrations/001_ampere_scanner.sql', import.meta.url), 'utf8');
+  await applyMigration({ client, source });
+  await applyMigrations({ client, migrations: await loadMigrations() });
+  const ledger = await client.execute('SELECT migration_id FROM ampere_schema_migrations ORDER BY migration_id');
+  assert.deepEqual(ledger.rows.map((row) => row.migration_id), ['001_ampere_scanner.sql', '002_ampere_source_account.sql']);
 });
 
 test('migration guard rejects non-ampere index targets and DML', () => {
   assert.throws(() => assertAmpereOnly([{ sql: 'CREATE INDEX IF NOT EXISTS ampere_bad_idx ON bankhoes_orders(id)' }]));
   assert.throws(() => assertAmpereOnly([{ sql: 'DELETE FROM ampere_sessions' }]));
   assert.throws(() => assertAmpereOnly([{ sql: 'CREATE TABLE IF NOT EXISTS ampere_copy AS SELECT * FROM bankhoes_orders' }]));
+  assert.throws(() => assertAmpereOnly([{ sql: 'ALTER TABLE bankhoes_orders ADD COLUMN source_account TEXT' }]));
   for (const target of ['"bankhoes_orders"', '`bankhoes_orders`', '[bankhoes_orders]']) {
     assert.throws(() => assertAmpereOnly([{ sql: `CREATE TABLE IF NOT EXISTS ampere_fk (id INTEGER REFERENCES ${target}(id))` }]));
   }
@@ -88,6 +106,7 @@ test('atomic state counts an accepted package once and cancellation cannot be do
     trackingCode: 'TRACK-1',
     shipmentId: 'SHIPMENT-1',
     orderId: 'ORDER-1',
+    sourceAccount: 'primary',
     outcome: 'accepted',
     reason: 'verified_live',
     stationId: 'PACK-01',
@@ -117,7 +136,8 @@ test('atomic state counts an accepted package once and cancellation cannot be do
   });
   assert.equal(uncertain.changed, false);
   assert.equal(uncertain.record.outcome, 'cancelled');
-  const events = await client.execute('SELECT attempted_outcome, effective_outcome FROM ampere_scan_events ORDER BY event_id');
+  assert.equal(uncertain.record.sourceAccount, 'primary');
+  const events = await client.execute('SELECT source_account, attempted_outcome, effective_outcome FROM ampere_scan_events ORDER BY event_id');
   assert.equal(events.rows.length, 4);
-  assert.deepEqual(events.rows.at(-1), { attempted_outcome: 'unverified', effective_outcome: 'cancelled' });
+  assert.deepEqual(events.rows.at(-1), { source_account: 'primary', attempted_outcome: 'unverified', effective_outcome: 'cancelled' });
 });

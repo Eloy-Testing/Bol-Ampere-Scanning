@@ -10,6 +10,10 @@ impossiblePlacedAtParcel.detail.order.orderPlacedDateTime = '2026-02-30T10:00:00
 const impossibleShipmentListParcel = parcel({ n: 91, shippedAt: '2026-08-05T09:00:00Z' });
 impossibleShipmentListParcel.summary.shipmentDateTime = '2026-02-30T10:00:00Z';
 
+function dualAccountSnapshot(primary, secondary) {
+  return { accounts: { primary, secondary } };
+}
+
 for (const failure of [
   { name: 'orders list', scenario: healthyScenario({ failures: [{ kind: 'orders', page: 1 }] }) },
   { name: 'shipments list', scenario: healthyScenario({ failures: [{ kind: 'shipments', page: 1 }] }) },
@@ -44,6 +48,47 @@ test.describe('pending initial snapshot', () => {
     await expect(input).toBeDisabled();
     await expect(page.locator(selectors.dataStatus)).toHaveAttribute('data-state', 'loading');
     await waitForReady(page);
+  });
+});
+
+test.describe('dual Bol account snapshot', () => {
+  const primary = snapshot({ parcels: [parcel({ n: 1, track: 'PRIMARY-TRACK' })] });
+  const secondary = snapshot({ parcels: [parcel({ n: 2, track: 'SECONDARY-TRACK' })] });
+  test.use({ scenario: healthyScenario({ snapshots: [dualAccountSnapshot(primary, secondary)] }) });
+
+  test('loads both configured accounts and sends the source key with a secondary scan', async ({ page }) => {
+    await waitForReady(page);
+    await expect(page.locator(selectors.shipmentList)).toContainText('PRIMARY-TRACK');
+    await expect(page.locator(selectors.shipmentList)).toContainText('SECONDARY-TRACK');
+    await page.locator(selectors.scanInput).fill('SECONDARY-TRACK');
+    await page.locator(selectors.scanInput).press('Enter');
+    await expect.poll(() => page.evaluate(() => window.__apiMock.callsOf('scan').at(-1)?.body?.account)).toBe('secondary');
+  });
+
+});
+
+test.describe('secondary account incompleteness', () => {
+  const primary = snapshot({ parcels: [parcel({ n: 1, track: 'PRIMARY-TRACK' })] });
+  const secondary = snapshot({ parcels: [parcel({ n: 2, track: 'SECONDARY-TRACK' })] });
+  test.use({ scenario: healthyScenario({
+    snapshots: [dualAccountSnapshot(primary, secondary)],
+    failures: [{ kind: 'orders', account: 'secondary', page: 1 }],
+  }) });
+
+  test('fails closed before scanning when the secondary account is incomplete', async ({ page }) => {
+    await expect(page.locator(selectors.scanInput)).toBeDisabled();
+    await expect(page.locator(selectors.dataStatus)).toHaveAttribute('data-state', 'error');
+  });
+});
+
+test.describe('cross-account tracking collision', () => {
+  const primary = snapshot({ parcels: [parcel({ n: 1, track: 'DUPLICATE-TRACK' })] });
+  const secondary = snapshot({ parcels: [parcel({ n: 2, track: 'DUPLICATE-TRACK' })] });
+  test.use({ scenario: healthyScenario({ snapshots: [dualAccountSnapshot(primary, secondary)] }) });
+
+  test('fails closed when the same tracking code appears across accounts', async ({ page }) => {
+    await expect(page.locator(selectors.scanInput)).toBeDisabled();
+    await expect(page.locator(selectors.dataStatus)).toHaveAttribute('data-state', 'error');
   });
 });
 

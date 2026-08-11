@@ -12,6 +12,7 @@ function serviceFixture({ shipmentItems, orderItems }) {
         trackingCode: decision.trackingCode,
         shipmentId: decision.shipmentId,
         orderId: decision.orderId,
+        sourceAccount: decision.sourceAccount,
         outcome: decision.outcome,
         reason: decision.reason,
         updatedAt: decision.now.toISOString(),
@@ -37,16 +38,17 @@ function serviceFixture({ shipmentItems, orderItems }) {
 const session = { stationId: 'PACK-01', principalId: 'operator-1', tokenHash: 'token-hash' };
 
 test('cancellation is scoped to shipment items, not unrelated order items', async () => {
-  const { service } = serviceFixture({
+  const { service, decisions } = serviceFixture({
     shipmentItems: [{ orderItemId: 'ITEM-1' }],
     orderItems: [
       { orderItemId: 'ITEM-1', cancellationRequest: false, quantityCancelled: 0 },
       { orderItemId: 'UNRELATED', cancellationRequest: true, quantityCancelled: 1 },
     ],
   });
-  const result = await service.decide({ trackingCode: 'TRACK-1', shipmentId: 'SHIPMENT-1', session, requestId: 'request-1' });
+  const result = await service.decide({ trackingCode: 'TRACK-1', shipmentId: 'SHIPMENT-1', account: 'primary', session, requestId: 'request-1' });
   assert.equal(result.outcome, 'success');
   assert.equal(result.counted, true);
+  assert.equal(decisions[0].sourceAccount, 'primary');
 });
 
 test('malformed live identifiers persist an unverified decision', async () => {
@@ -54,8 +56,9 @@ test('malformed live identifiers persist an unverified decision', async () => {
     shipmentItems: [{ orderItemId: '' }],
     orderItems: [{ orderItemId: 'ITEM-1', cancellationRequest: false, quantityCancelled: 0 }],
   });
-  const result = await service.decide({ trackingCode: 'TRACK-1', shipmentId: 'SHIPMENT-1', session, requestId: 'request-2' });
+  const result = await service.decide({ trackingCode: 'TRACK-1', shipmentId: 'SHIPMENT-1', account: 'secondary', session, requestId: 'request-2' });
   assert.equal(result.outcome, 'unverified');
   assert.equal(result.counted, false);
   assert.equal(decisions[0].outcome, 'unverified');
+  assert.equal(decisions[0].sourceAccount, null);
 });

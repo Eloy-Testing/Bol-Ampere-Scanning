@@ -32,9 +32,19 @@ function pageSlice(records, page, pageSize) {
   return records.slice((page - 1) * pageSize, page * pageSize);
 }
 
+function configuredAccounts(snapshot) {
+  return snapshot?.accounts && typeof snapshot.accounts === 'object' ? Object.keys(snapshot.accounts) : ['primary'];
+}
+
+function accountSnapshot(snapshot, account) {
+  if (!snapshot?.accounts) return account === 'primary' ? snapshot : null;
+  return snapshot.accounts[account] || null;
+}
+
 function failureMatches(rule, call, priorCalls) {
   if (rule.kind !== call.kind) return false;
   if (rule.identifier && rule.identifier !== call.identifier) return false;
+  if (rule.account && rule.account !== call.account) return false;
   if (rule.page && rule.page !== call.page) return false;
   if (rule.trackingCode && rule.trackingCode !== call.trackingCode) return false;
   return rule.fromCall == null || priorCalls.filter((entry) => entry.kind === call.kind).length >= rule.fromCall;
@@ -104,7 +114,10 @@ export const test = base.extend({
           if (!state.recordsByWorkday.has(state.workday)) state.recordsByWorkday.set(state.workday, []);
         } else if (command.action === 'setVerifierFailure') {
           const active = state.scenario.snapshots[state.activeSnapshot] || state.scenario.snapshots[0];
-          if (active.verifiers?.[command.payload]) active.verifiers[command.payload].fail = true;
+          for (const account of configuredAccounts(active)) {
+            const source = accountSnapshot(active, account);
+            if (source?.verifiers?.[command.payload]) source.verifiers[command.payload].fail = true;
+          }
         }
         await jsonResponse(route, { ok: true });
         return;
@@ -118,6 +131,7 @@ export const test = base.extend({
       const method = request.method();
       const resource = url.searchParams.get('resource');
       const identifier = url.searchParams.get('id');
+      const account = url.searchParams.get('account');
       const pageNumber = Number(url.searchParams.get('page') || 1);
       let body = null;
       try { body = request.postDataJSON(); } catch (_) {}
@@ -129,6 +143,7 @@ export const test = base.extend({
         kind,
         method,
         identifier,
+        account: account || body?.account || null,
         page: pageNumber,
         trackingCode: body?.trackingCode,
         body,
@@ -195,7 +210,18 @@ export const test = base.extend({
         return;
       }
 
-      const active = state.scenario.snapshots[state.activeSnapshot] || state.scenario.snapshots[0];
+      const activeRoot = state.scenario.snapshots[state.activeSnapshot] || state.scenario.snapshots[0];
+      if (url.pathname === '/api/retailer' && resource === 'accounts') {
+        call.finishedAt = Date.now();
+        await jsonResponse(route, { accounts: configuredAccounts(activeRoot) });
+        return;
+      }
+      const active = accountSnapshot(activeRoot, account || body?.account || 'primary');
+      if (!active) {
+        call.finishedAt = Date.now();
+        await jsonResponse(route, { error: { code: 'not_found' } }, 404);
+        return;
+      }
       if (url.pathname === '/api/retailer' && resource === 'orders') {
         const records = pageSlice(active.orders || [], pageNumber, active.pageSize || 50);
         call.finishedAt = Date.now();
@@ -248,6 +274,7 @@ export const test = base.extend({
           trackingCode,
           shipmentId: detail?.shipmentId || '',
           orderId: detail?.order?.orderId || '',
+          sourceAccount: detail ? body?.account || null : null,
           outcome: canonicalOutcome,
           recordedAt: new Date().toISOString(),
         };

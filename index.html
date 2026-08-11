@@ -484,12 +484,20 @@
 
     function unwrapPayload(payload) { return payload && payload.data && typeof payload.data === 'object' ? payload.data : payload; }
 
-    async function pagedResource(resource) {
+    async function configuredAccounts() {
+      const data = unwrapPayload(await requestJson('/api/retailer?resource=accounts'));
+      const accounts = Array.isArray(data && data.accounts) ? data.accounts.map(account => plainText(account)) : null;
+      if (!accounts || accounts.length === 0 || accounts.some(account => !['primary', 'secondary'].includes(account))
+        || new Set(accounts).size !== accounts.length || accounts[0] !== 'primary') throw new Error('Configured retailer accounts were incomplete');
+      return accounts;
+    }
+
+    async function pagedResource(resource, account) {
       const all = [];
       for (let page = 1; page <= MAX_PAGES; page += 1) {
         app.progress = resource === 'orders' ? tx().loadingOrders(page) : tx().loadingShipments(page);
         renderHealth();
-        const payload = await requestJson(`/api/retailer?resource=${resource}&page=${page}`);
+        const payload = await requestJson(`/api/retailer?resource=${resource}&account=${encodeURIComponent(account)}&page=${page}`);
         const data = unwrapPayload(payload);
         const rows = Array.isArray(data[resource]) ? data[resource] : null;
         if (!rows) throw new Error(`${resource} page ${page} was incomplete`);
@@ -499,7 +507,7 @@
       throw new Error(`${resource} pagination exceeded safety limit`);
     }
 
-    async function pagedShipmentsSince(cutoffIso) {
+    async function pagedShipmentsSince(cutoffIso, account) {
       if (!validIso(cutoffIso)) throw new Error('Shipment cutoff was invalid');
       const cutoff = new Date(cutoffIso);
       const recent = [];
@@ -507,7 +515,7 @@
       for (let page = 1; page <= MAX_PAGES; page += 1) {
         app.progress = tx().loadingShipments(page);
         renderHealth();
-        const payload = await requestJson(`/api/retailer?resource=shipments&page=${page}`);
+        const payload = await requestJson(`/api/retailer?resource=shipments&account=${encodeURIComponent(account)}&page=${page}`);
         const data = unwrapPayload(payload);
         const rows = Array.isArray(data.shipments) ? data.shipments : null;
         if (!rows) throw new Error(`shipments page ${page} was incomplete`);
@@ -548,21 +556,29 @@
     async function buildSnapshot() {
       const loadedAt = now();
       const window = amsterdamWindow(loadedAt);
-      const orders = await pagedResource('orders');
-      const detailedOrders = orders.map(order => {
+      const accounts = await configuredAccounts();
+      const ordersByAccount = await mapConcurrent(accounts, 2, async account => ({
+        account,
+        orders: await pagedResource('orders', account)
+      }));
+      const detailedOrders = ordersByAccount.flatMap(({ account, orders }) => orders.map(order => {
         const orderId = plainText(order.orderId);
         if (!orderId) throw new Error('Open order without orderId');
         if (!validIso(order.orderPlacedDateTime)) throw new Error(`Order ${orderId} timestamp was incomplete`);
         if (!Array.isArray(order.orderItems) || order.orderItems.length === 0) throw new Error(`Order ${orderId} summary was incomplete`);
-        return { ...order, orderId, orderItems: order.orderItems };
-      });
+        return { ...order, account, orderId, orderItems: order.orderItems };
+      }));
 
-      const recent = await pagedShipmentsSince(window.previousCutoffIso);
+      const recentByAccount = await mapConcurrent(accounts, 2, async account => ({
+        account,
+        shipments: await pagedShipmentsSince(window.previousCutoffIso, account)
+      }));
+      const recent = recentByAccount.flatMap(({ account, shipments }) => shipments.map(shipment => ({ account, shipment })));
       let completedDetails = 0;
-      const shipments = await mapConcurrent(recent, 4, async listed => {
+      const shipments = await mapConcurrent(recent, 4, async ({ account, shipment: listed }) => {
         const shipmentId = plainText(listed.shipmentId);
         if (!shipmentId) throw new Error('Shipment without shipmentId');
-        const data = unwrapPayload(await requestJson(`/api/retailer?resource=shipment&id=${encodeURIComponent(shipmentId)}`));
+        const data = unwrapPayload(await requestJson(`/api/retailer?resource=shipment&account=${encodeURIComponent(account)}&id=${encodeURIComponent(shipmentId)}`));
         const detailShipmentId = plainText(data && data.shipmentId);
         const listedOrderId = plainText(listed.order && listed.order.orderId);
         const orderId = plainText(data && data.order && data.order.orderId);
@@ -578,7 +594,7 @@
         app.progress = tx().loadingDetails(completedDetails, recent.length);
         renderHealth();
         return {
-          shipmentId, orderId,
+          account, shipmentId, orderId,
           placedAt,
           shipmentDateTime: data.shipmentDateTime,
           trackAndTrace: canonicalCode(data.transport && data.transport.trackAndTrace),
@@ -587,13 +603,14 @@
         };
       });
       shipments.sort((a, b) => new Date(a.placedAt || a.shipmentDateTime) - new Date(b.placedAt || b.shipmentDateTime)
-        || a.shipmentId.localeCompare(b.shipmentId));
+        || a.shipmentId.localeCompare(b.shipmentId)
+        || a.account.localeCompare(b.account));
       const trackIndex = new Map();
       for (const shipment of shipments) if (shipment.trackAndTrace) {
         if (trackIndex.has(shipment.trackAndTrace)) throw new Error(`Duplicate tracking code ${shipment.trackAndTrace}`);
         trackIndex.set(shipment.trackAndTrace, shipment);
       }
-      return { loadedAt: loadedAt.toISOString(), orders: detailedOrders, shipments, trackIndex };
+      return { loadedAt: loadedAt.toISOString(), accounts, orders: detailedOrders, shipments, trackIndex };
     }
 
     function snapshotFresh() { return app.snapshot && now().getTime() - new Date(app.snapshot.loadedAt).getTime() <= MAX_SNAPSHOT_AGE_MS; }
@@ -713,7 +730,10 @@
       app.maxActiveVerifiers = Math.max(app.maxActiveVerifiers, app.activeVerifiers);
       try {
         const body = { trackingCode: code };
-        if (shipment) body.shipmentId = shipment.shipmentId;
+        if (shipment) {
+          body.shipmentId = shipment.shipmentId;
+          body.account = shipment.account;
+        }
         else if (verificationIncomplete) body.verificationIncomplete = true;
         const response = await requestJson('/api/scan', { method: 'POST', body });
         const outcome = plainText(response.outcome).toLowerCase();

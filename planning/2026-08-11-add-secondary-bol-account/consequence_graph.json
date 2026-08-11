@@ -1,0 +1,49 @@
+{
+  "generated": "2026-08-11",
+  "target_surface": "BHP Warehouse Packing Tracker secondary Bol account support",
+  "problem": "The runtime accepts only one Bol OAuth pair, while the requested scanner behavior must retain that account and include one additional client account.",
+  "source_artifacts": [
+    "AGENTS.md",
+    "server/config.mjs",
+    "server/bol-client.mjs",
+    "server/application.mjs",
+    "server/scan-service.mjs",
+    "server/repository.mjs",
+    "migrations/001_ampere_scanner.sql",
+    "index.html"
+  ],
+  "nodes": [
+    { "id": "request", "type": "intent", "label": "retain existing Bol coverage and add client account", "evidence": "User request" },
+    { "id": "config", "type": "file", "label": "server/config.mjs", "evidence": "Current config requires one BOL_CLIENT_ID/BOL_CLIENT_SECRET pair" },
+    { "id": "api", "type": "route", "label": "same-origin retailer and scan routes", "evidence": "server/application.mjs routes all reads and scans through one bolClient" },
+    { "id": "snapshot", "type": "file", "label": "browser complete snapshot", "evidence": "index.html fetches unqualified orders/shipments/details before enabling scan" },
+    { "id": "scan", "type": "file", "label": "live scan verification", "evidence": "server/scan-service.mjs reads shipment then order from one client" },
+    { "id": "state", "type": "schema", "label": "ampere package and event provenance", "evidence": "migration has tracking/order/shipment fields but no account key" },
+    { "id": "migrator", "type": "runtime", "label": "numbered ampere migration runner", "evidence": "scripts/migrate.mjs currently reads only 001 and guards only CREATE statements" },
+    { "id": "release", "type": "runtime", "label": "approved Vercel project", "evidence": "Vercel project prj_dI9qXMRXVKDUekYqcZEVCmjry1fS was confirmed" },
+    { "id": "proof", "type": "verification", "label": "dual-account release proof", "evidence": "Project finish line requires tests plus desktop/mobile inspection" }
+  ],
+  "edges": [
+    { "from": "request", "to": "config", "relation": "depends_on", "order": 1, "confidence": "high", "delay": "runtime", "risk": "high", "evidence": "A second account cannot authenticate without configuration" },
+    { "from": "config", "to": "api", "relation": "updates", "order": 1, "confidence": "high", "delay": "runtime", "risk": "high", "evidence": "API constructs the configured Bol client" },
+    { "from": "api", "to": "snapshot", "relation": "calls", "order": 1, "confidence": "high", "delay": "runtime", "risk": "high", "evidence": "Browser reads /api/retailer before it permits scanning" },
+    { "from": "snapshot", "to": "scan", "relation": "feeds_back_into", "order": 2, "confidence": "high", "delay": "runtime", "risk": "high", "evidence": "Browser sends snapshot shipment identity to /api/scan" },
+    { "from": "scan", "to": "state", "relation": "updates", "order": 2, "confidence": "high", "delay": "runtime", "risk": "medium", "evidence": "Scan service persists decision data through repository" },
+    { "from": "migrator", "to": "state", "relation": "updates", "order": 2, "confidence": "high", "delay": "deploy", "risk": "high", "evidence": "Existing deployed tables need an additive migration rather than a changed CREATE TABLE" },
+    { "from": "release", "to": "proof", "relation": "verifies", "order": 3, "confidence": "high", "delay": "deploy", "risk": "high", "evidence": "Credential availability and user-facing result require the exact released artifact" }
+  ],
+  "order_1": ["secondary credentials must be validated and selected server-side", "the retailer API becomes account-qualified"],
+  "order_2": ["combined pagination and scan verification retain account provenance", "a numbered migration sequence can add provenance to already deployed ampere tables", "database audit can distinguish source-qualified decisions while retaining null for unknown codes"],
+  "order_3": ["complete combined snapshots prevent silent omission of client packages", "fixed source keys avoid arbitrary account access"],
+  "feedback_loops": ["A failed account list/detail/token call makes the combined snapshot unhealthy, which disables scanning until recovery."],
+  "verification_edges": [
+    { "edge": "config -> api", "verification": "configuration and server tests reject partial pairs and expose no secret values" },
+    { "edge": "api -> snapshot -> scan", "verification": "two-account browser fixtures prove merged complete data and source-qualified GO/STOP behavior" },
+    { "edge": "migrator -> state", "verification": "fresh and pre-002 local schemas each converge through an idempotent ampere-only migration sequence" },
+    { "edge": "scan -> state", "verification": "local migration/repository tests and restricted production readback show only ampere provenance" },
+    { "edge": "release -> proof", "verification": "exact deployment plus authenticated desktop/mobile visual receipt" }
+  ],
+  "local_isolation_proof": null,
+  "blockers": [],
+  "decision": "Use one explicit optional secondary pair and fixed internal source keys; do not replace the existing primary pair or create a general account registry."
+}

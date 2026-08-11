@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { BolClient } from './bol-client.mjs';
+import { BolClient, BolClientPool } from './bol-client.mjs';
 import { loadConfig } from './config.mjs';
 import { createDatabaseClient } from './database.mjs';
 import { AppError, ValidationError, publicError } from './errors.mjs';
@@ -89,7 +89,16 @@ function statePayload(workday, records) {
 }
 
 export function createApplication({ config, repository, bolClient, now = () => new Date(), requestId = () => randomUUID() }) {
-  const scanService = new ScanService({ repository, bolClient, now });
+  const bolClients = bolClient && typeof bolClient.accountKeys === 'function' && typeof bolClient.get === 'function'
+    ? bolClient
+    : Object.freeze({
+      accountKeys: () => ['primary'],
+      get: (accountKey) => {
+        if (accountKey !== 'primary') throw new ValidationError();
+        return bolClient;
+      },
+    });
+  const scanService = new ScanService({ repository, bolClientForAccount: (accountKey) => bolClients.get(accountKey), now });
 
   function requestCookies(req) {
     return parseCookies(requestHeader(req, 'cookie'));
@@ -221,10 +230,17 @@ export function createApplication({ config, repository, bolClient, now = () => n
     const id = requestId();
     await requireSession(req, id);
     const url = new URL(req.url, 'http://localhost');
-    const allowed = new Set(['resource', 'page', 'id']);
+    const allowed = new Set(['resource', 'page', 'id', 'account']);
     if ([...url.searchParams.keys()].some((key) => !allowed.has(key))) throw new ValidationError();
     const resource = url.searchParams.get('resource');
-    if (!['orders', 'shipments', 'order', 'shipment'].includes(resource) || url.searchParams.getAll('resource').length !== 1) throw new ValidationError();
+    if (!['accounts', 'orders', 'shipments', 'order', 'shipment'].includes(resource) || url.searchParams.getAll('resource').length !== 1) throw new ValidationError();
+    if (resource === 'accounts') {
+      if (url.searchParams.has('page') || url.searchParams.has('id') || url.searchParams.has('account')) throw new ValidationError();
+      return sendJson(res, 200, { accounts: bolClients.accountKeys() });
+    }
+    const accountKey = url.searchParams.get('account');
+    if (typeof accountKey !== 'string' || url.searchParams.getAll('account').length !== 1) throw new ValidationError();
+    const client = bolClients.get(accountKey);
     const identifier = url.searchParams.get('id');
     const detailResource = resource === 'order' || resource === 'shipment';
     if (identifier != null || detailResource) {
@@ -232,14 +248,14 @@ export function createApplication({ config, repository, bolClient, now = () => n
       if (url.searchParams.has('page') || url.searchParams.getAll('id').length !== 1) throw new ValidationError();
       const validId = validateIdentifier(identifier);
       const detail = resource === 'orders' || resource === 'order'
-        ? await bolClient.getOrder(validId)
-        : await bolClient.getShipment(validId);
+        ? await client.getOrder(validId)
+        : await client.getShipment(validId);
       return sendJson(res, 200, detail);
     }
     const rawPage = url.searchParams.get('page') || '1';
     if (!/^\d{1,3}$/.test(rawPage) || url.searchParams.getAll('page').length > 1) throw new ValidationError();
     const page = Number(rawPage);
-    const payload = resource === 'orders' ? await bolClient.getOrdersPage(page) : await bolClient.getShipmentsPage(page);
+    const payload = resource === 'orders' ? await client.getOrdersPage(page) : await client.getShipmentsPage(page);
     return sendJson(res, 200, payload);
   }
 
@@ -249,9 +265,16 @@ export function createApplication({ config, repository, bolClient, now = () => n
     const id = requestId();
     const session = await requireSession(req, id);
     const body = await readJson(req);
-    exactKeys(body, ['trackingCode'], ['shipmentId', 'verificationIncomplete']);
+    exactKeys(body, ['trackingCode'], ['shipmentId', 'verificationIncomplete', 'account']);
     normalizeTrackingCode(body.trackingCode);
-    if (body.shipmentId != null && body.shipmentId !== '') validateIdentifier(body.shipmentId);
+    const hasShipmentId = body.shipmentId != null && body.shipmentId !== '';
+    if (hasShipmentId) {
+      validateIdentifier(body.shipmentId);
+      if (typeof body.account !== 'string') throw new ValidationError();
+      bolClients.get(body.account);
+    } else if (body.account !== undefined) {
+      throw new ValidationError();
+    }
     if (body.verificationIncomplete !== undefined && body.verificationIncomplete !== true) throw new ValidationError();
     const decision = await scanService.decide({ ...body, session, requestId: id });
     const { canonicalRecords, workday, record, ...publicDecision } = decision;
@@ -289,10 +312,13 @@ export function getDefaultApplication() {
   const config = loadConfig();
   const client = createDatabaseClient({ url: config.databaseUrl, authToken: config.databaseToken });
   const repository = new ScannerRepository(client);
-  const bolClient = new BolClient({
-    clientId: config.bolClientId,
-    clientSecret: config.bolClientSecret,
-    nodeEnv: config.nodeEnv,
+  const bolClient = new BolClientPool({
+    accounts: config.bolAccounts,
+    clientFactory: (account) => new BolClient({
+      clientId: account.clientId,
+      clientSecret: account.clientSecret,
+      nodeEnv: config.nodeEnv,
+    }),
   });
   defaultApplication = createApplication({ config, repository, bolClient });
   return defaultApplication;

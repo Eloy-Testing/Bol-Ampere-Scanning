@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { BolClient, sanitizeOrder, sanitizeShipment } from '../../server/bol-client.mjs';
+import { BolClient, BolClientPool, sanitizeOrder, sanitizeShipment } from '../../server/bol-client.mjs';
 
 function json(body, init = {}) {
   return new Response(JSON.stringify(body), { status: 200, headers: { 'content-type': 'application/json' }, ...init });
@@ -157,4 +157,29 @@ test('detail responses must match the requested bol identifier', async () => {
   });
   await assert.rejects(() => client.getOrder('ORDER-1'), { code: 'verification_unavailable' });
   await assert.rejects(() => client.getShipment('SHIPMENT-1'), { code: 'verification_unavailable' });
+});
+
+test('fixed Bol client pool exposes only configured source keys', () => {
+  const created = [];
+  const client = () => ({
+    getOrdersPage: async () => ({ orders: [] }),
+    getShipmentsPage: async () => ({ shipments: [] }),
+    getOrder: async () => ({}),
+    getShipment: async () => ({}),
+  });
+  const pool = new BolClientPool({
+    accounts: [
+      { key: 'primary', clientId: 'one', clientSecret: 'one' },
+      { key: 'secondary', clientId: 'two', clientSecret: 'two' },
+    ],
+    clientFactory: (account) => {
+      created.push(account.key);
+      return client();
+    },
+  });
+  assert.deepEqual(pool.accountKeys(), ['primary', 'secondary']);
+  assert.equal(pool.has('secondary'), true);
+  assert.equal(pool.has('other'), false);
+  assert.equal(created.join(','), 'primary,secondary');
+  assert.throws(() => pool.get('other'), { code: 'invalid_request' });
 });

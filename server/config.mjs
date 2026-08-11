@@ -31,6 +31,21 @@ export function loadConfig(env = process.env) {
   if (!nonEmpty(env.BOL_CLIENT_ID) || !nonEmpty(env.BOL_CLIENT_SECRET)) {
     throw new ConfigurationError();
   }
+  const hasSecondaryClientId = nonEmpty(env.BOL_SECONDARY_CLIENT_ID);
+  const hasSecondaryClientSecret = nonEmpty(env.BOL_SECONDARY_CLIENT_SECRET);
+  if (hasSecondaryClientId !== hasSecondaryClientSecret) throw new ConfigurationError();
+  const bolAccounts = [Object.freeze({
+    key: 'primary',
+    clientId: env.BOL_CLIENT_ID,
+    clientSecret: env.BOL_CLIENT_SECRET,
+  })];
+  if (hasSecondaryClientId) {
+    bolAccounts.push(Object.freeze({
+      key: 'secondary',
+      clientId: env.BOL_SECONDARY_CLIENT_ID,
+      clientSecret: env.BOL_SECONDARY_CLIENT_SECRET,
+    }));
+  }
 
   return Object.freeze({
     databaseUrl,
@@ -39,6 +54,7 @@ export function loadConfig(env = process.env) {
     passwordHash: env.WAREHOUSE_PASSWORD_HASH,
     bolClientId: env.BOL_CLIENT_ID,
     bolClientSecret: env.BOL_CLIENT_SECRET,
+    bolAccounts: Object.freeze(bolAccounts),
     nodeEnv: env.NODE_ENV || 'production',
     secureCookies: (env.NODE_ENV || 'production') !== 'test',
     sessionTtlSeconds: 8 * 60 * 60,

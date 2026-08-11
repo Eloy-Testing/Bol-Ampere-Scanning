@@ -1,16 +1,16 @@
 import { createReadStream, statSync } from 'node:fs';
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { mkdtemp, rm } from 'node:fs/promises';
 import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
 import { extname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createApplication } from '../server/application.mjs';
-import { BolClient } from '../server/bol-client.mjs';
+import { BolClient, BolClientPool } from '../server/bol-client.mjs';
 import { loadConfig } from '../server/config.mjs';
 import { createDatabaseClient } from '../server/database.mjs';
 import { ScannerRepository } from '../server/repository.mjs';
 import { hashPassword } from '../server/security.mjs';
-import { applyMigration } from './migrate.mjs';
+import { applyMigrations, loadMigrations } from './migrate.mjs';
 
 const root = resolve(fileURLToPath(new URL('..', import.meta.url)));
 const port = Number(process.env.PORT || 4188);
@@ -35,10 +35,14 @@ const staticHeaders = {
   'X-Content-Type-Options': 'nosniff',
   'X-Frame-Options': 'DENY',
 };
+const syntheticNow = new Date();
+const syntheticOrderDateTime = new Date(syntheticNow.getTime() - 60 * 60 * 1000).toISOString();
+const syntheticShipmentDateTime = new Date(syntheticNow.getTime() - 30 * 60 * 1000).toISOString();
+const syntheticDeliveryDate = new Date(syntheticNow.getTime() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
 
 const syntheticOrder = {
   orderId: 'ORDER-REAL-1',
-  orderPlacedDateTime: '2026-08-05T08:00:00Z',
+  orderPlacedDateTime: syntheticOrderDateTime,
   orderItems: [{
     orderItemId: 'ORDER-REAL-1-ITEM-1',
     ean: '8710000000001',
@@ -48,12 +52,12 @@ const syntheticOrder = {
     quantityCancelled: 0,
     cancellationRequest: false,
     fulfilmentStatus: 'OPEN',
-    exactDeliveryDate: '2026-08-06',
+    exactDeliveryDate: syntheticDeliveryDate,
   }],
 };
 const syntheticShipment = {
   shipmentId: 'SHIPMENT-REAL-1',
-  shipmentDateTime: '2026-08-05T09:00:00Z',
+  shipmentDateTime: syntheticShipmentDateTime,
   order: { orderId: syntheticOrder.orderId, orderPlacedDateTime: syntheticOrder.orderPlacedDateTime },
   shipmentItems: [{
     orderItemId: 'ORDER-REAL-1-ITEM-1',
@@ -118,19 +122,21 @@ const config = loadConfig({
   SESSION_SECRET: 'synthetic-session-secret-with-at-least-32-bytes',
 });
 const databaseClient = createDatabaseClient({ url: config.databaseUrl, authToken: config.databaseToken });
-const migrationSource = await readFile(join(root, 'migrations', '001_ampere_scanner.sql'), 'utf8');
-await applyMigration({ client: databaseClient, source: migrationSource });
+await applyMigrations({ client: databaseClient, migrations: await loadMigrations() });
 const application = createApplication({
   config,
   repository: new ScannerRepository(databaseClient),
-  bolClient: new BolClient({
-    clientId: config.bolClientId,
-    clientSecret: config.bolClientSecret,
-    nodeEnv: 'test',
-    tokenUrl: `${origin}/__bol/token`,
-    apiBaseUrl: `${origin}/__bol/api`,
+  bolClient: new BolClientPool({
+    accounts: config.bolAccounts,
+    clientFactory: (account) => new BolClient({
+      clientId: account.clientId,
+      clientSecret: account.clientSecret,
+      nodeEnv: 'test',
+      tokenUrl: `${origin}/__bol/token`,
+      apiBaseUrl: `${origin}/__bol/api`,
+    }),
   }),
-  now: () => new Date('2026-08-05T10:00:00Z'),
+  now: () => new Date(),
 });
 
 const server = createServer(async (request, response) => {

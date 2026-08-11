@@ -268,3 +268,34 @@ export class BolClient {
     return this.#all('shipments');
   }
 }
+
+const ACCOUNT_KEY = /^(?:primary|secondary)$/;
+
+export class BolClientPool {
+  constructor({ accounts, clientFactory = (account) => new BolClient(account) }) {
+    if (!Array.isArray(accounts) || accounts.length === 0 || typeof clientFactory !== 'function') throw new UpstreamError();
+    this.clients = new Map();
+    for (const account of accounts) {
+      if (!account || !ACCOUNT_KEY.test(account.key) || this.clients.has(account.key)) throw new UpstreamError();
+      const client = clientFactory(account);
+      if (!client || typeof client.getOrdersPage !== 'function' || typeof client.getShipmentsPage !== 'function'
+        || typeof client.getOrder !== 'function' || typeof client.getShipment !== 'function') throw new UpstreamError();
+      this.clients.set(account.key, client);
+    }
+    if (!this.clients.has('primary')) throw new UpstreamError();
+  }
+
+  accountKeys() {
+    return [...this.clients.keys()];
+  }
+
+  has(accountKey) {
+    return typeof accountKey === 'string' && this.clients.has(accountKey);
+  }
+
+  get(accountKey) {
+    const client = this.clients.get(accountKey);
+    if (!client) throw new ValidationError();
+    return client;
+  }
+}

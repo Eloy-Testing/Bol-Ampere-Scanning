@@ -13,6 +13,18 @@ test('configuration permits tokenless local libSQL but requires all server-only 
     SESSION_SECRET: 's'.repeat(32),
   };
   assert.equal(loadConfig(complete).databaseToken, undefined);
+  assert.deepEqual(loadConfig(complete).bolAccounts.map(({ key }) => key), ['primary']);
+  assert.deepEqual(loadConfig({
+    ...complete,
+    BOL_SECONDARY_CLIENT_ID: 'secondary-client',
+    BOL_SECONDARY_CLIENT_SECRET: 'secondary-secret',
+  }).bolAccounts.map(({ key }) => key), ['primary', 'secondary']);
+  assert.throws(() => loadConfig({ ...complete, BOL_SECONDARY_CLIENT_ID: 'secondary-client' }), {
+    name: 'ConfigurationError',
+  });
+  assert.throws(() => loadConfig({ ...complete, BOL_SECONDARY_CLIENT_SECRET: 'secondary-secret' }), {
+    name: 'ConfigurationError',
+  });
   assert.throws(() => loadConfig({ ...complete, TURSO_DATABASE_URL: 'libsql://remote.example' }), {
     name: 'ConfigurationError',
   });

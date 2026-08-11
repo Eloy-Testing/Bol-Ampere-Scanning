@@ -1,16 +1,15 @@
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { mkdtemp, rm } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { createDatabaseClient } from '../../server/database.mjs';
 import { ScannerRepository } from '../../server/repository.mjs';
-import { applyMigration } from '../../scripts/migrate.mjs';
+import { applyMigrations, loadMigrations } from '../../scripts/migrate.mjs';
 
 export async function databaseFixture(test) {
   const directory = await mkdtemp(path.join(os.tmpdir(), 'ampere-server-test-'));
   const url = `file:${path.join(directory, 'scanner.db')}`;
   const client = createDatabaseClient({ url });
-  const migration = await readFile(new URL('../../migrations/001_ampere_scanner.sql', import.meta.url), 'utf8');
-  await applyMigration({ client, source: migration });
+  await applyMigrations({ client, migrations: await loadMigrations() });
   test.after(async () => {
     client.close();
     await rm(directory, { recursive: true, force: true });
