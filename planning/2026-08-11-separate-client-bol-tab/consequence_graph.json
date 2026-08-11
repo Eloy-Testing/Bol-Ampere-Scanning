@@ -1,0 +1,37 @@
+{
+  "generated": "2026-08-11",
+  "target_surface": "BHP Warehouse Packing Tracker account-separated operational worklists",
+  "problem": "The two fixed Bol sources are technically qualified but currently rendered as one combined scanner worklist.",
+  "source_artifacts": ["AGENTS.md", "index.html", "server/application.mjs", "tests/data-health.spec.mjs", "tests/fixtures/mock-bol.mjs"],
+  "nodes": [
+    {"id": "request", "type": "intent", "label": "separate client account tab", "evidence": "User request"},
+    {"id": "snapshot", "type": "runtime", "label": "complete two-source browser snapshot", "evidence": "index.html buildSnapshot"},
+    {"id": "selector", "type": "ui", "label": "explicit active account tab", "evidence": "design contract"},
+    {"id": "worklist", "type": "ui", "label": "selected-source orders shipments and metrics", "evidence": "index.html render functions"},
+    {"id": "scan", "type": "api", "label": "source-qualified scan verification", "evidence": "index.html processScan and server application routes"},
+    {"id": "state", "type": "runtime", "label": "source-qualified accepted/cancelled and source-unqualified STOP history", "evidence": "server/application.mjs statePayload and ScannerRepository workday/tracking identity"},
+    {"id": "proof", "type": "verification", "label": "fixture tests and released desktop/mobile station review", "evidence": "AGENTS.md verification finish line"}
+  ],
+  "edges": [
+    {"from": "request", "to": "selector", "relation": "requires", "order": 1, "confidence": "high", "delay": "runtime", "risk": "high", "evidence": "A visible tab is the explicit requested separation."},
+    {"from": "snapshot", "to": "selector", "relation": "provides", "order": 1, "confidence": "high", "delay": "runtime", "risk": "medium", "evidence": "Configured fixed accounts decide whether a second tab exists."},
+    {"from": "selector", "to": "worklist", "relation": "scopes", "order": 2, "confidence": "high", "delay": "runtime", "risk": "high", "evidence": "The active account determines every source-qualified row and metric."},
+    {"from": "snapshot", "to": "state", "relation": "guards", "order": 2, "confidence": "high", "delay": "runtime", "risk": "high", "evidence": "A cross-source matching code remains a global fail-closed snapshot condition because package persistence is keyed by workday and tracking code."},
+    {"from": "worklist", "to": "scan", "relation": "feeds", "order": 2, "confidence": "high", "delay": "runtime", "risk": "high", "evidence": "A scan must use the shipment and account from the active view."},
+    {"from": "scan", "to": "state", "relation": "updates", "order": 3, "confidence": "high", "delay": "runtime", "risk": "high", "evidence": "Live outcomes determine source-qualified progress or shared safety review."},
+    {"from": "selector", "to": "proof", "relation": "requires", "order": 3, "confidence": "high", "delay": "release", "risk": "medium", "evidence": "Desktop/mobile must prove tab selection, focus, and scoped content."}
+  ],
+  "order_1": ["make account context explicit before the scan action"],
+  "order_2": ["scope worklist and tracking lookup to the selected source", "prevent tab changes during active verification"],
+  "order_3": ["render accepted/cancelled per source while retaining unassigned STOP safety history"],
+  "feedback_loops": ["An unknown code triggers complete snapshot refresh; if verification is still incomplete, the decision remains STOP and scanning stays fail closed."],
+  "verification_edges": [
+    {"edge": "selector -> worklist", "verification": "fixture browser assertions show exclusive primary/client rows and counts after the complete snapshot validates"},
+    {"edge": "worklist -> scan", "verification": "scan request captures the selected fixed account and rejects wrong-source lookups"},
+    {"edge": "snapshot -> state", "verification": "same-code cross-source collision remains blocked before scanning; source-qualified state remains scoped and source-unqualified STOP state remains visible"},
+    {"edge": "selector -> proof", "verification": "current released desktop/mobile visual receipt shows selected tab and no overflow"}
+  ],
+  "local_isolation_proof": "No source-qualified renderer may read the combined snapshot directly; it must use the active-source selector helper, while the only combined tracking index remains a fail-closed collision validator.",
+  "blockers": [],
+  "decision": "Use one selected-source presentation layer over the already complete atomic snapshot, retaining the existing cross-source collision block rather than broadening into a persistence-key migration."
+}

@@ -14,6 +14,12 @@ The operational loop is `start → scan → next → repeat`. Enter-terminated s
 
 bol.com remains the source of truth. The datastore contains normalized operational identifiers and audit metadata, not complete order/shipment/customer payloads or secrets.
 
+## Two fixed Bol sources
+
+When the optional secondary Bol credentials are configured, the station shows separate **Bankhoes** and **Client Bol** tabs. Bankhoes is selected first. Each tab has its own live orders, shipments, totals, accepted progress, and cancelled-package list; select the intended tab before scanning.
+
+The station still requires one complete snapshot across both configured sources. A matching tracking code in both sources remains a global fail-closed collision, so neither tab may scan until that collision is resolved through an explicitly approved data-identity change. Unknown or unverified packages remain STOP items and are never counted.
+
 ## Required server environment
 
 Copy `.env.example` to an ignored local environment file and set:

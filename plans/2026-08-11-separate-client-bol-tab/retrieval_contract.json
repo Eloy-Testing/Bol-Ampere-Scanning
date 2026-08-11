@@ -1,0 +1,57 @@
+{
+  "task_id": "2026-08-11-separate-client-bol-tab",
+  "created_at": "2026-08-11",
+  "target_surface": "Authenticated Ampere warehouse scan station",
+  "project_owner": "BHP Warehouse Packing Tracker",
+  "request_summary": "Show the added client Bol account on its own tab instead of combining it with the existing Bankhoes account worklist.",
+  "included_pages": [
+    "index.html",
+    "server/application.mjs",
+    "tests/data-health.spec.mjs",
+    "tests/fixtures/mock-bol.mjs",
+    "tests/server/application.test.mjs",
+    "README.md"
+  ],
+  "excluded_pages": [
+    "Bol credential values, OAuth tokens, retailer account settings, and retailer writes",
+    "Turso schema/data changes and non-ampere tables",
+    "Other repositories, Vercel projects, or browser storage for operational state",
+    "A user-selectable arbitrary account registry"
+  ],
+  "active_rules": [
+    "Keep browser access on same-origin /api routes and all credentials server-side.",
+    "Keep the FIFO Enter-terminated automatic-refocus scan loop fail closed.",
+    "The primary account remains the default operational context.",
+    "Source-qualified orders, shipments, totals, accepted records, and cancellations may appear only in their matching account tab.",
+    "Source-unqualified STOP records remain visible as shared safety review rather than being silently hidden by a tab.",
+    "A matching tracking code across both sources remains an existing global fail-closed condition until an explicitly approved persistence-key migration exists.",
+    "Visual work requires current desktop and mobile inspection bound to the released deployment."
+  ],
+  "required_project_contracts": [
+    "plans/2026-08-11-separate-client-bol-tab/design_contract.md",
+    "plans/2026-08-11-separate-client-bol-tab/spatial_priority_contract.json",
+    "plans/2026-08-11-separate-client-bol-tab/interface_output_contract.json"
+  ],
+  "tool_surfaces": ["local filesystem", "shell", "approved browser tooling", "approved Vercel project"],
+  "write_targets": [
+    "index.html",
+    "server/application.mjs",
+    "tests/data-health.spec.mjs",
+    "tests/fixtures/mock-bol.mjs",
+    "tests/server/application.test.mjs",
+    "README.md",
+    "plans/2026-08-11-separate-client-bol-tab/**",
+    "planning/2026-08-11-separate-client-bol-tab/**",
+    "verification/**"
+  ],
+  "external_account_policy": "Use only the already approved Vercel bol-ampere-scanning project and only after local verification.",
+  "content_truth_policy": "All account-specific quantities and package rows come from the selected source snapshot; tab labels are fixed non-secret operational labels.",
+  "verification_required": {
+    "browser_visual": true,
+    "state_coverage": true,
+    "interface_output_contract": true,
+    "spatial_priority_contract": true,
+    "specialized_profile_contract": false,
+    "pagespace_status": false
+  }
+}

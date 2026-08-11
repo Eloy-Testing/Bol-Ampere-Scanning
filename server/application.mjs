@@ -80,9 +80,9 @@ function statePayload(workday, records) {
   for (const record of records) {
     if (record.outcome === 'accepted') scanned[record.trackingCode] = record.acceptedAt || record.updatedAt;
     else if (record.outcome === 'cancelled') {
-      cancelled.push({ code: record.trackingCode, orderId: record.orderId || '', time: record.cancelledAt || record.updatedAt });
+      cancelled.push({ code: record.trackingCode, orderId: record.orderId || '', time: record.cancelledAt || record.updatedAt, sourceAccount: record.sourceAccount || null });
     } else {
-      stops.push({ code: record.trackingCode, orderId: record.orderId || '', reason: record.outcome, time: record.updatedAt });
+      stops.push({ code: record.trackingCode, orderId: record.orderId || '', reason: record.outcome, time: record.updatedAt, sourceAccount: record.sourceAccount || null });
     }
   }
   return { workday, records, scanned, cancelled, stops };

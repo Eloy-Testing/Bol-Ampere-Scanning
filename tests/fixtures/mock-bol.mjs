@@ -10,6 +10,9 @@ export const selectors = Object.freeze({
   dataStatus: '[data-testid="data-status"]',
   retryData: '[data-testid="retry-data"]',
   refreshData: '[data-testid="refresh-data"]',
+  accountTabs: '[data-testid="account-tabs"]',
+  primaryAccountTab: '[data-testid="account-tab-primary"]',
+  secondaryAccountTab: '[data-testid="account-tab-secondary"]',
   feedback: '[data-testid="scan-feedback"]',
   queueDepth: '[data-testid="scan-queue-depth"]',
   scannedCount: '[data-testid="scanned-count"]',
@@ -57,8 +60,8 @@ function currentCanonicalState(state) {
   const stops = [];
   for (const record of records) {
     if (record.outcome === 'success') scanned[record.trackingCode] = record.recordedAt;
-    else if (record.outcome === 'cancelled') cancelled.push({ code: record.trackingCode, orderId: record.orderId, time: record.recordedAt });
-    else if (record.outcome === 'unknown' || record.outcome === 'unverified') stops.push({ code: record.trackingCode, orderId: record.orderId, reason: record.outcome, time: record.recordedAt });
+    else if (record.outcome === 'cancelled') cancelled.push({ code: record.trackingCode, orderId: record.orderId, time: record.recordedAt, sourceAccount: record.sourceAccount || null });
+    else if (record.outcome === 'unknown' || record.outcome === 'unverified') stops.push({ code: record.trackingCode, orderId: record.orderId, reason: record.outcome, time: record.recordedAt, sourceAccount: record.sourceAccount || null });
   }
   return { workday: state.workday, records, scanned, cancelled, stops };
 }

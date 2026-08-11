@@ -1,0 +1,77 @@
+{
+  "schema_version": "creative-framework.interface-output-contract.v1",
+  "task": "Separate client Bol worklist into an explicit account tab",
+  "surface_has_interface_output": true,
+  "interface_output_producers": "applicable",
+  "not_applicable_reason": "",
+  "planned_output_channels": ["visible", "assistive", "telemetry"],
+  "producers": [
+    {
+      "id": "account_tab_selection",
+      "event_origin": "product_workflow",
+      "presentation_owner": "product_owner",
+      "channel": "visible",
+      "source_condition": "The authenticated station has two configured fixed account sources and the operator selects a tab.",
+      "user_impact": "The visible operational worklist and the account used for the next scan change.",
+      "recovery": "Select Bankhoes or Client Bol before scanning; a tab is disabled while an existing scan decision is resolving.",
+      "copy_purpose": "Label the safe source-selection control without exposing account identifiers.",
+      "final_copy": "Bankhoes / Client Bol",
+      "external_proof": "Browser tab-selection, scoped-row, focus, and accessibility assertions"
+    },
+    {
+      "id": "source_snapshot_health",
+      "event_origin": "product_workflow",
+      "presentation_owner": "product_owner",
+      "channel": "visible",
+      "source_condition": "The selected source snapshot is loading, ready, refreshing, stale, or unavailable.",
+      "user_impact": "The operator can or cannot safely scan the selected account’s packages.",
+      "recovery": "Wait for a complete snapshot or use the existing Retry/Refresh control.",
+      "copy_purpose": "Preserve selected-source fail-closed readiness and recovery language.",
+      "final_copy": "Ready for the next scan / Data needs attention — retry before scanning.",
+      "external_proof": "Browser data-health and disabled-scanner assertions"
+    },
+    {
+      "id": "scan_decision",
+      "event_origin": "product_workflow",
+      "presentation_owner": "product_owner",
+      "channel": "visible",
+      "source_condition": "A selected-source scan resolves as GO, duplicate, cancelled, unknown, or unverified.",
+      "user_impact": "The operator needs a clear dispatch or pull-aside action.",
+      "recovery": "Dispatch GO packages; pull aside STOP packages and resolve them manually.",
+      "copy_purpose": "Preserve the existing safe package decision.",
+      "final_copy": "GO — package cleared / STOP — do not send this package.",
+      "external_proof": "Existing and updated scan-flow browser assertions"
+    },
+    {
+      "id": "tab_selection_assistive_state",
+      "event_origin": "user_invoked_editor_interaction",
+      "presentation_owner": "editor_owner",
+      "channel": "assistive",
+      "source_condition": "A native account tab's aria-selected state changes after direct operator input.",
+      "user_impact": "Assistive-technology users can identify the active source before scanning.",
+      "recovery": "Use the tab control to select the intended source.",
+      "copy_purpose": "Expose the same source-selection state to assistive technology.",
+      "final_copy": "Selected account tab",
+      "external_proof": "Role, aria-selected, and keyboard-focus browser assertions"
+    },
+    {
+      "id": "background_refresh_diagnostics",
+      "event_origin": "autonomous_helper",
+      "presentation_owner": "none",
+      "channel": "telemetry",
+      "source_condition": "Periodic refresh and tab rerender mechanics complete without a user-impacting fault.",
+      "user_impact": "No product-visible impact.",
+      "recovery": "Not applicable.",
+      "copy_purpose": "Keep non-actionable implementation diagnostics outside product chrome.",
+      "final_copy": "",
+      "external_proof": "Automated refresh assertions"
+    }
+  ],
+  "technical_status_exception": {"applicable": false, "direct_object_of_work": false, "producer_ids": [], "reason": ""},
+  "what_must_not_appear": [
+    "Bol client credentials, tokens, account identifiers, or raw upstream payloads",
+    "Stack traces, API route errors, Vercel or Turso internals, or test narration",
+    "A combined primary/client operational queue",
+    "Debug language that treats account-tab mechanics as product content"
+  ]
+}

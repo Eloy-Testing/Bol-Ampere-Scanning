@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { createApplication, createWebRoute } from '../../server/application.mjs';
+import { createApplication, createWebRoute, statePayload } from '../../server/application.mjs';
 import { DatabaseError } from '../../server/errors.mjs';
 import { hashPassword, signSessionToken, tokenHash } from '../../server/security.mjs';
 import { databaseFixture, invoke, mutationHeaders } from './helpers.mjs';
@@ -40,6 +40,15 @@ function bolFixture() {
 function cookiePair(setCookie) {
   return String(setCookie).split(';')[0];
 }
+
+test('state projection retains non-secret source provenance for scoped cancellation and STOP rendering', () => {
+  const payload = statePayload('2026-08-05', [
+    { trackingCode: 'PRIMARY-CANCELLED', orderId: 'ORDER-1', sourceAccount: 'primary', outcome: 'cancelled', cancelledAt: '2026-08-05T10:00:00.000Z', updatedAt: '2026-08-05T10:00:00.000Z' },
+    { trackingCode: 'UNVERIFIED', orderId: '', sourceAccount: null, outcome: 'unverified', updatedAt: '2026-08-05T10:01:00.000Z' },
+  ]);
+  assert.equal(payload.cancelled[0].sourceAccount, 'primary');
+  assert.equal(payload.stops[0].sourceAccount, null);
+});
 
 test('actual handlers sign in, hydrate, read bol, verify a scan, persist it, and revoke', async (t) => {
   const { repository } = await databaseFixture(t);

@@ -81,6 +81,11 @@
 
     .scan-station { position: relative; overflow: hidden; margin-bottom: 14px; padding: clamp(18px, 3vw, 30px); border-radius: 18px; color: #fff; background: linear-gradient(135deg, var(--navy), var(--navy-2)); box-shadow: var(--shadow); }
     .scan-station::after { content: ""; position: absolute; right: -80px; top: -130px; width: 310px; height: 310px; border-radius: 50%; border: 58px solid rgba(105,212,223,.09); pointer-events: none; }
+    .account-tabs { position: relative; z-index: 1; display: flex; width: fit-content; max-width: 100%; gap: 4px; margin: 0 0 14px; padding: 4px; overflow-x: auto; border: 1px solid rgba(255,255,255,.14); border-radius: 10px; background: rgba(4,18,22,.24); -webkit-overflow-scrolling: touch; }
+    .account-tab { flex: 0 0 auto; min-height: 34px; border: 1px solid transparent; border-radius: 7px; padding: 6px 11px; color: #c7d8db; background: transparent; font-size: 12px; font-weight: 850; cursor: pointer; }
+    .account-tab[aria-selected="true"] { border-color: rgba(105,212,223,.44); color: #063d31; background: var(--cyan); }
+    .account-tab:focus-visible { outline: 3px solid rgba(105,212,223,.7); outline-offset: 2px; }
+    .account-tab:disabled { opacity: .58; cursor: wait; }
     .scan-heading { position: relative; z-index: 1; display: flex; align-items: end; justify-content: space-between; gap: 16px; margin-bottom: 12px; }
     .scan-heading h2 { margin: 0; font-size: 18px; letter-spacing: -.01em; }
     .scan-hint { margin: 4px 0 0; color: #b9c9cd; font-size: 12px; }
@@ -207,12 +212,16 @@
         <span class="health-text" id="healthText">Loading complete shipment data…</span>
       </div>
       <div class="health-actions">
-        <button class="ghost-button" id="retryButton" data-testid="retry-data" type="button" tabindex="2" hidden>Retry</button>
-        <button class="ghost-button" id="refreshButton" data-testid="refresh-data" type="button" tabindex="2" hidden>Refresh data</button>
+        <button class="ghost-button" id="retryButton" data-testid="retry-data" type="button" hidden>Retry</button>
+        <button class="ghost-button" id="refreshButton" data-testid="refresh-data" type="button" hidden>Refresh data</button>
       </div>
     </div>
 
     <section class="scan-station" aria-labelledby="scanTitle">
+      <div class="account-tabs" id="accountTabs" data-testid="account-tabs" role="tablist" aria-label="Bol account" hidden>
+        <button class="account-tab" id="primaryAccountTab" data-testid="account-tab-primary" data-account="primary" role="tab" type="button" aria-selected="true">Bankhoes</button>
+        <button class="account-tab" id="secondaryAccountTab" data-testid="account-tab-secondary" data-account="secondary" role="tab" type="button" aria-selected="false">Client Bol</button>
+      </div>
       <div class="scan-heading">
         <div>
           <h2 id="scanTitle">Ready for scanner</h2>
@@ -222,7 +231,7 @@
       </div>
       <label class="sr-only" id="scanLabel" for="scanInput">Tracking code</label>
       <div class="scan-row">
-        <input id="scanInput" type="text" inputmode="text" enterkeyhint="done" autocomplete="off" autocapitalize="characters" spellcheck="false" tabindex="1" aria-describedby="scanHint" placeholder="Scan tracking code…" disabled>
+        <input id="scanInput" type="text" inputmode="text" enterkeyhint="done" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-describedby="scanHint" placeholder="Scan tracking code…" disabled>
         <div class="ready-flag" id="readyFlag" data-ready="false">WAIT</div>
       </div>
       <div class="current-status" id="currentStatus" aria-live="polite">Waiting for a complete data snapshot.</div>
@@ -288,7 +297,7 @@
     const TEXT = {
       nl: {
         locale: 'nl-NL', eyebrow: 'Magazijncontrole', title: 'Ampere scanstation', subtitle: 'Start. Scan. Volgende. Elk pakket krijgt live een veilige beslissing.',
-        scanTitle: 'Klaar voor scanner', scanHint: 'Scan de track & trace; Enter gaat automatisch door.', scanLabel: 'Track & trace', placeholder: 'Scan track & trace…', queue: 'Wachtrij', ready: 'KLAAR', wait: 'WACHT',
+        scanTitle: 'Klaar voor scanner', scanHint: 'Kies het Bol-account, scan daarna de track & trace; Enter gaat automatisch door.', scanLabel: 'Track & trace', placeholder: 'Scan track & trace…', queue: 'Wachtrij', accountTabs: 'Bol-account', primaryAccount: 'Bankhoes', secondaryAccount: 'Client Bol', ready: 'KLAAR', wait: 'WACHT',
         loading: 'Volledige verzenddata laden…', loadingOrders: p => `Open orders laden · pagina ${p}`, loadingShipments: p => `Verzendingen laden · pagina ${p}`, loadingDetails: (n, total) => `Verzenddetails laden · ${n}/${total}`, refreshing: 'Data verversen; bestaande scans blijven actief.', readyData: t => `Data compleet · bijgewerkt ${t}`, warningData: () => 'Verversen mislukt; de laatste complete snapshot blijft actief.', errorData: () => 'Scannen gepauzeerd — de verzendlijst is niet compleet. Probeer opnieuw.', retry: 'Opnieuw', refresh: 'Data verversen',
         idleStatus: 'Scanner klaar. Focus blijft op het invoerveld.', checking: order => `Live annulering controleren · order ${order}`, refreshingUnknown: 'Code niet gevonden; volledige data één keer verversen…', queued: n => n ? `${n} scan${n === 1 ? '' : 's'} wacht${n === 1 ? '' : 'en'}.` : 'Scanner klaar voor de volgende code.', blocked: 'Wacht op een volledige, gezonde datasnapshot.',
         lastDecision: 'Laatste beslissing', idleTitle: 'Nog geen pakket gescand', idleDetail: 'Het resultaat blijft staan terwijl de volgende scan wordt gecontroleerd.', successKicker: 'GO · verzenden', duplicateKicker: 'DUBBEL · niet opnieuw tellen', stopKicker: 'STOP · niet verzenden',
@@ -298,7 +307,7 @@
       },
       en: {
         locale: 'en-GB', eyebrow: 'Warehouse control', title: 'Ampere scan station', subtitle: 'Start. Scan. Next. Every parcel gets a live, fail-closed decision.',
-        scanTitle: 'Ready for scanner', scanHint: 'Scan the tracking code; Enter advances automatically.', scanLabel: 'Scan tracking code', placeholder: 'Scan tracking code…', queue: 'Queue', ready: 'READY', wait: 'WAIT',
+        scanTitle: 'Ready for scanner', scanHint: 'Choose the Bol account, then scan the tracking code; Enter advances automatically.', scanLabel: 'Scan tracking code', placeholder: 'Scan tracking code…', queue: 'Queue', accountTabs: 'Bol account', primaryAccount: 'Bankhoes', secondaryAccount: 'Client Bol', ready: 'READY', wait: 'WAIT',
         loading: 'Loading complete shipment data…', loadingOrders: p => `Loading open orders · page ${p}`, loadingShipments: p => `Loading shipments · page ${p}`, loadingDetails: (n, total) => `Loading shipment details · ${n}/${total}`, refreshing: 'Refreshing data; existing scan flow remains active.', readyData: t => `Data complete · updated ${t}`, warningData: () => 'Refresh failed; the last complete snapshot remains active.', errorData: () => 'Scanning paused — the shipment list is incomplete. Retry before continuing.', retry: 'Retry', refresh: 'Refresh data',
         idleStatus: 'Scanner ready. Focus stays on the input.', checking: order => `Live cancellation check · order ${order}`, refreshingUnknown: 'Code not found; refreshing all data once…', queued: n => n ? `${n} scan${n === 1 ? '' : 's'} waiting.` : 'Scanner ready for the next code.', blocked: 'Waiting for a complete, healthy data snapshot.',
         lastDecision: 'Last decision', idleTitle: 'No parcel scanned yet', idleDetail: 'The result remains here while the next scan is checked.', successKicker: 'GO · dispatch', duplicateKicker: 'DUPLICATE · not counted twice', stopKicker: 'STOP · do not dispatch',
@@ -308,7 +317,7 @@
       },
       es: {
         locale: 'es-ES', eyebrow: 'Control de almacén', title: 'Estación de escaneo Ampere', subtitle: 'Inicio. Escaneo. Siguiente. Cada paquete recibe una decisión segura en vivo.',
-        scanTitle: 'Listo para escanear', scanHint: 'Escanea el seguimiento; Enter avanza automáticamente.', scanLabel: 'Código de seguimiento', placeholder: 'Escanea el seguimiento…', queue: 'Cola', ready: 'LISTO', wait: 'ESPERA',
+        scanTitle: 'Listo para escanear', scanHint: 'Elige la cuenta Bol y escanea el seguimiento; Enter avanza automáticamente.', scanLabel: 'Código de seguimiento', placeholder: 'Escanea el seguimiento…', queue: 'Cola', accountTabs: 'Cuenta Bol', primaryAccount: 'Bankhoes', secondaryAccount: 'Cliente Bol', ready: 'LISTO', wait: 'ESPERA',
         loading: 'Cargando datos completos de envíos…', loadingOrders: p => `Cargando pedidos · página ${p}`, loadingShipments: p => `Cargando envíos · página ${p}`, loadingDetails: (n, total) => `Cargando detalles · ${n}/${total}`, refreshing: 'Actualizando datos; el escaneo existente sigue activo.', readyData: t => `Datos completos · actualizados ${t}`, warningData: () => 'Falló la actualización; se mantiene la última lista completa.', errorData: () => 'Escaneo pausado — la lista de envíos está incompleta. Reintenta.', retry: 'Reintentar', refresh: 'Actualizar datos',
         idleStatus: 'Escáner listo. El foco permanece en la entrada.', checking: order => `Comprobación de cancelación · pedido ${order}`, refreshingUnknown: 'Código no encontrado; actualizando todos los datos una vez…', queued: n => n ? `${n} escaneo${n === 1 ? '' : 's'} en espera.` : 'Escáner listo para el siguiente código.', blocked: 'Esperando datos completos y sanos.',
         lastDecision: 'Última decisión', idleTitle: 'Aún no se escaneó ningún paquete', idleDetail: 'El resultado permanece visible mientras se comprueba el siguiente.', successKicker: 'ADELANTE · enviar', duplicateKicker: 'DUPLICADO · no contar dos veces', stopKicker: 'PARADA · no enviar',
@@ -339,7 +348,7 @@
 
     const app = {
       accessPhase: 'checking', accessReason: '', session: null, sessionGeneration: 0,
-      phase: 'loading', progress: '', snapshot: null, lastLoadError: null, refreshPromise: null, stateHealthy: false,
+      phase: 'loading', progress: '', snapshot: null, lastLoadError: null, refreshPromise: null, stateHealthy: false, activeAccount: 'primary',
       queue: [], pausedQueue: [], refreshInterruptedJob: null, pendingCodes: new Set(), draining: false, currentCheck: null, decision: null,
       state: null, activeVerifiers: 0, maxActiveVerifiers: 0
     };
@@ -416,20 +425,14 @@
       return `${keyDate.year}-${String(keyDate.month).padStart(2, '0')}-${String(keyDate.day).padStart(2, '0')}`;
     }
 
-    function blankWorkState(workday = scannerWorkdayKey()) { return { workday, scanned: {}, cancelled: [], stops: [] }; }
+    function blankWorkState(workday = scannerWorkdayKey()) { return { workday, records: [], scanned: {}, cancelled: [], stops: [] }; }
+    function sourceAccount(value) { return ['primary', 'secondary'].includes(plainText(value)) ? plainText(value) : null; }
 
     function normalizeSharedState(payload) {
       const raw = payload && payload.state ? payload.state : payload;
       if (!raw || typeof raw !== 'object') throw new Error('Shared state was incomplete');
       const workday = typeof raw.workday === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(raw.workday) ? raw.workday : scannerWorkdayKey();
       const next = blankWorkState(workday);
-      if (raw.scanned && typeof raw.scanned === 'object' && !Array.isArray(raw.scanned)) {
-        for (const [key, value] of Object.entries(raw.scanned)) {
-          const code = canonicalCode(key);
-          const time = typeof value === 'string' ? value : value && (value.recordedAt || value.time);
-          if (code && validIso(time)) next.scanned[code] = time;
-        }
-      }
       const records = Array.isArray(raw.records) ? raw.records : Array.isArray(raw.packages) ? raw.packages : [];
       for (const record of records) {
         const code = canonicalCode(record && (record.trackingCode || record.tracking_code || record.code));
@@ -437,23 +440,36 @@
         const time = record && (record.recordedAt || record.updatedAt || record.createdAt || record.time);
         const orderId = plainText(record && (record.orderId || record.order_id)).slice(0, 128);
         if (!code || !validIso(time)) continue;
+        const entry = { code, orderId, reason: plainText(record && record.reason).slice(0, 128), outcome, time, sourceAccount: sourceAccount(record && (record.sourceAccount || record.source_account)) };
+        next.records.push(entry);
         if (outcome === 'success' || outcome === 'accepted') next.scanned[code] = time;
-        else if (outcome === 'cancelled') next.cancelled.push({ code, orderId, time });
-        else if (outcome === 'unknown' || outcome === 'unverified') next.stops.push({ code, orderId, reason: outcome, time });
+        else if (outcome === 'cancelled') next.cancelled.push({ code, orderId, time, sourceAccount: entry.sourceAccount });
+        else if (outcome === 'unknown' || outcome === 'unverified') next.stops.push({ code, orderId, reason: outcome, time, sourceAccount: entry.sourceAccount });
       }
-      const cancelled = Array.isArray(raw.cancelled) ? raw.cancelled : [];
-      for (const item of cancelled) {
-        const code = canonicalCode(item && (item.trackingCode || item.code));
-        const time = item && (item.recordedAt || item.time);
-        if (code && validIso(time) && !next.cancelled.some(entry => entry.code === code)) next.cancelled.push({ code, orderId: plainText(item.orderId).slice(0, 128), time });
+      if (!next.records.length) {
+        const scanned = raw.scanned && typeof raw.scanned === 'object' && !Array.isArray(raw.scanned) ? raw.scanned : {};
+        for (const [key, value] of Object.entries(scanned)) {
+          const code = canonicalCode(key);
+          const time = typeof value === 'string' ? value : value && (value.recordedAt || value.time);
+          if (code && validIso(time)) next.scanned[code] = time;
+        }
+        const cancelled = Array.isArray(raw.cancelled) ? raw.cancelled : [];
+        for (const item of cancelled) {
+          const code = canonicalCode(item && (item.trackingCode || item.code));
+          const time = item && (item.recordedAt || item.time);
+          const account = sourceAccount(item && (item.sourceAccount || item.source_account));
+          if (code && validIso(time) && !next.cancelled.some(entry => entry.code === code)) next.cancelled.push({ code, orderId: plainText(item.orderId).slice(0, 128), time, sourceAccount: account });
+        }
+        const stops = Array.isArray(raw.stops) ? raw.stops : [];
+        for (const item of stops) {
+          const code = canonicalCode(item && (item.trackingCode || item.code));
+          const reason = plainText(item && (item.outcome || item.reason)).toLowerCase();
+          const time = item && (item.recordedAt || item.time);
+          const account = sourceAccount(item && (item.sourceAccount || item.source_account));
+          if (code && ['unknown', 'unverified'].includes(reason) && validIso(time) && !next.stops.some(entry => entry.code === code && entry.reason === reason)) next.stops.push({ code, orderId: plainText(item.orderId).slice(0, 128), reason, time, sourceAccount: account });
+        }
       }
-      const stops = Array.isArray(raw.stops) ? raw.stops : [];
-      for (const item of stops) {
-        const code = canonicalCode(item && (item.trackingCode || item.code));
-        const reason = plainText(item && (item.outcome || item.reason)).toLowerCase();
-        const time = item && (item.recordedAt || item.time);
-        if (code && ['unknown', 'unverified'].includes(reason) && validIso(time) && !next.stops.some(entry => entry.code === code && entry.reason === reason)) next.stops.push({ code, orderId: plainText(item.orderId).slice(0, 128), reason, time });
-      }
+      next.records = next.records.slice(0, 500);
       next.cancelled = next.cancelled.slice(0, 500);
       next.stops = next.stops.slice(0, 500);
       return next;
@@ -606,16 +622,36 @@
         || a.shipmentId.localeCompare(b.shipmentId)
         || a.account.localeCompare(b.account));
       const trackIndex = new Map();
-      for (const shipment of shipments) if (shipment.trackAndTrace) {
+      const byAccount = Object.fromEntries(accounts.map(account => [account, { account, orders: [], shipments: [], trackIndex: new Map() }]));
+      for (const order of detailedOrders) byAccount[order.account].orders.push(order);
+      for (const shipment of shipments) {
+        byAccount[shipment.account].shipments.push(shipment);
+        if (!shipment.trackAndTrace) continue;
         if (trackIndex.has(shipment.trackAndTrace)) throw new Error(`Duplicate tracking code ${shipment.trackAndTrace}`);
         trackIndex.set(shipment.trackAndTrace, shipment);
+        byAccount[shipment.account].trackIndex.set(shipment.trackAndTrace, shipment);
       }
-      return { loadedAt: loadedAt.toISOString(), accounts, orders: detailedOrders, shipments, trackIndex };
+      return { loadedAt: loadedAt.toISOString(), accounts, orders: detailedOrders, shipments, trackIndex, byAccount };
     }
 
+    function activeAccount() { return app.snapshot && app.snapshot.accounts.includes(app.activeAccount) ? app.activeAccount : 'primary'; }
+    function activeSnapshot() { return app.snapshot && app.snapshot.byAccount ? app.snapshot.byAccount[activeAccount()] || null : null; }
+    function scopedState(account = activeAccount()) {
+      const next = blankWorkState(app.state && app.state.workday || scannerWorkdayKey());
+      if (!app.state) return next;
+      for (const record of app.state.records || []) {
+        if (record.sourceAccount !== account) continue;
+        next.records.push({ ...record });
+        if (record.outcome === 'success' || record.outcome === 'accepted') next.scanned[record.code] = record.time;
+        else if (record.outcome === 'cancelled') next.cancelled.push({ code: record.code, orderId: record.orderId, time: record.time, sourceAccount: record.sourceAccount });
+      }
+      return next;
+    }
+    function sharedStops() { return (app.state && app.state.stops || []).filter(item => !item.sourceAccount); }
+    function canSwitchAccount() { return Boolean(app.session && app.snapshot && app.snapshot.accounts.includes('secondary') && !app.draining && !app.currentCheck && app.queue.length === 0); }
     function snapshotFresh() { return app.snapshot && now().getTime() - new Date(app.snapshot.loadedAt).getTime() <= MAX_SNAPSHOT_AGE_MS; }
     function sessionExpired() { return Boolean(app.session && (!validIso(app.session.expiresAt) || new Date(app.session.expiresAt).getTime() <= now().getTime())); }
-    function canScan() { return Boolean(app.session && !sessionExpired() && app.stateHealthy && app.snapshot && snapshotFresh() && app.phase !== 'error'); }
+    function canScan() { return Boolean(app.session && !sessionExpired() && app.stateHealthy && activeSnapshot() && snapshotFresh() && app.phase !== 'error'); }
 
     async function fetchSharedState() {
       const next = normalizeSharedState(await requestJson('/api/state'));
@@ -695,10 +731,10 @@
       return refreshTask;
     }
 
-    function recordedCancellation(code) { return app.state.cancelled.find(item => item.code === code); }
+    function recordedCancellation(code, state = scopedState()) { return state.cancelled.find(item => item.code === code); }
 
-    function decide(kind, reason, code, orderId = '') {
-      app.decision = { kind, reason, code, orderId: plainText(orderId), time: now().toISOString() };
+    function decide(kind, reason, code, orderId = '', account = activeAccount()) {
+      app.decision = { kind, reason, code, orderId: plainText(orderId), account, time: now().toISOString() };
       playTone(kind);
       render();
       focusScanner();
@@ -708,19 +744,19 @@
       ensureWorkday();
       const code = job.code;
       if (job.queuedDuplicate) {
-        const shipment = app.snapshot && app.snapshot.trackIndex.get(code);
-        decide('duplicate', 'pending', code, shipment && shipment.orderId);
+        const shipment = app.snapshot && app.snapshot.byAccount && app.snapshot.byAccount[job.account] && app.snapshot.byAccount[job.account].trackIndex.get(code);
+        decide('duplicate', 'pending', code, shipment && shipment.orderId, job.account);
         return;
       }
 
-      let shipment = app.snapshot.trackIndex.get(code);
+      let shipment = app.snapshot && app.snapshot.byAccount && app.snapshot.byAccount[job.account] && app.snapshot.byAccount[job.account].trackIndex.get(code);
       let verificationIncomplete = false;
       if (!shipment) {
         app.currentCheck = { kind: 'refreshingUnknown', code };
         renderRuntime();
         const refreshed = await refreshSnapshot({ silentFocus: true, interruptedJob: job });
         if (!app.session) return;
-        if (refreshed) shipment = app.snapshot.trackIndex.get(code);
+        if (refreshed) shipment = app.snapshot && app.snapshot.byAccount && app.snapshot.byAccount[job.account] && app.snapshot.byAccount[job.account].trackIndex.get(code);
         else verificationIncomplete = true;
       }
 
@@ -742,9 +778,9 @@
         app.state = response.state ? normalizeSharedState(response.state) : await fetchSharedState();
         app.stateHealthy = true;
         const orderId = shipment ? shipment.orderId : plainText(response.orderId);
-        if (outcome === 'success') decide('success', 'verified', code, orderId);
-        else if (outcome === 'duplicate') decide('duplicate', 'scanned', code, orderId);
-        else decide('stop', outcome, code, orderId);
+        if (outcome === 'success') decide('success', 'verified', code, orderId, job.account);
+        else if (outcome === 'duplicate') decide('duplicate', 'scanned', code, orderId, job.account);
+        else decide('stop', outcome, code, orderId, job.account);
       } catch (error) {
         if (error instanceof RequestError && error.status === 401) {
           pauseForReauthentication(job);
@@ -755,7 +791,7 @@
         app.stateHealthy = false;
         app.phase = 'error';
         app.lastLoadError = 'shared';
-        decide('stop', 'unverified', code, shipment && shipment.orderId);
+        decide('stop', 'unverified', code, shipment && shipment.orderId, job.account);
       } finally {
         app.activeVerifiers -= 1;
       }
@@ -792,7 +828,7 @@
       primeAudio();
       const queuedDuplicate = app.pendingCodes.has(code);
       if (!queuedDuplicate) app.pendingCodes.add(code);
-      app.queue.push({ code, queuedDuplicate });
+      app.queue.push({ code, queuedDuplicate, account: activeAccount() });
       renderRuntime();
       void drainQueue();
     }
@@ -918,11 +954,12 @@
       if (app.currentCheck && app.currentCheck.kind === 'checking') status = d.checking(app.currentCheck.orderId);
       if (app.currentCheck && app.currentCheck.kind === 'refreshingUnknown') status = d.refreshingUnknown;
       el('currentStatus').textContent = status;
+      renderAccountTabs();
     }
 
     function renderDecision() {
       const d = tx();
-      const decision = app.decision;
+      const decision = app.decision && app.decision.account === activeAccount() ? app.decision : null;
       el('decisionKicker').textContent = d.lastDecision;
       el('scanFeedback').dataset.kind = decision ? decision.kind : 'idle';
       if (!decision) {
@@ -955,11 +992,13 @@
 
     function renderShipments() {
       const d = tx();
-      const shipments = app.snapshot ? [...app.snapshot.shipments] : [];
-      shipments.sort((a, b) => Number(Boolean(app.state.scanned[a.trackAndTrace])) - Number(Boolean(app.state.scanned[b.trackAndTrace])) || new Date(a.placedAt || a.shipmentDateTime) - new Date(b.placedAt || b.shipmentDateTime));
+      const source = activeSnapshot();
+      const state = scopedState();
+      const shipments = source ? [...source.shipments] : [];
+      shipments.sort((a, b) => Number(Boolean(state.scanned[a.trackAndTrace])) - Number(Boolean(state.scanned[b.trackAndTrace])) || new Date(a.placedAt || a.shipmentDateTime) - new Date(b.placedAt || b.shipmentDateTime));
       const rows = shipments.map(shipment => {
-        const scannedAt = app.state.scanned[shipment.trackAndTrace];
-        const cancelled = recordedCancellation(shipment.trackAndTrace);
+        const scannedAt = state.scanned[shipment.trackAndTrace];
+        const cancelled = recordedCancellation(shipment.trackAndTrace, state);
         return {
           className: cancelled ? 'is-stop' : scannedAt ? 'is-scanned' : '', orderId: shipment.orderId, trackCode: shipment.trackAndTrace,
           cells: [
@@ -972,13 +1011,14 @@
         };
       });
       if (!table(el('shipmentList'), [d.thOrder, d.thTrack, d.thShipped, d.thItems, d.thStatus], rows)) empty(el('shipmentList'), d.emptyShipments);
-      const scanned = shipments.filter(item => app.state.scanned[item.trackAndTrace]).length;
+      const scanned = shipments.filter(item => state.scanned[item.trackAndTrace]).length;
       el('shippedCount').textContent = `${scanned}/${shipments.length}`;
     }
 
     function renderOrders() {
       const d = tx();
-      const orders = app.snapshot ? app.snapshot.orders : [];
+      const source = activeSnapshot();
+      const orders = source ? source.orders : [];
       const before = orders.filter(orderBeforeCutoff).sort((a,b) => new Date(a.orderPlacedDateTime) - new Date(b.orderPlacedDateTime));
       const after = orders.filter(order => !orderBeforeCutoff(order)).sort((a,b) => new Date(a.orderPlacedDateTime) - new Date(b.orderPlacedDateTime));
       const beforeRows = before.map(order => {
@@ -1002,21 +1042,24 @@
 
     function renderStops() {
       const d = tx();
-      const cancelledRows = app.state.cancelled.map(item => ({ className: 'is-stop', orderId: item.orderId, trackCode: item.code, cells: [
+      const state = scopedState();
+      const cancelledRows = state.cancelled.map(item => ({ className: 'is-stop', orderId: item.orderId, trackCode: item.code, cells: [
         { content: item.orderId }, { content: displayValue(item.code, 'mono') }, { content: formatTime(item.time), className: 'muted' }
       ] }));
       if (!table(el('cancelledList'), [d.thOrder, d.thTrack, d.thFound], cancelledRows)) empty(el('cancelledList'), d.emptyCancelled);
-      const stopRows = app.state.stops.map(item => ({ className: 'is-stop', orderId: item.orderId, trackCode: item.code, cells: [
+      const stopRows = [...state.stops, ...sharedStops()].map(item => ({ className: 'is-stop', orderId: item.orderId, trackCode: item.code, cells: [
         { content: displayValue(item.code, 'mono') }, { content: item.orderId || '—' }, { content: item.reason === 'unknown' ? d.reasonUnknown : d.reasonUnverified }, { content: formatTime(item.time), className: 'muted' }
       ] }));
       if (!table(el('stopList'), [d.thTrack, d.thOrder, d.thReason, d.thFound], stopRows)) empty(el('stopList'), d.emptyStops);
-      el('cancelledCount').textContent = String(app.state.cancelled.length);
-      el('stopCount').textContent = String(app.state.stops.length);
+      el('cancelledCount').textContent = String(state.cancelled.length);
+      el('stopCount').textContent = String(stopRows.length);
     }
 
     function renderSummary(groups) {
-      const shipments = app.snapshot ? app.snapshot.shipments : [];
-      const scanned = shipments.filter(item => app.state.scanned[item.trackAndTrace]).length;
+      const source = activeSnapshot();
+      const state = scopedState();
+      const shipments = source ? source.shipments : [];
+      const scanned = shipments.filter(item => state.scanned[item.trackAndTrace]).length;
       const total = groups.before.length + shipments.length;
       el('totalCount').textContent = String(total);
       el('scannedCount').textContent = String(scanned);
@@ -1029,6 +1072,7 @@
       app.snapshot = null;
       app.state = blankWorkState();
       app.stateHealthy = false;
+      app.activeAccount = 'primary';
       app.queue.length = 0;
       app.pendingCodes.clear();
       app.draining = false;
@@ -1183,6 +1227,7 @@
       document.documentElement.lang = language;
       el('txtEyebrow').textContent = d.eyebrow; el('txtTitle').textContent = d.title; el('txtSubtitle').textContent = d.subtitle;
       el('scanTitle').textContent = d.scanTitle; el('scanHint').textContent = d.scanHint; el('scanLabel').textContent = d.scanLabel; el('scanInput').placeholder = d.placeholder; el('queueLabel').textContent = d.queue;
+      el('accountTabs').setAttribute('aria-label', d.accountTabs); el('primaryAccountTab').textContent = d.primaryAccount; el('secondaryAccountTab').textContent = d.secondaryAccount;
       el('totalLabel').textContent = d.total; el('scannedLabel').textContent = d.scanned; el('openLabel').textContent = d.open; el('noLabelLabel').textContent = d.noLabel; el('tomorrowLabel').textContent = d.afterCutoff;
       el('shippedTitle').textContent = d.shippedTitle; el('shippedNote').textContent = d.shippedNote; el('noLabelTitle').textContent = d.noLabelTitle; el('noLabelNote').textContent = d.noLabelNote; el('tomorrowTitle').textContent = d.tomorrowTitle; el('tomorrowNote').textContent = d.tomorrowNote;
       el('cancelledTitle').textContent = d.cancelledTitle; el('cancelledNote').textContent = d.cancelledNote; el('stopTitle').textContent = d.stopTitle; el('stopNote').textContent = d.stopNote;
@@ -1190,9 +1235,33 @@
       renderAccess();
     }
 
+    function renderAccountTabs() {
+      const accounts = app.snapshot && app.snapshot.accounts ? app.snapshot.accounts : [];
+      const hasSecondary = accounts.includes('secondary');
+      if (!accounts.includes(app.activeAccount)) app.activeAccount = 'primary';
+      el('accountTabs').hidden = !hasSecondary;
+      el('secondaryAccountTab').hidden = !hasSecondary;
+      const switchable = canSwitchAccount();
+      for (const button of [el('primaryAccountTab'), el('secondaryAccountTab')]) {
+        const account = button.dataset.account;
+        const selected = account === activeAccount();
+        button.setAttribute('aria-selected', String(selected));
+        button.tabIndex = selected ? 0 : -1;
+        button.disabled = hasSecondary && !switchable;
+      }
+    }
+
+    function selectAccount(account) {
+      if (!['primary', 'secondary'].includes(account) || account === activeAccount() || !canSwitchAccount()) return;
+      app.activeAccount = account;
+      app.decision = null;
+      render();
+      focusScanner();
+    }
+
     function render() {
       ensureWorkday();
-      renderStaticText(); renderHealth(); renderRuntime(); renderDecision();
+      renderStaticText(); renderAccountTabs(); renderHealth(); renderRuntime(); renderDecision();
       const groups = renderOrders(); renderShipments(); renderStops(); renderSummary(groups);
     }
 
@@ -1226,6 +1295,22 @@
       if (app.session) focusScanner();
       else focusAccess();
     });
+    el('accountTabs').addEventListener('click', event => {
+      const button = event.target.closest('button[data-account]');
+      if (button) selectAccount(button.dataset.account);
+    });
+    el('accountTabs').addEventListener('keydown', event => {
+      if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key) || !canSwitchAccount()) return;
+      const accounts = app.snapshot && app.snapshot.accounts ? app.snapshot.accounts : [];
+      const current = accounts.indexOf(activeAccount());
+      let next = current;
+      if (event.key === 'ArrowLeft') next = Math.max(0, current - 1);
+      if (event.key === 'ArrowRight') next = Math.min(accounts.length - 1, current + 1);
+      if (event.key === 'Home') next = 0;
+      if (event.key === 'End') next = accounts.length - 1;
+      event.preventDefault();
+      selectAccount(accounts[next]);
+    });
     el('retryButton').addEventListener('click', () => void refreshSnapshot());
     el('refreshButton').addEventListener('click', () => void refreshSnapshot());
     el('accessForm').addEventListener('submit', event => void signIn(event));
@@ -1244,14 +1329,18 @@
     app.state = blankWorkState();
     if (window.__apiMock) {
       window.__scannerTest = Object.freeze({
-        getState: () => ({
-          accessPhase: app.accessPhase, authenticated: Boolean(app.session), stateHealthy: app.stateHealthy,
+        getState: () => {
+          const source = activeSnapshot();
+          const state = scopedState();
+          return {
+          accessPhase: app.accessPhase, authenticated: Boolean(app.session), stateHealthy: app.stateHealthy, activeAccount: activeAccount(),
           phase: app.phase, canScan: canScan(), queueDepth: app.queue.length, pausedQueueDepth: app.pausedQueue.length, pendingCodes: [...app.pendingCodes],
           verifierActive: app.activeVerifiers, maxActiveVerifiers: app.maxActiveVerifiers,
-          workday: app.state.workday, scanned: { ...app.state.scanned }, cancelled: app.state.cancelled.map(item => ({ ...item })), stops: app.state.stops.map(item => ({ ...item })),
-          shipmentCount: app.snapshot ? app.snapshot.shipments.length : 0, orderCount: app.snapshot ? app.snapshot.orders.length : 0,
+          workday: app.state.workday, scanned: { ...state.scanned }, cancelled: state.cancelled.map(item => ({ ...item })), stops: [...state.stops, ...sharedStops()].map(item => ({ ...item })),
+          shipmentCount: source ? source.shipments.length : 0, orderCount: source ? source.orders.length : 0,
           decision: app.decision ? { ...app.decision } : null
-        }),
+          };
+        },
         amsterdamWindow: iso => amsterdamWindow(iso ? new Date(iso) : now()),
         scannerWorkdayKey: iso => scannerWorkdayKey(iso ? new Date(iso) : now()),
         refresh: () => refreshSnapshot({ silentFocus: true })

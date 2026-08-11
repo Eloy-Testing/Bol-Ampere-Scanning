@@ -56,15 +56,49 @@ test.describe('dual Bol account snapshot', () => {
   const secondary = snapshot({ parcels: [parcel({ n: 2, track: 'SECONDARY-TRACK' })] });
   test.use({ scenario: healthyScenario({ snapshots: [dualAccountSnapshot(primary, secondary)] }) });
 
-  test('loads both configured accounts and sends the source key with a secondary scan', async ({ page }) => {
+  test('keeps each account on its own tab and sends the selected source key with a client scan', async ({ page }) => {
     await waitForReady(page);
+    await expect(page.locator(selectors.accountTabs)).toBeVisible();
+    await expect(page.locator(selectors.primaryAccountTab)).toHaveAttribute('aria-selected', 'true');
     await expect(page.locator(selectors.shipmentList)).toContainText('PRIMARY-TRACK');
+    await expect(page.locator(selectors.shipmentList)).not.toContainText('SECONDARY-TRACK');
+    await page.locator(selectors.secondaryAccountTab).click();
+    await expect(page.locator(selectors.secondaryAccountTab)).toHaveAttribute('aria-selected', 'true');
     await expect(page.locator(selectors.shipmentList)).toContainText('SECONDARY-TRACK');
+    await expect(page.locator(selectors.shipmentList)).not.toContainText('PRIMARY-TRACK');
+    await expect(page.locator(selectors.scanInput)).toBeFocused();
     await page.locator(selectors.scanInput).fill('SECONDARY-TRACK');
     await page.locator(selectors.scanInput).press('Enter');
     await expect.poll(() => page.evaluate(() => window.__apiMock.callsOf('scan').at(-1)?.body?.account)).toBe('secondary');
+    await expect(page.locator(selectors.scannedCount)).toHaveText('1');
+    await page.locator(selectors.primaryAccountTab).click();
+    await expect(page.locator(selectors.scannedCount)).toHaveText('0');
+    await expect(page.locator(selectors.shipmentList)).toContainText('PRIMARY-TRACK');
+    await expect(page.locator(selectors.shipmentList)).not.toContainText('SECONDARY-TRACK');
   });
 
+});
+
+test.describe('account switch during live verification', () => {
+  const primary = snapshot({ parcels: [parcel({ n: 1, track: 'PRIMARY-TRACK' })] });
+  const secondary = snapshot({ parcels: [parcel({ n: 2, track: 'SECONDARY-TRACK', verifierDelayMs: 200 })] });
+  test.use({ scenario: healthyScenario({ snapshots: [dualAccountSnapshot(primary, secondary)] }) });
+
+  test('locks account selection until the source-bound decision completes', async ({ page }) => {
+    await waitForReady(page);
+    await page.locator(selectors.secondaryAccountTab).click();
+    await page.locator(selectors.scanInput).fill('SECONDARY-TRACK');
+    await page.locator(selectors.scanInput).press('Enter');
+    await expect(page.locator(selectors.primaryAccountTab)).toBeDisabled();
+    await expect.poll(() => page.evaluate(() => window.__apiMock.callsOf('scan').length)).toBe(1);
+    await expect(page.locator(selectors.primaryAccountTab)).toBeEnabled();
+  });
+});
+
+test('keeps the primary scanner unchanged when no client source is configured', async ({ page }) => {
+  await waitForReady(page);
+  await expect(page.locator(selectors.accountTabs)).toBeHidden();
+  await expect(page.locator(selectors.shipmentList)).toContainText('TRACK-1');
 });
 
 test.describe('secondary account incompleteness', () => {
@@ -86,7 +120,7 @@ test.describe('cross-account tracking collision', () => {
   const secondary = snapshot({ parcels: [parcel({ n: 2, track: 'DUPLICATE-TRACK' })] });
   test.use({ scenario: healthyScenario({ snapshots: [dualAccountSnapshot(primary, secondary)] }) });
 
-  test('fails closed when the same tracking code appears across accounts', async ({ page }) => {
+  test('keeps the global fail-closed collision guard when the same tracking code appears across accounts', async ({ page }) => {
     await expect(page.locator(selectors.scanInput)).toBeDisabled();
     await expect(page.locator(selectors.dataStatus)).toHaveAttribute('data-state', 'error');
   });
