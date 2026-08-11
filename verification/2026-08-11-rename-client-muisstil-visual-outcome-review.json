@@ -1,0 +1,114 @@
+{
+  "schema_version": "visual-outcome-review.v1",
+  "task_id": "2026-08-11-rename-client-muisstil",
+  "project_root": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker",
+  "surface_profile": "browser_ui",
+  "review_mode": "main_agent_only",
+  "main_agent_id": "codex-main",
+  "frozen_contract": {
+    "path": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/verification/2026-08-11-rename-client-muisstil-visual-contract.md",
+    "sha256": "0ec13f9e28fa449b19ca2538ee8e11c0ec02320107dfbfbfdebeeaa7592972b5",
+    "quality_bar": "The production scanner visibly names its secondary account Muisstil while retaining Bankhoes default selection, selected-tab emphasis, scanner readiness, and contained mobile layout.",
+    "required_invariants": [
+      "Muisstil visible secondary tab label",
+      "Bankhoes default selection",
+      "Muisstil selected-tab emphasis",
+      "scanner readiness after selection",
+      "contained mobile page width",
+      "console-clean production state"
+    ],
+    "browser_routes": ["/"],
+    "browser_viewports": ["desktop", "mobile"],
+    "browser_required_states": [
+      "authenticated_primary_default",
+      "authenticated_muisstil_selected",
+      "mobile_muisstil_ready"
+    ],
+    "shot_or_beat_ids": [],
+    "motion_duration_seconds": null,
+    "audio_required": false
+  },
+  "references": [],
+  "artifact": {
+    "kind": "deployed_url",
+    "path": null,
+    "url": "https://bol-ampere-scanning.vercel.app/",
+    "deployment_identity": "dpl_EsVLJdjVJcBN3a1srKyHs1bDWxuV",
+    "sha256": null,
+    "created_at": "2026-08-11T15:58:17.029Z"
+  },
+  "evidence": [
+    {
+      "id": "EV-001",
+      "kind": "browser_screenshot",
+      "path": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/verification/screenshot-evidence/muisstil-tab-production-desktop.png",
+      "sha256": "c6b50367e69867893edfc363c3905e720664768e38234b51be2dd2504c80f1ba",
+      "artifact_binding": "dpl_EsVLJdjVJcBN3a1srKyHs1bDWxuV",
+      "captured_at": "2026-08-11T15:59:41Z",
+      "coverage": {
+        "viewport": "desktop",
+        "route": "/",
+        "full_surface": true,
+        "notes": "Authenticated Muisstil selected scanner surface at 1440px width."
+      }
+    },
+    {
+      "id": "EV-002",
+      "kind": "browser_screenshot",
+      "path": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/verification/screenshot-evidence/muisstil-tab-production-mobile.png",
+      "sha256": "39d09c0ad1561c21cfd80d4a5e6282780ca65b9bd7d4d525f82b04c7dd4f6909",
+      "artifact_binding": "dpl_EsVLJdjVJcBN3a1srKyHs1bDWxuV",
+      "captured_at": "2026-08-11T15:59:50Z",
+      "coverage": {
+        "viewport": "mobile",
+        "route": "/",
+        "full_surface": true,
+        "notes": "Authenticated Muisstil selected scanner surface at 390px width."
+      }
+    },
+    {
+      "id": "EV-003",
+      "kind": "browser_state",
+      "path": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/verification/2026-08-11-rename-client-muisstil-browser-state.json",
+      "sha256": "23402a84526d49a0d4bcf340ceea97df96f53b74320f23d8c58aab549844c6cc",
+      "artifact_binding": "dpl_EsVLJdjVJcBN3a1srKyHs1bDWxuV",
+      "captured_at": "2026-08-11T16:00:20Z",
+      "coverage": {
+        "routes": ["/"],
+        "states_checked": [
+          "authenticated_primary_default",
+          "authenticated_muisstil_selected",
+          "mobile_muisstil_ready"
+        ],
+        "interactions_checked": true,
+        "scroll_complete": true,
+        "overflow_checked": true,
+        "console_checked": true,
+        "notes": "Production account-tab interaction and visual inspection state."
+      }
+    }
+  ],
+  "review_cycles": [
+    {
+      "cycle": 1,
+      "artifact_binding": "dpl_EsVLJdjVJcBN3a1srKyHs1bDWxuV",
+      "inspected_at": "2026-08-11T16:00:24Z",
+      "main_agent": {
+        "inspector_id": "codex-main",
+        "inspection_complete": true,
+        "verdict": "PASS",
+        "evidence_ids": ["EV-001", "EV-002", "EV-003"],
+        "summary": "The authenticated production scanner opened with Bankhoes selected and displayed Muisstil as the adjacent secondary source. Selecting Muisstil changed the selected visual state while the scanner remained ready. The Muisstil scanner surface was inspected at desktop and mobile widths, the full desktop page was scrolled, the mobile page had no horizontal overflow, and no console errors were observed."
+      },
+      "critic": null,
+      "findings": [],
+      "resolved_finding_ids": [],
+      "advisories": [],
+      "verdict": "PASS"
+    }
+  ],
+  "final_verdict": "PASS",
+  "limits": [
+    "The receipt binds the visual account-label outcome to the exact production artifact; deterministic browser tests separately prove static fallback, NL/EN/ES labels, and source-bound scan identity."
+  ]
+}

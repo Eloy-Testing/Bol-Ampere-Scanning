@@ -1,0 +1,15 @@
+{
+  "artifact_url": "https://bol-ampere-scanning.vercel.app/",
+  "deployment_identity": "dpl_EsVLJdjVJcBN3a1srKyHs1bDWxuV",
+  "routes": ["/"],
+  "states_checked": [
+    "authenticated_primary_default",
+    "authenticated_muisstil_selected",
+    "mobile_muisstil_ready"
+  ],
+  "interactions_checked": true,
+  "scroll_complete": true,
+  "overflow_checked": true,
+  "console_checked": true,
+  "notes": "The authenticated production scanner opened with Bankhoes selected. Selecting Muisstil changed the explicit selected tab while the scanner remained ready. Desktop and mobile account-selection surfaces were visually inspected; the mobile page had no horizontal overflow, the desktop page was scrolled through its full surface, and the production console had no errors."
+}
