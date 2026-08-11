@@ -30,12 +30,12 @@
   },
   "references": [],
   "artifact": {
-    "kind": "deployed_url",
-    "path": null,
-    "url": "https://bol-ampere-scanning.vercel.app/",
-    "deployment_identity": "dpl_FNU5P51xAphHwU4GHw1VeWj9ZPjJ",
-    "sha256": null,
-    "created_at": "2026-08-11T11:29:31.951Z"
+    "kind": "local_file",
+    "path": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/index.html",
+    "url": null,
+    "deployment_identity": null,
+    "sha256": "5ddfbd324a7220235a44d3b426224a407db2b0bb0097c72cbe3d7e949aa8d6fa",
+    "created_at": "2026-08-11T11:29:12Z"
   },
   "evidence": [
     {
@@ -43,7 +43,7 @@
       "kind": "browser_screenshot",
       "path": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/verification/screenshot-evidence/client-bol-tabs-production-desktop.png",
       "sha256": "0eb419e53a2302715afe087197835f5319f157487fa3f33acb84023a7aa2d039",
-      "artifact_binding": "dpl_FNU5P51xAphHwU4GHw1VeWj9ZPjJ",
+      "artifact_binding": "5ddfbd324a7220235a44d3b426224a407db2b0bb0097c72cbe3d7e949aa8d6fa",
       "captured_at": "2026-08-11T11:32:52Z",
       "coverage": {
         "viewport": "desktop",
@@ -57,7 +57,7 @@
       "kind": "browser_screenshot",
       "path": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/verification/screenshot-evidence/client-bol-tabs-production-mobile.png",
       "sha256": "9d2ec4cb404fac75af5e6e45dd35c7f4d499fcce85ded6ffd76d591a94a677e0",
-      "artifact_binding": "dpl_FNU5P51xAphHwU4GHw1VeWj9ZPjJ",
+      "artifact_binding": "5ddfbd324a7220235a44d3b426224a407db2b0bb0097c72cbe3d7e949aa8d6fa",
       "captured_at": "2026-08-11T11:32:59Z",
       "coverage": {
         "viewport": "mobile",
@@ -71,7 +71,7 @@
       "kind": "browser_state",
       "path": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/verification/2026-08-11-separate-client-bol-tab-browser-state.json",
       "sha256": "990578639773847df37b2338428731b986dfd49924d6aaf10573e8c9b942d950",
-      "artifact_binding": "dpl_FNU5P51xAphHwU4GHw1VeWj9ZPjJ",
+      "artifact_binding": "5ddfbd324a7220235a44d3b426224a407db2b0bb0097c72cbe3d7e949aa8d6fa",
       "captured_at": "2026-08-11T11:34:20Z",
       "coverage": {
         "routes": ["/"],
@@ -84,14 +84,14 @@
         "scroll_complete": true,
         "overflow_checked": true,
         "console_checked": true,
-        "notes": "Production tab interaction and visual inspection state."
+        "notes": "Production tab interaction and visual inspection state bound to the released source artifact."
       }
     }
   ],
   "review_cycles": [
     {
       "cycle": 1,
-      "artifact_binding": "dpl_FNU5P51xAphHwU4GHw1VeWj9ZPjJ",
+      "artifact_binding": "5ddfbd324a7220235a44d3b426224a407db2b0bb0097c72cbe3d7e949aa8d6fa",
       "inspected_at": "2026-08-11T11:34:23Z",
       "main_agent": {
         "inspector_id": "codex-main",
@@ -109,6 +109,6 @@
   ],
   "final_verdict": "PASS",
   "limits": [
-    "The receipt validates artifact binding, recorded coverage, and resolved visual findings; deterministic browser tests separately prove source-exclusive row and scan behavior."
+    "This source-bound receipt supplements the deployment-bound visual review; deterministic browser tests separately prove source-exclusive row and scan behavior."
   ]
 }

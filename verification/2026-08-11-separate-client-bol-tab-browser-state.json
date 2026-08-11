@@ -1,0 +1,15 @@
+{
+  "artifact_url": "https://bol-ampere-scanning.vercel.app/",
+  "deployment_identity": "dpl_FNU5P51xAphHwU4GHw1VeWj9ZPjJ",
+  "routes": ["/"],
+  "states_checked": [
+    "authenticated_primary_default",
+    "authenticated_client_tab",
+    "mobile_client_ready"
+  ],
+  "interactions_checked": true,
+  "scroll_complete": true,
+  "overflow_checked": true,
+  "console_checked": true,
+  "notes": "The authenticated production snapshot opened with Bankhoes selected. Selecting Client Bol changed the explicit tab state while leaving the scanner ready. The full desktop surface and the mobile scanner surface were inspected; neither viewport had page-level horizontal overflow, and the production console reported no errors."
+}

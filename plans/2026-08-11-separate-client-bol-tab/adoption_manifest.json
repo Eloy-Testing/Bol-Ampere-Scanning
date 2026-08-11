@@ -1,0 +1,45 @@
+{
+  "schema_version": "creative-framework.adoption.v2",
+  "task_id": "2026-08-11-separate-client-bol-tab",
+  "surface_kind": "browser_visible",
+  "plan_review_mode": "formal",
+  "framework_control_root": "/Users/zanderbrilleman/Documents/Codex/2026-07-06/co",
+  "active_project_root": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker",
+  "contracts": {
+    "retrieval": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/plans/2026-08-11-separate-client-bol-tab/retrieval_contract.json",
+    "design": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/plans/2026-08-11-separate-client-bol-tab/design_contract.md",
+    "implementation_plan": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/planning/2026-08-11-separate-client-bol-tab/task_plan.md",
+    "review_packet": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/planning/2026-08-11-separate-client-bol-tab/review_packet.json",
+    "plan_review": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/planning/2026-08-11-separate-client-bol-tab/plan_review.json",
+    "interface_output": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/plans/2026-08-11-separate-client-bol-tab/interface_output_contract.json"
+  },
+  "contract_sha256": {
+    "retrieval": "dfacd26a3494bd5fe1172f82063b6bcb28b684c4fd67f66381b5f34d717e1565",
+    "design": "dae159e9d49ee1dfe8de545575dce489bc4b00b6e651aa667f0f9624c6f0b1a8",
+    "implementation_plan": "af8e897e951cc5a37014568edf9e495c5e451bebf4fec07dbe663ad1f8332ad2",
+    "interface_output": "d6019c9dc4582529f87b64b58f69a42015bcc6ecaea5d926aec0fd5c27a7289d"
+  },
+  "artifact": {
+    "path": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/index.html",
+    "sha256": "5ddfbd324a7220235a44d3b426224a407db2b0bb0097c72cbe3d7e949aa8d6fa"
+  },
+  "verification": {
+    "visual_evidence": [
+      {
+        "path": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/verification/screenshot-evidence/client-bol-tabs-production-desktop.png",
+        "sha256": "0eb419e53a2302715afe087197835f5319f157487fa3f33acb84023a7aa2d039",
+        "viewport": "desktop"
+      },
+      {
+        "path": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/verification/screenshot-evidence/client-bol-tabs-production-mobile.png",
+        "sha256": "9d2ec4cb404fac75af5e6e45dd35c7f4d499fcce85ded6ffd76d591a94a677e0",
+        "viewport": "mobile"
+      }
+    ],
+    "visual_outcome_review": {
+      "path": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/verification/2026-08-11-separate-client-bol-tab-local-visual-outcome-review.json",
+      "sha256": "29396c9f2145ebec7496a52582c31d2d07f469e3422fa6de25ec348f2dcd70a9",
+      "status": "PASS"
+    }
+  }
+}
