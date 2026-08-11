@@ -1,0 +1,30 @@
+{
+  "generated": "2026-08-11",
+  "target_surface": "Muisstil secondary account label in the Ampere warehouse scanner",
+  "problem": "The current secondary account is operationally correct but visibly named Client Bol rather than Muisstil.",
+  "source_artifacts": ["AGENTS.md", "index.html", "README.md", "tests/data-health.spec.mjs"],
+  "nodes": [
+    {"id": "request", "type": "intent", "label": "Muisstil is the client name", "evidence": "User request"},
+    {"id": "labels", "type": "ui", "label": "static and localized secondary tab labels", "evidence": "index.html"},
+    {"id": "identity", "type": "runtime", "label": "fixed secondary source key", "evidence": "index.html scan request behavior"},
+    {"id": "guidance", "type": "documentation", "label": "operator two-source guidance", "evidence": "README.md"},
+    {"id": "proof", "type": "verification", "label": "regression tests and production inspection", "evidence": "AGENTS.md finish line"}
+  ],
+  "edges": [
+    {"from": "request", "to": "labels", "relation": "renames", "order": 1, "confidence": "high", "delay": "immediate", "risk": "medium", "evidence": "Muisstil is the user-supplied replacement name."},
+    {"from": "labels", "to": "identity", "relation": "must_not_mutate", "order": 2, "confidence": "high", "delay": "runtime", "risk": "high", "evidence": "Visible name and internal secondary source key are separate concerns."},
+    {"from": "labels", "to": "guidance", "relation": "aligns", "order": 2, "confidence": "high", "delay": "release", "risk": "medium", "evidence": "Operator docs must match the tab label."},
+    {"from": "labels", "to": "proof", "relation": "requires", "order": 3, "confidence": "high", "delay": "release", "risk": "medium", "evidence": "The release needs browser coverage and current live visual evidence."}
+  ],
+  "order_1": ["replace current visible secondary label"],
+  "order_2": ["preserve internal source identity", "align operator documentation"],
+  "order_3": ["prove behavior and released visual label"],
+  "feedback_loops": ["A browser regression failure or live visual mismatch blocks release and returns to the label source."],
+  "verification_edges": [
+    {"edge": "labels -> identity", "verification": "existing source-key scan assertion remains passing after copy-only diff"},
+    {"edge": "labels -> proof", "verification": "browser label assertion and authenticated production desktop/mobile inspection"}
+  ],
+  "local_isolation_proof": "The only runtime change is text content; source-key values, scan calls, API routes, and server modules are excluded from the diff.",
+  "blockers": [],
+  "decision": "Rename visible secondary labels to Muisstil and preserve the fixed secondary source identity."
+}

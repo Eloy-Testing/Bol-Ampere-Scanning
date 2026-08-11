@@ -1,0 +1,64 @@
+{
+  "schema_version": "creative-framework.spatial-priority.v1",
+  "task_id": "2026-08-11-rename-client-muisstil",
+  "surface": "Authenticated warehouse scanner account-selection row",
+  "primary_decision": {
+    "statement": "Which fixed account will the next package scan use?",
+    "primary_action": "Confirm Bankhoes or Muisstil, then scan the tracking code.",
+    "item_id": "account_and_scan"
+  },
+  "items": [
+    {
+      "id": "account_and_scan",
+      "label": "Account selection and scan input",
+      "purpose": "Make Muisstil the unambiguous secondary operator label directly before scanning.",
+      "priority": "p0",
+      "consequence_of_omission": "An operator could misidentify the secondary account before a package scan.",
+      "visibility": "immediate",
+      "placement": {"mode": "explicit", "region": "primary_decision_zone", "anchor": "existing_account_tabs_before_scan_input", "justification": "The selected account is a safety prerequisite to scanning."},
+      "attention_order": 1,
+      "attention_dependencies": [],
+      "interactive": true,
+      "focus_order": 1,
+      "adaptive_behavior": {
+        "desktop": {"region": "primary_decision_zone", "visibility": "immediate", "order": 1},
+        "mobile": {"region": "primary_decision_zone", "visibility": "immediate", "order": 1},
+        "invariant": "The account label and scan control remain in the first decision zone at each viewport."
+      },
+      "demotion_reason": null
+    },
+    {
+      "id": "snapshot_health",
+      "label": "Snapshot health",
+      "purpose": "Retain existing readiness and recovery context without adding copy.",
+      "priority": "p1",
+      "consequence_of_omission": "The operator could not determine if scanning is safely available.",
+      "visibility": "adjacent",
+      "placement": {"mode": "explicit", "region": "supporting_status_zone", "anchor": "existing_healthbar", "justification": "Health explains whether scanning can continue."},
+      "attention_order": 2,
+      "attention_dependencies": ["account_and_scan"],
+      "interactive": true,
+      "focus_order": 2,
+      "adaptive_behavior": {
+        "desktop": {"region": "supporting_status_zone", "visibility": "adjacent", "order": 2},
+        "mobile": {"region": "supporting_status_zone", "visibility": "adjacent", "order": 2},
+        "invariant": "Health remains before worklists and does not replace the scan action."
+      },
+      "demotion_reason": "It remains supporting context while healthy."
+    }
+  ],
+  "attention_sequence": ["account_and_scan", "snapshot_health"],
+  "focus_sequence": ["account_and_scan", "snapshot_health"],
+  "responsive_invariants": {
+    "primary_decision_precedes_secondary": true,
+    "dom_order_matches_visual_order": true,
+    "focus_order_matches_task_order": true
+  },
+  "verification": {
+    "desktop_viewport": "1440x980",
+    "mobile_viewport": "390x900",
+    "geometry_required": true,
+    "keyboard_required": true,
+    "overflow_required": true
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "task_id": "2026-08-11-rename-client-muisstil",
+  "created_at": "2026-08-11",
+  "target_surface": "Authenticated Ampere warehouse scanner account-tab label",
+  "project_owner": "BHP Warehouse Packing Tracker",
+  "request_summary": "Rename the visible secondary Bol account from Client Bol to Muisstil.",
+  "included_pages": ["/"],
+  "excluded_pages": ["unrelated projects and external dashboards"],
+  "active_rules": ["AGENTS.md", "design-system/interface-integrity.md"],
+  "required_project_contracts": ["design-system/interface-integrity.md"],
+  "active_skills": ["creative-design-orchestrator", "visual-outcome-review"],
+  "tool_surfaces": ["local source", "approved Vercel project", "approved browser"],
+  "write_targets": ["index.html", "README.md", "tests/data-health.spec.mjs", "plans/2026-08-11-rename-client-muisstil/**", "planning/2026-08-11-rename-client-muisstil/**", "verification/**"],
+  "page_fault_policy": "record-and-resolve-before-design",
+  "external_account_policy": "approved Vercel project only for release and verification",
+  "content_truth_policy": "Muisstil is the user-supplied fixed client name; source keys and credentials remain server-only",
+  "assumptions": {
+    "verified": ["The secondary account is rendered through secondaryAccount localization strings and a static tab fallback.", "The account transport identity remains the fixed internal key secondary."],
+    "inferred": ["Muisstil is the exact label intended in each supported station language."],
+    "unknown": []
+  },
+  "verification_required": {
+    "browser_visual": true,
+    "state_coverage": true,
+    "interface_output_contract": true,
+    "spatial_priority_contract": true,
+    "specialized_profile_contract": false,
+    "pagespace_status": false
+  }
+}

@@ -58,8 +58,15 @@ test.describe('dual Bol account snapshot', () => {
 
   test('keeps each account on its own tab and sends the selected source key with a client scan', async ({ page }) => {
     await waitForReady(page);
+    const staticDocument = await page.request.get('/index.html');
+    await expect(staticDocument).toBeOK();
+    await expect(await staticDocument.text()).toContain('data-testid="account-tab-secondary" data-account="secondary" role="tab" type="button" aria-selected="false">Muisstil</button>');
     await expect(page.locator(selectors.accountTabs)).toBeVisible();
     await expect(page.locator(selectors.primaryAccountTab)).toHaveAttribute('aria-selected', 'true');
+    for (const language of ['nl', 'en', 'es']) {
+      await page.locator(`#langSwitch button[data-lang="${language}"]`).click();
+      await expect(page.locator(selectors.secondaryAccountTab)).toHaveText('Muisstil');
+    }
     await expect(page.locator(selectors.shipmentList)).toContainText('PRIMARY-TRACK');
     await expect(page.locator(selectors.shipmentList)).not.toContainText('SECONDARY-TRACK');
     await page.locator(selectors.secondaryAccountTab).click();

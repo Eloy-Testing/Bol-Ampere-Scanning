@@ -1,0 +1,167 @@
+{
+  "schema_version": 3,
+  "marker": "PLAN_CRITIC_REVIEW_V2",
+  "envelope": {
+    "review_id": "bhp-rename-client-muisstil-2026-08-11",
+    "literal_request": "Client name is Muisstil.",
+    "intended_outcome": "The current secondary scanner account is visibly and consistently named Muisstil, while its approved fixed secondary source identity and all scan safety behavior remain unchanged.",
+    "outcomes": [
+      {
+        "id": "OUT-1",
+        "text": "The static and each localized authenticated secondary account tab display Muisstil whenever the fixed secondary source is configured."
+      },
+      {
+        "id": "OUT-2",
+        "text": "Current non-secret operator guidance uses Muisstil and no current product or documentation label remains Client Bol."
+      },
+      {
+        "id": "OUT-3",
+        "text": "The internal secondary source key, source-bound scan request, optional-tab visibility, FIFO behavior, and fail-closed safeguards remain unchanged."
+      },
+      {
+        "id": "OUT-4",
+        "text": "The exact approved production deployment has passing regression coverage plus current desktop/mobile Muisstil evidence and validated visual/adoption receipts."
+      }
+    ],
+    "unacceptable_narrow_interpretation": "Changing only one language or only post-render text; leaving the static fallback or README outdated; renaming the secondary source key or environment/configuration identity; or reusing old visual evidence after a visible-copy change.",
+    "in_scope": [
+      "static and localized secondary tab label",
+      "focused browser regression",
+      "current README guidance",
+      "new task-local visual contract/browser-state/screenshots/receipt and adoption evidence",
+      "approved deployment and browser inspection"
+    ],
+    "out_of_scope": [
+      "Bol credentials, source keys, session/auth code, APIs, server modules, migrations/database, retailer writes, Vercel environment variables, historical evidence, other accounts/projects"
+    ],
+    "acceptance_evidence": [
+      "Deterministic browser coverage proves the static fallback and the rendered NL, EN, and ES secondary tab labels are exactly Muisstil with the secondary source configured, and still sends account secondary for a scan.",
+      "Migration, server, and full browser suites pass.",
+      "Diff review proves only allowed label/docs/test/evidence paths changed and contains no secret material.",
+      "The exact approved production artifact visibly shows Muisstil at desktop and mobile widths with no page-level overflow or console errors.",
+      "A new Muisstil-specific deployment-bound visual receipt validates from its current contract, browser state, and screenshots without changing earlier Client Bol receipts; the task-local adoption manifest validates against its source-bound companion receipt."
+    ],
+    "dependency_expansion_rule": "Only dependencies required to render or verify the visible secondary label may be added."
+  },
+  "context": {
+    "context_root": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker",
+    "project_index_paths": [
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/README.md"
+    ],
+    "project_context_paths": [
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/AGENTS.md",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/README.md",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/plans/2026-08-11-rename-client-muisstil/retrieval_contract.json",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/plans/2026-08-11-rename-client-muisstil/design_contract.md",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/plans/2026-08-11-rename-client-muisstil/spatial_priority_contract.json",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/plans/2026-08-11-rename-client-muisstil/interface_output_contract.json"
+    ],
+    "governing_instructions": [
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/AGENTS.md"
+    ],
+    "inspected_paths": [
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/AGENTS.md",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/README.md",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/index.html",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/data-health.spec.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/fixtures/mock-bol.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/package.json",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/verification/visual-outcome-review.json",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/plans/2026-08-11-rename-client-muisstil/retrieval_contract.json",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/plans/2026-08-11-rename-client-muisstil/design_contract.md",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/plans/2026-08-11-rename-client-muisstil/spatial_priority_contract.json",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/plans/2026-08-11-rename-client-muisstil/interface_output_contract.json"
+    ]
+  },
+  "target": {
+    "target_system_root": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker",
+    "governing_instructions": [
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/AGENTS.md"
+    ],
+    "existing_direct_target_paths": [
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/index.html",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/README.md",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/data-health.spec.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/fixtures/mock-bol.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/package.json",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/verification/visual-outcome-review.json"
+    ],
+    "planned_target_paths": [
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/plans/2026-08-11-rename-client-muisstil/adoption_manifest.json",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/verification/2026-08-11-rename-client-muisstil-visual-contract.md",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/verification/2026-08-11-rename-client-muisstil-browser-state.json",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/verification/screenshot-evidence/muisstil-tab-production-desktop.png",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/verification/screenshot-evidence/muisstil-tab-production-mobile.png",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/verification/2026-08-11-rename-client-muisstil-visual-outcome-review.json",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/verification/2026-08-11-rename-client-muisstil-local-visual-outcome-review.json"
+    ],
+    "inspected_paths": [
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/AGENTS.md",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/index.html",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/README.md",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/data-health.spec.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/fixtures/mock-bol.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/package.json",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/verification/visual-outcome-review.json"
+    ],
+    "cross_root_authority_reason": "The project context and implementation roots are identical."
+  },
+  "plan_manifest": {
+    "draft_text": "# Reviewed plan\n\n1. Replace the existing static fallback and all supported-language secondary account labels with the exact user-supplied proper name Muisstil. Preserve the DOM IDs, role/tab semantics, fixed `secondary` account key, source-switch guard, and scanner behavior.\n2. Add deterministic browser coverage that proves the unrendered static fallback and the rendered NL, EN, and ES secondary-tab labels are each exactly Muisstil with the secondary source configured. Retain the existing selected-source scan request assertion for account `secondary`. Update non-secret README operator guidance only; do not alter historical plans or prior receipts.\n3. Run migration, server, and full browser suites; review the diff for prohibited identity/configuration changes. Commit, push, and deploy only the approved bol-ampere-scanning Vercel project. Inspect the exact authenticated production artifact at desktop and mobile widths. Create and validate the new Muisstil-specific visual contract, browser-state record, screenshots, deployment-bound visual-outcome receipt, source-bound companion receipt, and adoption manifest; preserve earlier Client Bol receipts unchanged.\n",
+    "steps": [
+      {
+        "id": "P1",
+        "text": "Replace static and localized secondary operator labels with Muisstil while preserving the internal secondary source key and existing tab semantics.",
+        "provenance": "user_request",
+        "required": true,
+        "required_surfaces": [
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/index.html"
+        ],
+        "requirement_source": "OUT-1",
+        "dependency_evidence": [
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/index.html",
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/plans/2026-08-11-rename-client-muisstil/design_contract.md"
+        ]
+      },
+      {
+        "id": "P2",
+        "text": "Add deterministic static-fallback plus rendered NL, EN, and ES Muisstil label coverage while retaining the selected-source scan request for account secondary, and align current non-secret operator guidance without rewriting historical evidence.",
+        "provenance": "existing_contract",
+        "required": true,
+        "required_surfaces": [
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/data-health.spec.mjs",
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/README.md"
+        ],
+        "requirement_source": "OUT-1, OUT-2 and OUT-3",
+        "dependency_evidence": [
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/index.html",
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/data-health.spec.mjs",
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/fixtures/mock-bol.mjs",
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/README.md"
+        ]
+      },
+      {
+        "id": "P3",
+        "text": "Run required regression checks, inspect the static fallback and every supported localized label, and release only the approved production project. Create and validate a new Muisstil-specific visual contract, browser-state record, desktop/mobile screenshots, deployment-bound visual receipt, source-bound companion receipt, and adoption manifest while preserving earlier Client Bol receipts.",
+        "provenance": "existing_contract",
+        "required": true,
+        "required_surfaces": [
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/package.json",
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/verification/visual-outcome-review.json"
+        ],
+        "requirement_source": "OUT-1, OUT-3 and OUT-4",
+        "dependency_evidence": [
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/AGENTS.md",
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/index.html",
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/package.json",
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/verification/visual-outcome-review.json"
+        ]
+      }
+    ]
+  },
+  "hashes": {
+    "envelope_sha256": "4337e9c5fbe09d2a9dd70aac5867d35c3cc8225ed6c266f2d70e2690b227c4e7",
+    "draft_sha256": "a1e9dbbf9c5ea8494f7121d730e478e5f1ec46cb64d3e0cd269ddb8330f101a5",
+    "packet_sha256": "6f637fcea5d6c5c54d18df1e16699b889b1795105cdb1fb18acc5b19795f6030"
+  }
+}

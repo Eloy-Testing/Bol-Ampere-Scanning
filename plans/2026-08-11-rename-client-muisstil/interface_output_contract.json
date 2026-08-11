@@ -1,0 +1,40 @@
+{
+  "schema_version": "creative-framework.interface-output-contract.v1",
+  "task": "Rename the visible secondary Bol source to Muisstil",
+  "surface_has_interface_output": true,
+  "interface_output_producers": "applicable",
+  "not_applicable_reason": "",
+  "planned_output_channels": ["visible", "assistive"],
+  "producers": [
+    {
+      "id": "muisstil_account_label",
+      "event_origin": "product_workflow",
+      "presentation_owner": "product_owner",
+      "channel": "visible",
+      "source_condition": "The authenticated scanner has its fixed secondary source configured.",
+      "user_impact": "The operator can identify the secondary worklist before scanning.",
+      "recovery": "Select Bankhoes or Muisstil before scanning; source switching stays disabled during a live decision.",
+      "copy_purpose": "Name the fixed secondary account without exposing its internal identity.",
+      "final_copy": "Muisstil",
+      "external_proof": "Browser assertion and production desktop/mobile inspection."
+    },
+    {
+      "id": "muisstil_tab_selection",
+      "event_origin": "user_invoked_editor_interaction",
+      "presentation_owner": "editor_owner",
+      "channel": "assistive",
+      "source_condition": "An operator selects the Muisstil account tab.",
+      "user_impact": "Assistive-technology users can identify the selected account before scanning.",
+      "recovery": "Use the account tab control to select the intended source.",
+      "copy_purpose": "Expose the same selected account choice to assistive technology.",
+      "final_copy": "Muisstil selected account tab",
+      "external_proof": "Role and aria-selected browser assertions."
+    }
+  ],
+  "technical_status_exception": {"applicable": false, "direct_object_of_work": false, "producer_ids": [], "reason": ""},
+  "what_must_not_appear": [
+    "Client Bol as the current secondary operator label",
+    "Bol credentials, tokens, account identifiers, or raw upstream payloads",
+    "debug or implementation narration"
+  ]
+}
