@@ -1,0 +1,58 @@
+{
+  "task_id": "2026-08-12-dynamic-bol-account-management-production",
+  "artifact": {
+    "kind": "deployed_url",
+    "url": "https://bol-ampere-scanning.vercel.app/",
+    "deployment_identity": "dpl_2wETMbjMUvm4MN5nohumfMwgQPcT",
+    "commit": "3f02fb260e8940b1ffbd24de05b8bab243c5ebe7"
+  },
+  "inspector": "codex-main",
+  "inspected_at": "2026-08-12T17:11:37Z",
+  "account_inventory": [
+    { "key": "primary", "label": "Bankhoes", "type": "Intern" },
+    { "key": "secondary", "label": "Muisstil", "type": "Intern" }
+  ],
+  "states": [
+    {
+      "id": "production-ready",
+      "observed": "The authenticated scanner completed its live all-account snapshot, enabled scanning, and rendered separate Bankhoes and Muisstil tabs."
+    },
+    {
+      "id": "production-connected-inventory",
+      "observed": "The manager loaded Bankhoes and Muisstil from the protected integrations route with update-in-place actions and one Add account action."
+    },
+    {
+      "id": "production-add-form-desktop",
+      "observed": "The form is visually contained, account name is focused, no horizontal overflow exists, and all four inputs begin empty."
+    },
+    {
+      "id": "production-add-form-mobile",
+      "observed": "At 390x844 the form remains within the viewport, action order is clear, scanner input is disabled behind the dialog, and no horizontal overflow exists."
+    },
+    {
+      "id": "production-close-recovery",
+      "observed": "Closing the dialog restores focus to the enabled scanner input and retains the Bankhoes and Muisstil tabs."
+    }
+  ],
+  "secret_fields": {
+    "list_client_secret_value": "",
+    "list_management_password_value": "",
+    "form_client_id_value": "",
+    "form_client_secret_value": "",
+    "form_management_password_value": ""
+  },
+  "geometry": {
+    "desktop_viewport": "1280x720",
+    "mobile_viewport": "390x844",
+    "desktop_dialog_horizontal_overflow": 0,
+    "mobile_dialog_horizontal_overflow": 0,
+    "mobile_page_horizontal_overflow": 0
+  },
+  "console_errors": [],
+  "network_observation": "The authenticated manager completed its same-origin GET and rendered the approved non-secret account inventory. Direct navigation to the JSON route was blocked by the browser client and was not used as proof.",
+  "mutations_submitted": false,
+  "live_third_account_created": false,
+  "limits": [
+    "Production create/update was not submitted because no additional live Bol account was approved for this verification; synthetic end-to-end coverage proves the mutation path."
+  ]
+}

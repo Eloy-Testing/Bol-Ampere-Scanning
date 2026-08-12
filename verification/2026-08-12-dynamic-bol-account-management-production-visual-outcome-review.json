@@ -1,0 +1,122 @@
+{
+  "schema_version": "visual-outcome-review.v1",
+  "task_id": "2026-08-12-dynamic-bol-account-management-production",
+  "project_root": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker",
+  "surface_profile": "browser_ui",
+  "review_mode": "main_agent_only",
+  "main_agent_id": "codex-main",
+  "frozen_contract": {
+    "path": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/plans/2026-08-12-dynamic-bol-account-management/design_contract.md",
+    "sha256": "00c85eca817aac73ae8edfb471926dcfc596483d398215cfa4daff4dbfd86bfb",
+    "quality_bar": "The exact production deployment must present a compact authenticated Bol connection manager, real approved account names, empty secret fields, correct desktop/mobile containment, separate source tabs, and scanner-focus recovery without console errors.",
+    "required_invariants": [
+      "production deployment identity is exact and READY",
+      "Bankhoes and Muisstil remain separate tabs and inventory rows",
+      "management inputs begin empty and current credentials are never revealed",
+      "add and update actions are unambiguous",
+      "desktop and mobile have no horizontal overflow",
+      "scanner input is disabled behind the dialog and refocused on close",
+      "no unapproved live account is submitted"
+    ],
+    "browser_routes": ["/"],
+    "browser_viewports": ["desktop", "mobile"],
+    "browser_required_states": [
+      "production ready",
+      "connected inventory",
+      "add form desktop",
+      "add form mobile",
+      "focus recovery"
+    ],
+    "shot_or_beat_ids": [],
+    "motion_duration_seconds": null,
+    "audio_required": false
+  },
+  "references": [],
+  "artifact": {
+    "kind": "deployed_url",
+    "path": null,
+    "url": "https://bol-ampere-scanning.vercel.app/",
+    "deployment_identity": "dpl_2wETMbjMUvm4MN5nohumfMwgQPcT",
+    "sha256": null,
+    "created_at": "2026-08-12T17:08:05Z"
+  },
+  "evidence": [
+    {
+      "id": "EV-PROD-LIST-DESKTOP",
+      "kind": "browser_screenshot",
+      "path": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/verification/screenshot-evidence/2026-08-12-dynamic-bol-production-list-desktop.png",
+      "sha256": "ac9f55899c29ce01f0836afd6bbe7ba67cc139b325818c7ae1731f08205b074d",
+      "artifact_binding": "dpl_2wETMbjMUvm4MN5nohumfMwgQPcT",
+      "captured_at": "2026-08-12T17:11:20Z",
+      "coverage": { "viewport": "desktop", "route": "/", "full_surface": true }
+    },
+    {
+      "id": "EV-PROD-FORM-DESKTOP",
+      "kind": "browser_screenshot",
+      "path": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/verification/screenshot-evidence/2026-08-12-dynamic-bol-production-form-desktop.png",
+      "sha256": "3965a87b5e7f38a181931cb97e59210bbcd4e685eaa2aaa3f48463b761de59b8",
+      "artifact_binding": "dpl_2wETMbjMUvm4MN5nohumfMwgQPcT",
+      "captured_at": "2026-08-12T17:11:21Z",
+      "coverage": { "viewport": "desktop", "route": "/", "full_surface": true }
+    },
+    {
+      "id": "EV-PROD-FORM-MOBILE",
+      "kind": "browser_screenshot",
+      "path": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/verification/screenshot-evidence/2026-08-12-dynamic-bol-production-form-mobile.png",
+      "sha256": "c83b6a6a0a8f2dcb851860642d26745219678a8ea61a5e2fef16b9fedb387c76",
+      "artifact_binding": "dpl_2wETMbjMUvm4MN5nohumfMwgQPcT",
+      "captured_at": "2026-08-12T17:10:20Z",
+      "coverage": { "viewport": "mobile", "route": "/", "full_surface": true }
+    },
+    {
+      "id": "EV-PROD-BROWSER-STATE",
+      "kind": "browser_state",
+      "path": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/verification/2026-08-12-dynamic-bol-account-management-production-browser-state.json",
+      "sha256": "d64490f1f831f4f6a6f364df96501dd9f9568e13b7556c6e2c1c9fb39974d812",
+      "artifact_binding": "dpl_2wETMbjMUvm4MN5nohumfMwgQPcT",
+      "captured_at": "2026-08-12T17:11:37Z",
+      "coverage": {
+        "routes": ["/"],
+        "interactions_checked": true,
+        "states_checked": [
+          "production ready",
+          "connected inventory",
+          "add form desktop",
+          "add form mobile",
+          "focus recovery"
+        ],
+        "scroll_complete": true,
+        "overflow_checked": true,
+        "console_checked": true
+      }
+    }
+  ],
+  "review_cycles": [
+    {
+      "cycle": 1,
+      "artifact_binding": "dpl_2wETMbjMUvm4MN5nohumfMwgQPcT",
+      "inspected_at": "2026-08-12T17:11:37Z",
+      "main_agent": {
+        "inspector_id": "codex-main",
+        "inspection_complete": true,
+        "verdict": "PASS",
+        "evidence_ids": [
+          "EV-PROD-LIST-DESKTOP",
+          "EV-PROD-FORM-DESKTOP",
+          "EV-PROD-FORM-MOBILE",
+          "EV-PROD-BROWSER-STATE"
+        ],
+        "summary": "The exact READY production deployment loads Bankhoes and Muisstil as separate tabs and management rows, presents empty management fields, contains the form at desktop and mobile widths, disables scanning behind the modal, restores scanner focus on close, and produced no console errors."
+      },
+      "critic": null,
+      "findings": [],
+      "resolved_finding_ids": [],
+      "advisories": [],
+      "verdict": "PASS"
+    }
+  ],
+  "final_verdict": "PASS",
+  "limits": [
+    "Production create/update was not submitted because no additional live Bol account was approved; the current local receipt and deterministic browser suite prove the mutation and one-new-account-one-tab path."
+  ]
+}
