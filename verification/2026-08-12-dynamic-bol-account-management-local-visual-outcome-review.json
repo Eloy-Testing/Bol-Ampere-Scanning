@@ -38,7 +38,7 @@
     "path": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/index.html",
     "url": null,
     "deployment_identity": null,
-    "sha256": "5415335122c3095d70eecbe42f17ab5c3cbe0ab2da67c8095ba2a6608b66aec9",
+    "sha256": "8abb115a07a4c07fac48acbd75cc924f1f65629049a6863197d996ab1bbe5e3c",
     "created_at": "2026-08-12T16:37:23Z"
   },
   "evidence": [
@@ -46,8 +46,8 @@
       "id": "EV-LOCAL-LIST-DESKTOP",
       "kind": "browser_screenshot",
       "path": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/verification/screenshot-evidence/2026-08-12-dynamic-bol-connections-desktop.png",
-      "sha256": "50ed0b953f6857bea9973586f67a76dd530d2f18f78bd6013b0cb1f7c2ed4e1d",
-      "artifact_binding": "5415335122c3095d70eecbe42f17ab5c3cbe0ab2da67c8095ba2a6608b66aec9",
+      "sha256": "c984b30ac24d0de3416158609b57414d9bb5ceda5373760732ea45a40c0ad14c",
+      "artifact_binding": "8abb115a07a4c07fac48acbd75cc924f1f65629049a6863197d996ab1bbe5e3c",
       "captured_at": "2026-08-12T16:50:10Z",
       "coverage": { "viewport": "1440x980", "route": "/index.html", "full_surface": true }
     },
@@ -55,8 +55,8 @@
       "id": "EV-LOCAL-FORM-DESKTOP",
       "kind": "browser_screenshot",
       "path": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/verification/screenshot-evidence/2026-08-12-dynamic-bol-connection-form-desktop.png",
-      "sha256": "fd6a83e1df7ed3f581295b92edb17abf937075f1f0967c07fdd0511210ffaabd",
-      "artifact_binding": "5415335122c3095d70eecbe42f17ab5c3cbe0ab2da67c8095ba2a6608b66aec9",
+      "sha256": "0e40717fa1dfa9d991b06609ac71eae7831f88b6aaf2269715c6749994250494",
+      "artifact_binding": "8abb115a07a4c07fac48acbd75cc924f1f65629049a6863197d996ab1bbe5e3c",
       "captured_at": "2026-08-12T16:50:11Z",
       "coverage": { "viewport": "1440x980", "route": "/index.html", "full_surface": true }
     },
@@ -65,7 +65,7 @@
       "kind": "browser_screenshot",
       "path": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/verification/screenshot-evidence/2026-08-12-dynamic-bol-connection-form-mobile.png",
       "sha256": "53c4bcaa49639693123e0a8263e60540c4b705f63bd277ece69b803f9f72f2bb",
-      "artifact_binding": "5415335122c3095d70eecbe42f17ab5c3cbe0ab2da67c8095ba2a6608b66aec9",
+      "artifact_binding": "8abb115a07a4c07fac48acbd75cc924f1f65629049a6863197d996ab1bbe5e3c",
       "captured_at": "2026-08-12T16:50:12Z",
       "coverage": { "viewport": "390x844", "route": "/index.html", "full_surface": true }
     },
@@ -73,8 +73,8 @@
       "id": "EV-LOCAL-SUCCESS-DESKTOP",
       "kind": "browser_screenshot",
       "path": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/verification/screenshot-evidence/2026-08-12-dynamic-bol-connection-success-desktop.png",
-      "sha256": "6a1e9259234a02e2d19778b18d6dc2817a5c1be970303af9886af6a1f90ef408",
-      "artifact_binding": "5415335122c3095d70eecbe42f17ab5c3cbe0ab2da67c8095ba2a6608b66aec9",
+      "sha256": "c7d5554c6aa5fe0849f346c2a034c0d7962a1ccbc0508cbec6900e7de9c87e69",
+      "artifact_binding": "8abb115a07a4c07fac48acbd75cc924f1f65629049a6863197d996ab1bbe5e3c",
       "captured_at": "2026-08-12T16:50:13Z",
       "coverage": { "viewport": "1440x980", "route": "/index.html", "full_surface": true }
     },
@@ -82,8 +82,8 @@
       "id": "EV-LOCAL-BROWSER-STATE",
       "kind": "browser_state",
       "path": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/verification/2026-08-12-dynamic-bol-account-management-local-browser-state.json",
-      "sha256": "cbdc1e50faae21e07a174efa5e26ca6be4b3d7c3901059795238c3ee3f060cb1",
-      "artifact_binding": "5415335122c3095d70eecbe42f17ab5c3cbe0ab2da67c8095ba2a6608b66aec9",
+      "sha256": "f3b30d012f5a43858cff63c9e3ef50b36527d3077c1fc163278a98f259038496",
+      "artifact_binding": "8abb115a07a4c07fac48acbd75cc924f1f65629049a6863197d996ab1bbe5e3c",
       "captured_at": "2026-08-12T16:51:04Z",
       "coverage": {
         "routes": ["/index.html"],
@@ -105,7 +105,7 @@
   "review_cycles": [
     {
       "cycle": 1,
-      "artifact_binding": "5415335122c3095d70eecbe42f17ab5c3cbe0ab2da67c8095ba2a6608b66aec9",
+      "artifact_binding": "8abb115a07a4c07fac48acbd75cc924f1f65629049a6863197d996ab1bbe5e3c",
       "inspected_at": "2026-08-12T16:51:04Z",
       "main_agent": {
         "inspector_id": "codex-main",

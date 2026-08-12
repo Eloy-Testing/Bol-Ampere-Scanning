@@ -334,7 +334,7 @@
           <p class="integration-status" id="integrationOverviewStatus" data-testid="integration-overview-status" data-tone="neutral" role="status" aria-live="polite"></p>
         </div>
 
-        <form class="integration-form" id="integrationForm" data-testid="integration-form" novalidate hidden>
+        <form class="integration-form" id="integrationForm" data-testid="integration-form" autocomplete="off" novalidate hidden>
           <h3 id="integrationFormTitle">Connect a Bol account</h3>
           <p class="integration-security" id="integrationSecurity">Credentials are saved securely and are never shown again.</p>
           <div class="field" id="accountNameField">
@@ -351,7 +351,7 @@
           </div>
           <div class="field">
             <label for="integrationPassword" id="integrationPasswordLabel">Warehouse password</label>
-            <input id="integrationPassword" name="password" type="password" required maxlength="256" autocomplete="current-password">
+            <input id="integrationPassword" name="managementPassword" type="password" required maxlength="256" autocomplete="off">
           </div>
           <div class="integration-actions">
             <button class="ghost-button" id="integrationCancelButton" type="button">Cancel</button>
@@ -1374,6 +1374,10 @@
       const formMode = app.integrationMode === 'form';
       el('integrationOverview').hidden = formMode;
       el('integrationForm').hidden = !formMode;
+      if (!formMode) {
+        el('bolClientSecret').value = '';
+        el('integrationPassword').value = '';
+      }
       const checking = app.integrationPhase === 'checking';
       el('integrationCloseButton').disabled = checking;
       el('addAccountButton').disabled = app.integrationPhase === 'loading' || app.integrationPhase === 'loadError';
@@ -1430,6 +1434,7 @@
       app.integrationMode = 'list';
       app.integrationEditingKey = null;
       app.integrationMessage = '';
+      for (const id of ['accountName', 'bolClientId', 'bolClientSecret', 'integrationPassword']) el(id).value = '';
       el('integrationDialog').showModal();
       render();
       try {

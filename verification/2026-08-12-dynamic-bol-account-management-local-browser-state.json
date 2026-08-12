@@ -3,7 +3,7 @@
   "artifact": {
     "kind": "local_file",
     "path": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/index.html",
-    "sha256": "5415335122c3095d70eecbe42f17ab5c3cbe0ab2da67c8095ba2a6608b66aec9"
+    "sha256": "8abb115a07a4c07fac48acbd75cc924f1f65629049a6863197d996ab1bbe5e3c"
   },
   "route": "http://127.0.0.1:4188/index.html",
   "inspector": "codex-main",
@@ -49,5 +49,6 @@
   "live_third_account_submitted": false,
   "repair_history": [
     "The first real-browser pass exposed a missing local /api/integrations route. The route and Vercel-entrypoint coverage were added before all evidence in the final receipt was recaptured."
+    ,"The first production pass exposed browser autofill in the hidden management re-auth field. The form now disables autofill and clears secret/password fields on every list render before the current local evidence was recaptured."
   ]
 }

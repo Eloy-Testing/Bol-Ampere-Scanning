@@ -5,6 +5,8 @@ async function openConnections(page) {
   await page.locator(selectors.connectionsButton).click();
   await expect(page.locator(selectors.integrationDialog)).toBeVisible();
   await expect(page.locator(selectors.addAccountButton)).toBeEnabled();
+  await expect(page.locator('#bolClientSecret')).toHaveValue('');
+  await expect(page.locator('#integrationPassword')).toHaveValue('');
 }
 
 async function fillConnection(page, {
