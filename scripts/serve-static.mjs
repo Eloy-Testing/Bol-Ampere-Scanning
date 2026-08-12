@@ -5,8 +5,10 @@ import { tmpdir } from 'node:os';
 import { extname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createApplication } from '../server/application.mjs';
-import { BolClient, BolClientPool } from '../server/bol-client.mjs';
+import { BolAccountService } from '../server/bol-account-service.mjs';
+import { BolClient } from '../server/bol-client.mjs';
 import { loadConfig } from '../server/config.mjs';
+import { CredentialVault } from '../server/credential-vault.mjs';
 import { createDatabaseClient } from '../server/database.mjs';
 import { ScannerRepository } from '../server/repository.mjs';
 import { hashPassword } from '../server/security.mjs';
@@ -80,22 +82,37 @@ function json(response, status, payload) {
 }
 
 function validSyntheticBearer(request) {
-  return request.headers.authorization === 'Bearer synthetic-access-token'
+  return ['Bearer synthetic-access-token', 'Bearer synthetic-empty-access-token'].includes(request.headers.authorization)
     && request.headers.accept === 'application/vnd.retailer.v10+json';
+}
+
+function syntheticClientId(request) {
+  try {
+    const authorization = String(request.headers.authorization || '');
+    if (!authorization.startsWith('Basic ')) return '';
+    return Buffer.from(authorization.slice(6), 'base64').toString('utf8').split(':', 1)[0];
+  } catch {
+    return '';
+  }
 }
 
 function handleSyntheticBol(request, response, url) {
   if (url.pathname === '/__bol/token' && request.method === 'POST') {
-    if (!String(request.headers.authorization || '').startsWith('Basic ')) return json(response, 401, {});
-    return json(response, 200, { access_token: 'synthetic-access-token', expires_in: 299 });
+    const clientId = syntheticClientId(request);
+    if (!clientId) return json(response, 401, {});
+    return json(response, 200, {
+      access_token: clientId === 'empty-client' ? 'synthetic-empty-access-token' : 'synthetic-access-token',
+      expires_in: 299,
+    });
   }
   if (!url.pathname.startsWith('/__bol/api/') || request.method !== 'GET' || !validSyntheticBearer(request)) {
     return json(response, 404, { error: 'not_found' });
   }
   const path = url.pathname.slice('/__bol/api'.length);
+  const emptyAccount = request.headers.authorization === 'Bearer synthetic-empty-access-token';
   if (path === '/orders') {
     const page = Number(url.searchParams.get('page') || 1);
-    return json(response, 200, { orders: page === 1 ? [{
+    return json(response, 200, { orders: !emptyAccount && page === 1 ? [{
       orderId: syntheticOrder.orderId,
       orderPlacedDateTime: syntheticOrder.orderPlacedDateTime,
       orderItems: syntheticOrder.orderItems,
@@ -103,7 +120,7 @@ function handleSyntheticBol(request, response, url) {
   }
   if (path === '/shipments') {
     const page = Number(url.searchParams.get('page') || 1);
-    return json(response, 200, { shipments: page === 1 ? [{ ...syntheticShipment, transport: undefined }] : [], totalPages: 1, totalElements: 1 });
+    return json(response, 200, { shipments: !emptyAccount && page === 1 ? [{ ...syntheticShipment, transport: undefined }] : [], totalPages: 1, totalElements: emptyAccount ? 0 : 1 });
   }
   if (path === `/orders/${syntheticOrder.orderId}`) return json(response, 200, syntheticOrder);
   if (path === `/shipments/${syntheticShipment.shipmentId}`) return json(response, 200, syntheticShipment);
@@ -118,24 +135,29 @@ const config = loadConfig({
   TURSO_DATABASE_URL: databaseUrl,
   BOL_CLIENT_ID: 'synthetic-client',
   BOL_CLIENT_SECRET: 'synthetic-secret',
+  BOL_CREDENTIAL_ENCRYPTION_KEY: Buffer.alloc(32, 9).toString('base64url'),
   WAREHOUSE_PASSWORD_HASH: passwordHash,
   SESSION_SECRET: 'synthetic-session-secret-with-at-least-32-bytes',
 });
 const databaseClient = createDatabaseClient({ url: config.databaseUrl, authToken: config.databaseToken });
 await applyMigrations({ client: databaseClient, migrations: await loadMigrations() });
+const repository = new ScannerRepository(databaseClient);
+const bolAccountService = new BolAccountService({
+  repository,
+  staticAccounts: config.bolAccounts,
+  vault: new CredentialVault(config.bolCredentialEncryptionKey),
+  nodeEnv: 'test',
+  clientFactory: (credentials) => new BolClient({
+    ...credentials,
+    nodeEnv: 'test',
+    tokenUrl: `${origin}/__bol/token`,
+    apiBaseUrl: `${origin}/__bol/api`,
+  }),
+});
 const application = createApplication({
   config,
-  repository: new ScannerRepository(databaseClient),
-  bolClient: new BolClientPool({
-    accounts: config.bolAccounts,
-    clientFactory: (account) => new BolClient({
-      clientId: account.clientId,
-      clientSecret: account.clientSecret,
-      nodeEnv: 'test',
-      tokenUrl: `${origin}/__bol/token`,
-      apiBaseUrl: `${origin}/__bol/api`,
-    }),
-  }),
+  repository,
+  bolAccountService,
   now: () => new Date(),
 });
 
@@ -153,7 +175,7 @@ const server = createServer(async (request, response) => {
     return;
   }
 
-  const apiName = url.pathname.match(/^\/api\/(session|state|retailer|scan)$/)?.[1];
+  const apiName = url.pathname.match(/^\/api\/(session|state|retailer|integrations|scan)$/)?.[1];
   if (apiName) {
     await application[apiName](request, response);
     return;

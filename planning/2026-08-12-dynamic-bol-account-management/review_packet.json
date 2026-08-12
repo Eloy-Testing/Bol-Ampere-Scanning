@@ -1,0 +1,309 @@
+{
+  "schema_version": 3,
+  "marker": "PLAN_CRITIC_REVIEW_V2",
+  "envelope": {
+    "review_id": "bhp-dynamic-bol-account-management-2026-08-12",
+    "literal_request": "Allow manual API key entry and connection with Bol for internal Bol integration management and additional client accounts, where every new account and credential produces a new scanner tab.",
+    "intended_outcome": "The production Ampere scanner provides an authenticated in-product workflow to add or rotate Bol Retailer client credentials, validates and encrypts them server-side, gives every connected account a stable correctly labelled tab, and preserves account-qualified fail-closed scanning without revealing secrets.",
+    "outcomes": [
+      {
+        "id": "OUT-1",
+        "text": "An authenticated operator can list, add, and update Bol Retailer connections using account name, client ID, client secret, and warehouse-password re-authentication; nothing is saved until Bol token, orders, and shipments access succeeds."
+      },
+      {
+        "id": "OUT-2",
+        "text": "Credential pairs are encrypted at rest with a dedicated server-only AES-256-GCM key and account-bound authenticated data, never returned or stored in browser state, and every mutation is audited without secret material."
+      },
+      {
+        "id": "OUT-3",
+        "text": "Existing Bankhoes and Muisstil environment accounts remain stable fallbacks/identities, database records may safely override their credentials, and every new account receives a stable dynamic source key and labelled scanner tab used end-to-end for retailer reads, live scan verification, and provenance."
+      },
+      {
+        "id": "OUT-4",
+        "text": "The additive ampere-only migration, full server/browser behavior, approved Turso/Vercel/GitHub release, and current desktop/mobile production outcome are verified without accessing an unapproved third live Bol account."
+      }
+    ],
+    "unacceptable_narrow_interpretation": "A browser-only credential form, plaintext storage, another fixed environment slot, UI-only dynamic tabs, token-only validation, unaudited secret updates, source keys derived from mutable labels, or a release that requires submitting credentials for an unapproved account.",
+    "in_scope": [
+      "Authenticated list/add/update connection manager with exact actionable states and dynamic tabs.",
+      "Dedicated encryption configuration, AES-GCM vault, database-backed account registry, environment fallback/override behavior, and duplicate client identity prevention.",
+      "Same-origin session-protected and warehouse-password re-authenticated API mutations; live token/orders/shipments validation before atomic save/audit.",
+      "Dynamic account resolution through retailer reads, snapshots, scan verification, and non-secret provenance while preserving FIFO and aggregate fail-closed behavior.",
+      "Additive ampere-only migration, tests, approved release, API/schema/browser proof, and visual/adoption receipts."
+    ],
+    "out_of_scope": [
+      "Account deletion/disabling, credential reveal/export, roles or a new admin password, and historical provenance backfill.",
+      "Bol Ads API, retailer writes, account settings, intermediary OAuth, customer-data display, or provider account discovery.",
+      "Non-ampere Bankhoes data, unrelated GitHub/Vercel projects or accounts, and live use of an unnamed/unapproved third Bol account.",
+      "Changing aggregate complete-snapshot policy to per-account partial availability."
+    ],
+    "acceptance_evidence": [
+      "Unit/application tests prove exact key validation, session and re-auth controls, live-validation-before-write, AES-GCM integrity/AAD, duplicate/no-write behavior, static fallback/override, dynamic key resolution, and no-secret outputs.",
+      "Fresh and pre-003 local migration plus approved live ampere schema/ledger/readback prove additive account/audit/provenance storage without non-ampere access.",
+      "Browser tests prove list/add/update/pending/success/rejected/expired states, NL/EN/ES copy, dynamic tab creation, account-qualified scans, keyboard/focus, and responsive containment.",
+      "Exact approved Vercel identity, non-disclosed key-name configuration, Git commit, READY deployment, authenticated metadata API, existing approved account tabs, and validated current desktop/mobile visual/adoption receipts."
+    ],
+    "dependency_expansion_rule": "Only an inspected causal dependency from an OUT item may become required; deletion, role redesign, per-account partial snapshots, and other provider surfaces remain excluded."
+  },
+  "context": {
+    "context_root": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker",
+    "project_index_paths": [
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/README.md"
+    ],
+    "project_context_paths": [
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/AGENTS.md",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/README.md",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/plans/2026-08-12-dynamic-bol-account-management/design_contract.md",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/plans/2026-08-12-dynamic-bol-account-management/interface_output_contract.json",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/plans/2026-08-12-dynamic-bol-account-management/spatial_priority_contract.json"
+    ],
+    "governing_instructions": [
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/AGENTS.md"
+    ],
+    "inspected_paths": [
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/AGENTS.md",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/README.md",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/.env.example",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/index.html",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/package.json",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/vercel.json",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/server/config.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/server/bol-client.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/server/application.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/server/scan-service.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/server/repository.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/server/security.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/server/errors.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/migrations/001_ampere_scanner.sql",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/migrations/002_ampere_source_account.sql",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/scripts/migrate.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/fixtures/mock-bol.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/data-health.spec.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/mobile.spec.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/security.spec.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/server/application.test.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/server/bol-client.test.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/server/config.test.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/server/repository.test.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/server/scan-service.test.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/server/helpers.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/plans/2026-08-12-dynamic-bol-account-management/retrieval_contract.json",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/plans/2026-08-12-dynamic-bol-account-management/creative_brief.md",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/plans/2026-08-12-dynamic-bol-account-management/design_contract.md",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/plans/2026-08-12-dynamic-bol-account-management/interface_output_contract.json",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/plans/2026-08-12-dynamic-bol-account-management/spatial_priority_contract.json",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/planning/2026-08-12-dynamic-bol-account-management/project_brief.md",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/planning/2026-08-12-dynamic-bol-account-management/task_plan.md",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/planning/2026-08-12-dynamic-bol-account-management/nuance_ledger.md",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/planning/2026-08-12-dynamic-bol-account-management/consequence_graph.json",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/planning/2026-08-12-dynamic-bol-account-management/solution_frontier.md",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/planning/2026-08-12-dynamic-bol-account-management/verification_plan.md",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/planning/2026-08-12-dynamic-bol-account-management/decision_log.md"
+    ]
+  },
+  "target": {
+    "target_system_root": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker",
+    "governing_instructions": [
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/AGENTS.md"
+    ],
+    "existing_direct_target_paths": [
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/.env.example",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/README.md",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/index.html",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/vercel.json",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/server/config.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/server/bol-client.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/server/application.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/server/scan-service.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/server/repository.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/server/security.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/server/errors.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/migrations/001_ampere_scanner.sql",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/migrations/002_ampere_source_account.sql",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/scripts/migrate.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/fixtures/mock-bol.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/data-health.spec.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/mobile.spec.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/security.spec.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/server/application.test.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/server/bol-client.test.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/server/config.test.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/server/repository.test.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/server/scan-service.test.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/server/helpers.mjs"
+    ],
+    "planned_target_paths": [
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/api/integrations.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/server/credential-vault.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/server/bol-account-service.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/migrations/003_ampere_dynamic_bol_accounts.sql",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/server/credential-vault.test.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/server/bol-account-service.test.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/integration-management.spec.mjs"
+    ],
+    "inspected_paths": [
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/AGENTS.md",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/.env.example",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/README.md",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/index.html",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/vercel.json",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/server/config.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/server/bol-client.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/server/application.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/server/scan-service.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/server/repository.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/server/security.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/server/errors.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/migrations/001_ampere_scanner.sql",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/migrations/002_ampere_source_account.sql",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/scripts/migrate.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/fixtures/mock-bol.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/data-health.spec.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/mobile.spec.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/security.spec.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/server/application.test.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/server/bol-client.test.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/server/config.test.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/server/repository.test.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/server/scan-service.test.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/server/helpers.mjs"
+    ],
+    "cross_root_authority_reason": "The project context and target implementation root are identical."
+  },
+  "plan_manifest": {
+    "draft_text": "# Reviewed plan\n\n1. Add a compact authenticated Bol-connections dialog to the existing scanner. It lists only non-secret account metadata, offers Add account and Update credentials, requires account name where applicable plus client ID, client secret, and current warehouse password, renders actionable loading/success/rejected/duplicate/unavailable/session-expired states, pauses scanner focus while open, and dynamically reconciles one labelled tab per returned account in NL/EN/ES. Deletion and secret reveal remain excluded.\n2. Add a strict dedicated `BOL_CREDENTIAL_ENCRYPTION_KEY` configuration and server-only AES-256-GCM vault. Encode one credential-pair JSON payload per account with a random 96-bit nonce, authentication tag, versioned account-key AAD, and keyed client-ID fingerprint. Reject malformed keys/envelopes, tampering, wrong-account AAD, control characters, and all browser/response/log paths for credential or token material.\n3. Add a database-backed Bol account service that merges fixed `primary`/Bankhoes and optional `secondary`/Muisstil environment fallbacks with encrypted database overrides. Generate opaque stable `acct_*` keys for new accounts, keep labels separate from identity, limit account count/name/credential sizes, prevent duplicate fingerprints, and cache clients only by current encrypted-record revision. Before any write, instantiate a candidate client and require successful OAuth token plus sanitized orders page 1 and shipments page 1 reads.\n4. Add an authenticated `/api/integrations` route: GET returns non-secret account metadata; POST creates; PUT replaces credentials/label for a named existing key. Mutations enforce same origin, exact body keys, active session, and a fresh warehouse-password check. Commit encrypted row plus non-secret create/update audit atomically only after Bol validation. Map rejected credentials, duplicate identity, re-auth failure, database/config, and upstream availability to bounded user-actionable errors without raw bodies.\n5. Make retailer and scan account resolution async and dynamic. Preserve account-qualified snapshot/detail/live verification, FIFO/automatic focus, global collision detection, and aggregate complete-snapshot fail-close. Validate dynamic source keys server-side; persist exact source identity only for source-qualified decisions and retain null for unknown/unverified source-less codes.\n6. Add numbered ledgered migration `003` creating only `ampere_bol_accounts`, its indexes, and `ampere_bol_account_audit`, plus nullable unconstrained dynamic `source_account_key` columns on package state/events. Read `COALESCE(source_account_key, source_account)` for legacy compatibility; write the legacy column only for primary/secondary and the new column for every source. Do not backfill or touch non-ampere data.\n7. Add crypto, service, repository, application, config, scan, migration, secret-hygiene, and browser coverage. Prove create/update/no-write failure, duplicate/race fail-close, environment fallback/override, stable label/key separation, dynamic retailer/scan provenance, forged keys, session expiry, all UI states/locales, keyboard/focus, responsive containment, and unchanged FIFO/partial-data behavior. Run contract validators, local migration twice, pre-003 upgrade, full server/browser suites, and diff/secret checks.\n8. Confirm the approved Vercel identity; create a dedicated random encryption key without printing it and set only that key name/value in Preview and Production. Apply the additive `003` migration only to the approved Bankhoes Turso `ampere_*` namespace, commit/push/deploy the intended branch, and verify exact deployment, migration/schema/ledger, authenticated non-secret account metadata, existing Bankhoes/Muisstil tabs, and current desktop/mobile manager/tab/focus/console states. Do not submit credentials for an unapproved third live Bol account; synthetic end-to-end tests prove the creation path. Create and validate deployment/source visual receipts and the adoption manifest.\n",
+    "steps": [
+      {
+        "id": "P1",
+        "text": "Implement the authenticated management dialog, truthful interface states, and dynamic labelled tabs without exposing secrets or disrupting scanner focus/FIFO.",
+        "provenance": "user_request",
+        "required": true,
+        "required_surfaces": [
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/index.html"
+        ],
+        "requirement_source": "OUT-1,OUT-3",
+        "dependency_evidence": [
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/index.html",
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/plans/2026-08-12-dynamic-bol-account-management/design_contract.md",
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/plans/2026-08-12-dynamic-bol-account-management/interface_output_contract.json",
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/plans/2026-08-12-dynamic-bol-account-management/spatial_priority_contract.json"
+        ]
+      },
+      {
+        "id": "P2",
+        "text": "Add dedicated encryption configuration and an account-bound AES-256-GCM credential vault with keyed duplicate fingerprinting and strict secret boundaries.",
+        "provenance": "required_dependency",
+        "required": true,
+        "required_surfaces": [
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/server/config.mjs",
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/server/credential-vault.mjs",
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/.env.example"
+        ],
+        "requirement_source": "OUT-2",
+        "dependency_evidence": [
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/AGENTS.md",
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/server/config.mjs",
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/.env.example"
+        ]
+      },
+      {
+        "id": "P3",
+        "text": "Add a dynamic Bol account service with environment fallbacks, encrypted overrides, opaque stable keys, duplicate prevention, live token/orders/shipments validation, and revision-bound client caching.",
+        "provenance": "required_dependency",
+        "required": true,
+        "required_surfaces": [
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/server/bol-account-service.mjs",
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/server/bol-client.mjs",
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/server/repository.mjs"
+        ],
+        "requirement_source": "OUT-1,OUT-3",
+        "dependency_evidence": [
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/server/config.mjs",
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/server/bol-client.mjs",
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/server/application.mjs",
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/server/repository.mjs"
+        ]
+      },
+      {
+        "id": "P4",
+        "text": "Add the protected integrations route and make retailer/scan resolution async and dynamic while preserving same-origin auth, fresh password re-authentication, FIFO, global collision detection, and fail-closed outcomes.",
+        "provenance": "required_dependency",
+        "required": true,
+        "required_surfaces": [
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/api/integrations.mjs",
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/server/application.mjs",
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/server/scan-service.mjs",
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/index.html"
+        ],
+        "requirement_source": "OUT-1,OUT-3",
+        "dependency_evidence": [
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/server/application.mjs",
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/server/scan-service.mjs",
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/server/security.mjs",
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/index.html"
+        ]
+      },
+      {
+        "id": "P5",
+        "text": "Add a ledgered additive ampere-only migration for encrypted account/audit records and dynamic source-key provenance with legacy compatibility and no backfill.",
+        "provenance": "required_dependency",
+        "required": true,
+        "required_surfaces": [
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/migrations/003_ampere_dynamic_bol_accounts.sql",
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/server/repository.mjs",
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/scripts/migrate.mjs"
+        ],
+        "requirement_source": "OUT-2,OUT-3",
+        "dependency_evidence": [
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/migrations/001_ampere_scanner.sql",
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/migrations/002_ampere_source_account.sql",
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/server/repository.mjs",
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/scripts/migrate.mjs"
+        ]
+      },
+      {
+        "id": "P6",
+        "text": "Add focused and full server/browser/migration/security coverage for every secret, identity, failure, state, interaction, and compatibility edge.",
+        "provenance": "existing_contract",
+        "required": true,
+        "required_surfaces": [
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/server/credential-vault.test.mjs",
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/server/bol-account-service.test.mjs",
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/server/application.test.mjs",
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/server/repository.test.mjs",
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/integration-management.spec.mjs",
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/fixtures/mock-bol.mjs"
+        ],
+        "requirement_source": "OUT-1,OUT-2,OUT-3,OUT-4",
+        "dependency_evidence": [
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/AGENTS.md",
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/package.json",
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/server/application.test.mjs",
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/server/repository.test.mjs",
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/fixtures/mock-bol.mjs"
+        ]
+      },
+      {
+        "id": "P7",
+        "text": "Configure the dedicated encryption key only in the approved Vercel project, migrate only approved ampere objects, commit/push/deploy, and verify exact schema/API/browser/visual outcomes without a third live account write.",
+        "provenance": "existing_contract",
+        "required": true,
+        "required_surfaces": [
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/README.md",
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/vercel.json"
+        ],
+        "requirement_source": "OUT-4",
+        "dependency_evidence": [
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/AGENTS.md",
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/README.md",
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/vercel.json"
+        ]
+      }
+    ]
+  },
+  "hashes": {
+    "envelope_sha256": "1cb822256e7e453d2b36d666ce82ff2c1036bf1cb53d10f8a6eb28b3390f2725",
+    "draft_sha256": "12f1cf67db417a12bd1776b43403cb93b48139d70ef55b747871e560ee5bef24",
+    "packet_sha256": "a5cfc7e41922792c18435bac1fad99899f5da2569c726c01a7b58c6a390d5def"
+  }
+}

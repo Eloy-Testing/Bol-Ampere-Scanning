@@ -71,7 +71,7 @@ export class ScanService {
     let shipment;
     let orderId = null;
     try {
-      const bolClient = this.bolClientForAccount(sourceAccount || 'primary');
+      const bolClient = await this.bolClientForAccount(sourceAccount || 'primary');
       shipment = await bolClient.getShipment(shipmentId);
       if (shipment.shipmentId !== shipmentId) throw new UpstreamError();
       const verifiedCode = normalizeTrackingCode(shipment.transport?.trackAndTrace || '');

@@ -33,7 +33,7 @@ test('the deterministic harness makes no live external requests', async ({ page 
 
 test('the browser bundle contains no server credential names or bearer token handling', async () => {
   const html = await readFile(resolve('index.html'), 'utf8');
-  for (const secretName of ['TURSO_AUTH_TOKEN', 'BOL_CLIENT_SECRET', 'BOL_SECONDARY_CLIENT_SECRET', 'WAREHOUSE_PASSWORD_HASH', 'SESSION_SECRET']) {
+  for (const secretName of ['TURSO_AUTH_TOKEN', 'BOL_CLIENT_SECRET', 'BOL_SECONDARY_CLIENT_SECRET', 'BOL_CREDENTIAL_ENCRYPTION_KEY', 'WAREHOUSE_PASSWORD_HASH', 'SESSION_SECRET']) {
     expect(html).not.toContain(secretName);
   }
   expect(html).not.toMatch(/authorization\s*:\s*[`'\"]?bearer/i);

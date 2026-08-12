@@ -13,6 +13,12 @@ export const selectors = Object.freeze({
   accountTabs: '[data-testid="account-tabs"]',
   primaryAccountTab: '[data-testid="account-tab-primary"]',
   secondaryAccountTab: '[data-testid="account-tab-secondary"]',
+  connectionsButton: '[data-testid="connections-button"]',
+  integrationDialog: '[data-testid="integration-dialog"]',
+  integrationList: '[data-testid="integration-list"]',
+  addAccountButton: '[data-testid="add-account-button"]',
+  integrationForm: '[data-testid="integration-form"]',
+  integrationFormStatus: '[data-testid="integration-form-status"]',
   feedback: '[data-testid="scan-feedback"]',
   queueDepth: '[data-testid="scan-queue-depth"]',
   scannedCount: '[data-testid="scanned-count"]',
@@ -37,6 +43,15 @@ function pageSlice(records, page, pageSize) {
 
 function configuredAccounts(snapshot) {
   return snapshot?.accounts && typeof snapshot.accounts === 'object' ? Object.keys(snapshot.accounts) : ['primary'];
+}
+
+function accountDirectory(snapshot) {
+  return configuredAccounts(snapshot).map((key) => ({
+    key,
+    label: snapshot?.accounts?.[key]?.label || (key === 'primary' ? 'Bankhoes' : key === 'secondary' ? 'Muisstil' : key),
+    kind: key === 'primary' || key === 'secondary' ? 'internal' : 'client',
+    lastVerifiedAt: null,
+  }));
 }
 
 function accountSnapshot(snapshot, account) {
@@ -92,6 +107,7 @@ export const test = base.extend({
       recordsByWorkday: new Map(),
       activeScans: 0,
       maxConcurrentScans: 0,
+      nextManagedAccount: 1,
     };
     state.recordsByWorkday.set(state.workday, Array.isArray(cloned.records) ? cloned.records.map((entry) => ({ ...entry })) : []);
 
@@ -216,7 +232,54 @@ export const test = base.extend({
       const activeRoot = state.scenario.snapshots[state.activeSnapshot] || state.scenario.snapshots[0];
       if (url.pathname === '/api/retailer' && resource === 'accounts') {
         call.finishedAt = Date.now();
-        await jsonResponse(route, { accounts: configuredAccounts(activeRoot) });
+        await jsonResponse(route, { accounts: accountDirectory(activeRoot) });
+        return;
+      }
+      if (url.pathname === '/api/integrations' && method === 'GET') {
+        call.finishedAt = Date.now();
+        await jsonResponse(route, { accounts: accountDirectory(activeRoot) });
+        return;
+      }
+      if (url.pathname === '/api/integrations' && ['POST', 'PUT'].includes(method)) {
+        if (!body || body.password !== state.password) {
+          call.finishedAt = Date.now();
+          await jsonResponse(route, { error: { code: 'management_reauth_failed' } }, 403);
+          return;
+        }
+        if (body.clientId === 'rejected-client') {
+          call.finishedAt = Date.now();
+          await jsonResponse(route, { error: { code: 'bol_credentials_rejected' } }, 422);
+          return;
+        }
+        if (body.clientId === 'duplicate-client') {
+          call.finishedAt = Date.now();
+          await jsonResponse(route, { error: { code: 'bol_account_duplicate' } }, 409);
+          return;
+        }
+        let key = body.accountKey;
+        let label;
+        let kind;
+        if (method === 'POST') {
+          key = `acct_${String(state.nextManagedAccount++).padStart(22, 'a')}`;
+          label = String(body.accountName || '').trim();
+          kind = 'client';
+          if (!activeRoot.accounts) {
+            const primary = { ...activeRoot };
+            delete primary.accounts;
+            activeRoot.accounts = { primary };
+          }
+          activeRoot.accounts[key] = { label, orders: [], shipments: [], orderDetails: {}, shipmentDetails: {}, verifiers: {} };
+        } else {
+          const existing = accountDirectory(activeRoot).find((entry) => entry.key === key);
+          if (!existing) {
+            call.finishedAt = Date.now();
+            await jsonResponse(route, { error: { code: 'invalid_request' } }, 400);
+            return;
+          }
+          ({ label, kind } = existing);
+        }
+        call.finishedAt = Date.now();
+        await jsonResponse(route, { account: { key, label, kind, lastVerifiedAt: new Date().toISOString() } }, method === 'POST' ? 201 : 200);
         return;
       }
       const active = accountSnapshot(activeRoot, account || body?.account || 'primary');

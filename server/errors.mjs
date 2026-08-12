@@ -28,6 +28,37 @@ export class UpstreamError extends AppError {
   }
 }
 
+export class BolCredentialsRejectedError extends UpstreamError {
+  constructor() {
+    super();
+    this.name = 'BolCredentialsRejectedError';
+    this.code = 'bol_credentials_rejected';
+    this.status = 422;
+    this.message = 'Bol did not accept these credentials.';
+  }
+}
+
+export class CredentialStoreError extends AppError {
+  constructor() {
+    super('credential_store_unavailable', 503, 'The connection could not be saved.');
+    this.name = 'CredentialStoreError';
+  }
+}
+
+export class DuplicateAccountError extends AppError {
+  constructor() {
+    super('bol_account_duplicate', 409, 'These credentials are already connected.');
+    this.name = 'DuplicateAccountError';
+  }
+}
+
+export class AccountLimitError extends AppError {
+  constructor() {
+    super('bol_account_limit', 409, 'The account limit has been reached.');
+    this.name = 'AccountLimitError';
+  }
+}
+
 export class ValidationError extends AppError {
   constructor() {
     super('invalid_request', 400, 'The request was invalid.');

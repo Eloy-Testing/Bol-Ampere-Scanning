@@ -1,0 +1,92 @@
+{
+  "task_id": "2026-08-12-dynamic-bol-account-management",
+  "created_at": "2026-08-12",
+  "target_surface": "Authenticated Ampere scanner Bol integration manager and dynamic account tabs",
+  "project_owner": "BHP Warehouse Packing Tracker",
+  "request_summary": "Allow authenticated manual Bol credential entry for existing integrations and additional client accounts, with one tab per connected account.",
+  "included_pages": [
+    "AGENTS.md",
+    "README.md",
+    "index.html",
+    "server/config.mjs",
+    "server/bol-client.mjs",
+    "server/application.mjs",
+    "server/scan-service.mjs",
+    "server/repository.mjs",
+    "server/security.mjs",
+    "server/errors.mjs",
+    "migrations/001_ampere_scanner.sql",
+    "migrations/002_ampere_source_account.sql",
+    "scripts/migrate.mjs",
+    "tests/server and browser fixtures",
+    "Official Bol Retailer API authentication documentation"
+  ],
+  "excluded_pages": [
+    "Other repositories and Vercel projects",
+    "Non-ampere Bankhoes database tables",
+    "Bol Ads API, retailer writes, account settings, and intermediary OAuth",
+    "Unrelated project creative artifacts",
+    "Raw credentials, bearer tokens, and customer data"
+  ],
+  "active_rules": [
+    "Browser calls same-origin API routes only",
+    "Bol and Turso credentials remain server-side",
+    "All database objects begin ampere_",
+    "FIFO scanning and fail-closed decisions remain intact",
+    "Release uses formal review and current desktop/mobile visual verification"
+  ],
+  "required_project_contracts": [
+    "design-system/interface-integrity.md",
+    "project AGENTS.md runtime and account boundaries"
+  ],
+  "active_skills": [
+    "creative-brief",
+    "surface-classifier",
+    "flow-priority-mapper",
+    "spatial-priority-planner",
+    "state-contract-warden",
+    "plan-critic",
+    "project-task-planner",
+    "visual-outcome-review"
+  ],
+  "tool_surfaces": [
+    "Local filesystem and test runner",
+    "Approved Bankhoes Turso ampere namespace",
+    "Approved bol-ampere-scanning Vercel project",
+    "Approved browser verification surface",
+    "Official Bol documentation"
+  ],
+  "write_targets": [
+    "Project-local source, tests, plans, and verification evidence",
+    "Additive ampere-only Turso migration",
+    "BOL_CREDENTIAL_ENCRYPTION_KEY in approved Vercel project",
+    "Approved GitHub branch and Vercel deployment"
+  ],
+  "page_fault_policy": "record-and-resolve-before-design",
+  "external_account_policy": "Only existing approved Bankhoes and Muisstil accounts may be used in release verification; future accounts are connected only when an authenticated operator supplies their credentials.",
+  "content_truth_policy": "real-data-labeled-sample-or-neutral-placeholder",
+  "assumptions": {
+    "verified": [
+      "Bol Retailer API uses a client ID and client secret with OAuth2 client credentials.",
+      "The current app exposes only primary and secondary static source keys.",
+      "The current browser snapshot and scan path carry a non-secret source key.",
+      "The approved Turso boundary permits ampere-prefixed operational configuration and audit objects for this scanner."
+    ],
+    "inferred": [
+      "Manual API key entry means entering the Bol client ID and client secret pair.",
+      "Integration management includes adding accounts and replacing credentials, but not deleting accounts in this release.",
+      "The shared warehouse password is the available management re-authentication factor."
+    ],
+    "unknown": [
+      "No third live client credential pair is available for production creation-path verification."
+    ]
+  },
+  "verification_required": {
+    "browser_visual": true,
+    "state_coverage": true,
+    "interface_output_contract": true,
+    "spatial_priority_contract": true,
+    "specialized_profile_contract": false,
+    "pagespace_status": false
+  }
+}

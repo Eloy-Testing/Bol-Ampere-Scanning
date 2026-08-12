@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { createApplication, createWebRoute, statePayload } from '../../server/application.mjs';
-import { DatabaseError } from '../../server/errors.mjs';
+import { BolCredentialsRejectedError, DatabaseError } from '../../server/errors.mjs';
 import { hashPassword, signSessionToken, tokenHash } from '../../server/security.mjs';
 import { databaseFixture, invoke, mutationHeaders } from './helpers.mjs';
 
@@ -271,7 +271,10 @@ test('retailer and scan routes keep the configured source key through secondary 
   });
   const cookie = `ampere_session=${signSessionToken(token, config.sessionSecret)}`;
   const accounts = await invoke(app.retailer, { method: 'GET', url: '/api/retailer?resource=accounts', headers: { cookie } });
-  assert.deepEqual(accounts.body, { accounts: ['primary', 'secondary'] });
+  assert.deepEqual(accounts.body, { accounts: [
+    { key: 'primary', label: 'Bankhoes', kind: 'internal', lastVerifiedAt: null },
+    { key: 'secondary', label: 'Muisstil', kind: 'internal', lastVerifiedAt: null },
+  ] });
   const accepted = await invoke(app.scan, {
     method: 'POST',
     body: { trackingCode: 'SECONDARY-TRACK', shipmentId: 'SECONDARY-SHIPMENT', account: 'secondary' },
@@ -280,6 +283,93 @@ test('retailer and scan routes keep the configured source key through secondary 
   assert.equal(accepted.body.outcome, 'success');
   assert.equal(accepted.body.record.sourceAccount, 'secondary');
   assert.deepEqual(calls, [['shipment', 'SECONDARY-SHIPMENT'], ['order', 'SECONDARY-ORDER']]);
+});
+
+test('integration management requires session re-auth and never returns submitted secrets', async (t) => {
+  const { repository } = await databaseFixture(t);
+  const calls = [];
+  const bolAccountService = {
+    listAccounts: async () => [
+      { key: 'primary', label: 'Bankhoes', kind: 'internal', lastVerifiedAt: null },
+      { key: 'secondary', label: 'Muisstil', kind: 'internal', lastVerifiedAt: null },
+    ],
+    get: async () => bolFixture(),
+    connect: async (payload) => {
+      calls.push(payload);
+      return { key: `acct_${'n'.repeat(22)}`, label: payload.label, kind: 'client', lastVerifiedAt: payload.now.toISOString() };
+    },
+  };
+  const config = await configFixture();
+  const app = createApplication({
+    config,
+    repository,
+    bolAccountService,
+    now: () => new Date('2026-08-12T09:00:00.000Z'),
+    requestId: () => 'request-integrations',
+  });
+  const login = await invoke(app.session, {
+    method: 'POST',
+    body: { stationId: 'PACK-01', operatorLabel: 'Alex', password: 'warehouse password fixture' },
+    headers: mutationHeaders(),
+  });
+  const cookie = cookiePair(login.headers['set-cookie']);
+  const listed = await invoke(app.integrations, { method: 'GET', url: '/api/integrations', headers: { cookie } });
+  assert.equal(listed.statusCode, 200);
+  assert.deepEqual(listed.body.accounts.map(({ label }) => label), ['Bankhoes', 'Muisstil']);
+
+  const secret = 'client-secret-not-for-output';
+  const created = await invoke(app.integrations, {
+    method: 'POST',
+    body: { accountName: 'Client North', clientId: 'client-north', clientSecret: secret, password: 'warehouse password fixture' },
+    headers: mutationHeaders(cookie),
+  });
+  assert.equal(created.statusCode, 201);
+  assert.deepEqual(created.body.account, {
+    key: `acct_${'n'.repeat(22)}`,
+    label: 'Client North',
+    kind: 'client',
+    lastVerifiedAt: '2026-08-12T09:00:00.000Z',
+  });
+  assert.doesNotMatch(created.rawBody, /client-north|client-secret-not-for-output/);
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].session.stationId, 'PACK-01');
+
+  const wrongPassword = await invoke(app.integrations, {
+    method: 'POST',
+    body: { accountName: 'Blocked', clientId: 'client-blocked', clientSecret: secret, password: 'wrong-password' },
+    headers: mutationHeaders(cookie),
+  });
+  assert.equal(wrongPassword.statusCode, 403);
+  assert.equal(wrongPassword.body.error.code, 'management_reauth_failed');
+  assert.equal(calls.length, 1);
+});
+
+test('integration management rejects cross-origin and Bol-rejected connection attempts generically', async (t) => {
+  const { repository } = await databaseFixture(t);
+  const config = await configFixture();
+  const bolAccountService = {
+    listAccounts: async () => [{ key: 'primary', label: 'Bankhoes', kind: 'internal', lastVerifiedAt: null }],
+    get: async () => bolFixture(),
+    connect: async () => { throw new BolCredentialsRejectedError(); },
+  };
+  const app = createApplication({ config, repository, bolAccountService });
+  const login = await invoke(app.session, {
+    method: 'POST',
+    body: { stationId: 'PACK-01', operatorLabel: 'Alex', password: 'warehouse password fixture' },
+    headers: mutationHeaders(),
+  });
+  const cookie = cookiePair(login.headers['set-cookie']);
+  const body = { accountName: 'Rejected', clientId: 'rejected-client', clientSecret: 'rejected-secret', password: 'warehouse password fixture' };
+  const crossOrigin = await invoke(app.integrations, {
+    method: 'POST',
+    body,
+    headers: { ...mutationHeaders(cookie), host: 'scanner.test', origin: 'https://attacker.test', 'sec-fetch-site': 'cross-site' },
+  });
+  assert.equal(crossOrigin.statusCode, 403);
+  const rejected = await invoke(app.integrations, { method: 'POST', body, headers: mutationHeaders(cookie) });
+  assert.equal(rejected.statusCode, 422);
+  assert.equal(rejected.body.error.code, 'bol_credentials_rejected');
+  assert.doesNotMatch(rejected.rawBody, /rejected-client|rejected-secret/);
 });
 
 test('Web Standard adapter preserves status, JSON, and repeated cookies', async () => {

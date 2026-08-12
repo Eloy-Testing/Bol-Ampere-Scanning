@@ -25,7 +25,7 @@ export function assertAmpereOnly(statements) {
   for (const { sql } of statements) {
     const normalized = sql.replace(/\s+/g, ' ').trim();
     const table = normalized.match(/^CREATE TABLE IF NOT EXISTS ([A-Za-z0-9_]+)\s*\(/i);
-    const index = normalized.match(/^CREATE INDEX IF NOT EXISTS ([A-Za-z0-9_]+) ON ([A-Za-z0-9_]+)\s*\(/i);
+    const index = normalized.match(/^CREATE (?:UNIQUE )?INDEX IF NOT EXISTS ([A-Za-z0-9_]+) ON ([A-Za-z0-9_]+)\s*\(/i);
     const alter = normalized.match(/^ALTER TABLE ([A-Za-z0-9_]+) ADD COLUMN ([A-Za-z0-9_]+)\s+/i);
     const names = table ? [table[1]] : index ? [index[1], index[2]] : alter ? [alter[1]] : [];
     const referenceKeywords = [...normalized.matchAll(/\bREFERENCES\b/gi)];

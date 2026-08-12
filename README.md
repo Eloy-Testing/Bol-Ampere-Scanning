@@ -14,11 +14,13 @@ The operational loop is `start → scan → next → repeat`. Enter-terminated s
 
 bol.com remains the source of truth. The datastore contains normalized operational identifiers and audit metadata, not complete order/shipment/customer payloads or secrets.
 
-## Two fixed Bol sources
+## Bol account connections
 
-When the optional secondary Bol credentials are configured, the station shows separate **Bankhoes** and **Muisstil** tabs. Bankhoes is selected first. Each tab has its own live orders, shipments, totals, accepted progress, and cancelled-package list; select the intended tab before scanning.
+The server starts with the **Bankhoes** environment account and optional **Muisstil** environment account. An authenticated operator can open **Bol connections** to replace either internal account's credentials or connect more client accounts. Bol Retailer API access uses a client ID and client secret together. Each client connection receives a stable opaque source key and its own labelled scanner tab; Bankhoes remains selected first.
 
-The station still requires one complete snapshot across both configured sources. A matching tracking code in both sources remains a global fail-closed collision, so neither tab may scan until that collision is resolved through an explicitly approved data-identity change. Unknown or unverified packages remain STOP items and are never counted.
+Connection changes require the current warehouse password. The server validates a fresh Bol token plus orders and shipments access before atomically saving an AES-256-GCM encrypted credential envelope and a non-secret audit event. Client IDs, client secrets, access tokens, and encryption material are never returned to the browser. Existing environment credentials remain the fallback until an internal account has a verified database override.
+
+The station requires one complete snapshot across every connected source. A matching tracking code in multiple sources remains a global fail-closed collision, so no tab may scan until that collision is resolved through an explicitly approved data-identity change. Unknown or unverified packages remain STOP items and are never counted.
 
 ## Required server environment
 
@@ -28,6 +30,7 @@ Copy `.env.example` to an ignored local environment file and set:
 - `TURSO_AUTH_TOKEN` — a server-side token that can create/use only the scanner schema where provider permissions allow.
 - `BOL_CLIENT_ID` and `BOL_CLIENT_SECRET` — bol Retailer API credentials.
 - `BOL_SECONDARY_CLIENT_ID` and `BOL_SECONDARY_CLIENT_SECRET` — optional fixed secondary bol Retailer API credentials. Configure both or neither; the scanner keeps the source account only in server-side operational audit state.
+- `BOL_CREDENTIAL_ENCRYPTION_KEY` — exactly 32 random bytes encoded as canonical base64url. It encrypts managed Bol credentials server-side and must be identical across deployment scopes that share the same Turso database. Do not rotate it without first re-encrypting every managed credential.
 - `WAREHOUSE_PASSWORD_HASH` — the output of `npm run hash:password`, never the plaintext credential.
 - `SESSION_SECRET` — at least 32 random bytes, for example output from `openssl rand -hex 32`.
 
@@ -62,7 +65,7 @@ This drives the real same-origin application handlers against a disposable local
 
 ## Approved Turso migration
 
-First inspect the numbered migrations (currently `001_ampere_scanner.sql` and `002_ampere_source_account.sql`), run the local migration and complete test suite, and confirm every created object begins with `ampere_`. Then use the already approved Bankhoes Turso environment without copying its token into this repository:
+First inspect the numbered migrations (currently `001_ampere_scanner.sql`, `002_ampere_source_account.sql`, and `003_ampere_dynamic_bol_accounts.sql`), run the local migration and complete test suite, and confirm every created object begins with `ampere_`. Then use the already approved Bankhoes Turso environment without copying its token into this repository:
 
 ```sh
 node --env-file='../Bankhoes BI Dashboard/.env.local' scripts/migrate.mjs
@@ -73,9 +76,9 @@ The migration is additive and idempotent. Stop if the resolved database host is 
 ## Vercel setup
 
 1. Import this repository into the intended Vercel project.
-2. Add the six required server environment variables above to the intended Preview/Production scopes. When the secondary bol source is enabled, add its two variables together to both scopes; neither source credential may be exposed to the browser.
+2. Add every required server environment variable above to the intended Preview/Production scopes. Use the same `BOL_CREDENTIAL_ENCRYPTION_KEY` anywhere the deployment shares managed account rows; when the secondary bol source is enabled, add its two variables together. No credential may be exposed to the browser.
 3. Run the approved migration outside the build step; deployments must never migrate automatically.
-4. Deploy from the intended commit, then verify login, session expiry/logout, shared-state hydration, one GO scan, duplicate behavior, STOP behavior, reload persistence, and a second station. When configured, prove each bol source loads independently and that a failed source blocks the combined snapshot.
+4. Deploy from the intended commit, then verify login, session expiry/logout, shared-state hydration, the Bol connections inventory, one GO scan, duplicate behavior, STOP behavior, reload persistence, and a second station. Prove each configured source loads independently and that a failed source blocks the combined snapshot. Use synthetic credentials for account-creation verification unless the additional live account is explicitly approved.
 5. Rotate the temporary warehouse credential by generating a new scrypt hash and replacing `WAREHOUSE_PASSWORD_HASH`; rotate `SESSION_SECRET` to invalidate all sessions when required.
 
 No Vercel project/account is accessed by this repository's verification workflow. Account identity and release authority must be confirmed before deployment.

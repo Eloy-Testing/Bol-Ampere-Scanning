@@ -24,6 +24,25 @@ function stateRecord(row) {
   };
 }
 
+function bolAccountRecord(row) {
+  if (!row) return null;
+  return {
+    accountKey: String(row.account_key),
+    label: String(row.label),
+    accountKind: String(row.account_kind),
+    envelopeVersion: Number(row.envelope_version),
+    credentialCiphertext: String(row.credential_ciphertext),
+    credentialIv: String(row.credential_iv),
+    credentialTag: String(row.credential_tag),
+    credentialFingerprint: String(row.credential_fingerprint),
+    revision: Number(row.revision),
+    active: Number(row.active) === 1,
+    createdAt: String(row.created_at),
+    updatedAt: String(row.updated_at),
+    lastVerifiedAt: String(row.last_verified_at),
+  };
+}
+
 export class ScannerRepository {
   constructor(client) {
     this.client = client;
@@ -218,7 +237,8 @@ export class ScannerRepository {
 
   async getWorkdayState(workday) {
     const result = await this.#execute({
-      sql: `SELECT workday, tracking_code, shipment_id, order_id, source_account, outcome, reason,
+      sql: `SELECT workday, tracking_code, shipment_id, order_id,
+                   COALESCE(source_account_key, source_account) AS source_account, outcome, reason,
                    first_seen_at, accepted_at, cancelled_at, updated_at
             FROM ampere_package_state
             WHERE workday = ?
@@ -243,17 +263,20 @@ export class ScannerRepository {
     now,
   }) {
     const timestamp = iso(now);
+    const legacySourceAccount = ['primary', 'secondary'].includes(sourceAccount) ? sourceAccount : null;
+    const sourceAccountKey = nullable(sourceAccount);
     const acceptedAt = outcome === 'accepted' ? timestamp : null;
     const cancelledAt = outcome === 'cancelled' ? timestamp : null;
     const upsert = {
       sql: `INSERT INTO ampere_package_state
-              (workday, tracking_code, shipment_id, order_id, source_account, outcome, reason, first_seen_at,
+              (workday, tracking_code, shipment_id, order_id, source_account, source_account_key, outcome, reason, first_seen_at,
                accepted_at, cancelled_at, updated_at, station_id, principal_id, session_token_hash, request_id)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(workday, tracking_code) DO UPDATE SET
               shipment_id = COALESCE(excluded.shipment_id, ampere_package_state.shipment_id),
               order_id = COALESCE(excluded.order_id, ampere_package_state.order_id),
               source_account = COALESCE(excluded.source_account, ampere_package_state.source_account),
+              source_account_key = COALESCE(excluded.source_account_key, ampere_package_state.source_account_key),
               outcome = excluded.outcome,
               reason = excluded.reason,
               accepted_at = CASE
@@ -274,29 +297,31 @@ export class ScannerRepository {
               OR (excluded.outcome = 'accepted' AND ampere_package_state.outcome IN ('unknown', 'unverified'))
               OR (excluded.outcome IN ('unknown', 'unverified') AND ampere_package_state.outcome IN ('unknown', 'unverified'))`,
       args: [
-        workday, trackingCode, nullable(shipmentId), nullable(orderId), nullable(sourceAccount), outcome, reason, timestamp,
+        workday, trackingCode, nullable(shipmentId), nullable(orderId), legacySourceAccount, sourceAccountKey, outcome, reason, timestamp,
         acceptedAt, cancelledAt, timestamp, stationId, principalId, sessionTokenHash, requestId,
       ],
     };
     const event = {
       sql: `INSERT INTO ampere_scan_events
-              (workday, tracking_code, shipment_id, order_id, source_account, attempted_outcome, reason,
+              (workday, tracking_code, shipment_id, order_id, source_account, source_account_key, attempted_outcome, reason,
                effective_outcome, station_id, principal_id, session_token_hash, request_id, occurred_at)
-            SELECT ?, ?, ?, ?, ?, ?, ?, outcome, ?, ?, ?, ?, ?
+            SELECT ?, ?, ?, ?, ?, ?, ?, ?, outcome, ?, ?, ?, ?, ?
             FROM ampere_package_state WHERE workday = ? AND tracking_code = ?`,
       args: [
-        workday, trackingCode, nullable(shipmentId), nullable(orderId), nullable(sourceAccount), outcome, reason,
+        workday, trackingCode, nullable(shipmentId), nullable(orderId), legacySourceAccount, sourceAccountKey, outcome, reason,
         stationId, principalId, sessionTokenHash, requestId, timestamp, workday, trackingCode,
       ],
     };
     const state = {
-      sql: `SELECT workday, tracking_code, shipment_id, order_id, source_account, outcome, reason,
+      sql: `SELECT workday, tracking_code, shipment_id, order_id,
+                   COALESCE(source_account_key, source_account) AS source_account, outcome, reason,
                    first_seen_at, accepted_at, cancelled_at, updated_at
             FROM ampere_package_state WHERE workday = ? AND tracking_code = ? LIMIT 1`,
       args: [workday, trackingCode],
     };
     const workdayState = {
-      sql: `SELECT workday, tracking_code, shipment_id, order_id, source_account, outcome, reason,
+      sql: `SELECT workday, tracking_code, shipment_id, order_id,
+                   COALESCE(source_account_key, source_account) AS source_account, outcome, reason,
                    first_seen_at, accepted_at, cancelled_at, updated_at
             FROM ampere_package_state
             WHERE workday = ?
@@ -309,5 +334,107 @@ export class ScannerRepository {
       record: stateRecord(results[2].rows[0]),
       records: results[3].rows.map(stateRecord),
     };
+  }
+
+  async listBolAccountRecords() {
+    const result = await this.#execute({
+      sql: `SELECT account_key, label, account_kind, envelope_version, credential_ciphertext,
+                   credential_iv, credential_tag, credential_fingerprint, revision, active,
+                   created_at, updated_at, last_verified_at
+            FROM ampere_bol_accounts
+            WHERE active = 1
+            ORDER BY CASE account_key WHEN 'primary' THEN 0 WHEN 'secondary' THEN 1 ELSE 2 END,
+                     label COLLATE NOCASE, account_key`,
+      args: [],
+    });
+    return result.rows.map(bolAccountRecord);
+  }
+
+  async getBolAccountRecord(accountKey) {
+    const result = await this.#execute({
+      sql: `SELECT account_key, label, account_kind, envelope_version, credential_ciphertext,
+                   credential_iv, credential_tag, credential_fingerprint, revision, active,
+                   created_at, updated_at, last_verified_at
+            FROM ampere_bol_accounts WHERE account_key = ? AND active = 1 LIMIT 1`,
+      args: [accountKey],
+    });
+    return bolAccountRecord(result.rows[0]);
+  }
+
+  async findBolAccountByFingerprint(credentialFingerprint) {
+    const result = await this.#execute({
+      sql: `SELECT account_key, label, account_kind, envelope_version, credential_ciphertext,
+                   credential_iv, credential_tag, credential_fingerprint, revision, active,
+                   created_at, updated_at, last_verified_at
+            FROM ampere_bol_accounts WHERE credential_fingerprint = ? AND active = 1 LIMIT 1`,
+      args: [credentialFingerprint],
+    });
+    return bolAccountRecord(result.rows[0]);
+  }
+
+  async countBolAccountRecords() {
+    const result = await this.#execute({
+      sql: 'SELECT COUNT(*) AS total FROM ampere_bol_accounts WHERE active = 1',
+      args: [],
+    });
+    return Number(result.rows[0]?.total || 0);
+  }
+
+  async saveBolAccount({
+    accountKey,
+    label,
+    accountKind,
+    envelope,
+    stationId,
+    principalId,
+    requestId,
+    action,
+    now,
+  }) {
+    const timestamp = iso(now);
+    const results = await this.#batch([
+      {
+        sql: `INSERT INTO ampere_bol_accounts
+                (account_key, label, account_kind, envelope_version, credential_ciphertext,
+                 credential_iv, credential_tag, credential_fingerprint, revision, active,
+                 created_by, updated_by, created_at, updated_at, last_verified_at)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, 1, ?, ?, ?, ?, ?)
+              ON CONFLICT(account_key) DO UPDATE SET
+                label = excluded.label,
+                account_kind = excluded.account_kind,
+                envelope_version = excluded.envelope_version,
+                credential_ciphertext = excluded.credential_ciphertext,
+                credential_iv = excluded.credential_iv,
+                credential_tag = excluded.credential_tag,
+                credential_fingerprint = excluded.credential_fingerprint,
+                revision = ampere_bol_accounts.revision + 1,
+                active = 1,
+                updated_by = excluded.updated_by,
+                updated_at = excluded.updated_at,
+                last_verified_at = excluded.last_verified_at`,
+        args: [
+          accountKey, label, accountKind, envelope.envelopeVersion, envelope.credentialCiphertext,
+          envelope.credentialIv, envelope.credentialTag, envelope.credentialFingerprint,
+          principalId, principalId, timestamp, timestamp, timestamp,
+        ],
+      },
+      {
+        sql: `INSERT INTO ampere_bol_account_audit
+                (account_key, label, action, station_id, principal_id, request_id, occurred_at)
+              VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        args: [accountKey, label, action, stationId, principalId, requestId, timestamp],
+      },
+      {
+        sql: `SELECT account_key, label, account_kind, envelope_version, credential_ciphertext,
+                     credential_iv, credential_tag, credential_fingerprint, revision, active,
+                     created_at, updated_at, last_verified_at
+              FROM ampere_bol_accounts WHERE account_key = ? AND active = 1 LIMIT 1`,
+        args: [accountKey],
+      },
+    ]);
+    if (Number(results[0].rowsAffected || 0) !== 1 || Number(results[1].rowsAffected || 0) !== 1 || !results[2].rows[0]) {
+      throw new DatabaseError();
+    }
+    return bolAccountRecord(results[2].rows[0]);
   }
 }

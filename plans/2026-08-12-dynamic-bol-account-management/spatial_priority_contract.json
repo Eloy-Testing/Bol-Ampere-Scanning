@@ -1,0 +1,121 @@
+{
+  "schema_version": "creative-framework.spatial-priority.v1",
+  "task_id": "2026-08-12-dynamic-bol-account-management",
+  "surface": "Authenticated Bol connection-management dialog within the Ampere scanner",
+  "primary_decision": {
+    "statement": "Choose whether to add a new Bol account or update one existing connection, then connect valid credentials.",
+    "primary_action": "Connect account",
+    "item_id": "connection_workflow"
+  },
+  "items": [
+    {
+      "id": "connection_workflow",
+      "label": "Account connection workflow",
+      "purpose": "Orient the user with existing accounts, capture the selected account credentials, and complete the connection.",
+      "priority": "p0",
+      "consequence_of_omission": "The user cannot safely choose, configure, and connect the intended account.",
+      "visibility": "immediate",
+      "placement": { "mode": "explicit", "region": "primary_decision_zone", "anchor": "dialog heading", "justification": "Existing identity, fields, and the connect action must remain one coherent decision path." },
+      "attention_order": 1,
+      "attention_dependencies": [],
+      "interactive": true,
+      "focus_order": 1,
+      "adaptive_behavior": {
+        "desktop": { "region": "primary_decision_zone", "visibility": "immediate", "order": 1 },
+        "mobile": { "region": "primary_decision_zone", "visibility": "immediate", "order": 1 },
+        "invariant": "Account names and Add account remain before the ordered credential fields, which remain before Connect account."
+      },
+      "demotion_reason": null
+    },
+    {
+      "id": "connection_form",
+      "label": "Credential entry",
+      "purpose": "Capture the account name, client ID, client secret, and management re-authentication.",
+      "priority": "p1",
+      "consequence_of_omission": "No connection can be created or rotated safely.",
+      "visibility": "on_demand",
+      "placement": { "mode": "explicit", "region": "primary_decision_zone", "anchor": "selected add or update action", "justification": "Credentials must stay bound to the chosen account action." },
+      "attention_order": 2,
+      "attention_dependencies": ["connection_workflow"],
+      "interactive": true,
+      "focus_order": 2,
+      "adaptive_behavior": {
+        "desktop": { "region": "primary_decision_zone", "visibility": "on_demand", "order": 2 },
+        "mobile": { "region": "primary_decision_zone", "visibility": "on_demand", "order": 2 },
+        "invariant": "Fields remain in name, client ID, client secret, warehouse password order."
+      },
+      "demotion_reason": "The form is an on-demand subordinate state of the primary connection workflow."
+    },
+    {
+      "id": "connection_action",
+      "label": "Connect account",
+      "purpose": "Validate against Bol and save the encrypted connection.",
+      "priority": "p1",
+      "consequence_of_omission": "The user cannot complete the task.",
+      "visibility": "adjacent",
+      "placement": { "mode": "explicit", "region": "primary_decision_zone", "anchor": "credential form", "justification": "The action depends on all credential fields and must remain adjacent." },
+      "attention_order": 3,
+      "attention_dependencies": ["connection_workflow", "connection_form"],
+      "interactive": true,
+      "focus_order": 3,
+      "adaptive_behavior": {
+        "desktop": { "region": "primary_decision_zone", "visibility": "adjacent", "order": 3 },
+        "mobile": { "region": "primary_decision_zone", "visibility": "adjacent", "order": 3 },
+        "invariant": "Primary save action follows all required fields and precedes secondary cancellation."
+      },
+      "demotion_reason": "The submit control is subordinate to the complete workflow and appears only after fields are available."
+    },
+    {
+      "id": "security_note",
+      "label": "Credential handling note",
+      "purpose": "Set the safety expectation that credentials are not shown again.",
+      "priority": "p1",
+      "consequence_of_omission": "The user may not understand why current keys cannot be viewed.",
+      "visibility": "adjacent",
+      "placement": { "mode": "implicit", "region": "primary_decision_zone", "anchor": "credential form heading", "justification": "It supports trust but must not compete with form completion." },
+      "attention_order": 4,
+      "attention_dependencies": ["connection_form"],
+      "interactive": false,
+      "focus_order": null,
+      "adaptive_behavior": {
+        "desktop": { "region": "primary_decision_zone", "visibility": "adjacent", "order": 4 },
+        "mobile": { "region": "primary_decision_zone", "visibility": "adjacent", "order": 4 },
+        "invariant": "The note remains concise and never includes secret material or implementation details."
+      },
+      "demotion_reason": "Trust support is secondary to the connect task."
+    },
+    {
+      "id": "close_cancel",
+      "label": "Close or cancel",
+      "purpose": "Exit management without changing the connection.",
+      "priority": "p1",
+      "consequence_of_omission": "The user could feel trapped in the management surface.",
+      "visibility": "immediate",
+      "placement": { "mode": "explicit", "region": "utility_zone", "anchor": "dialog top and form action row", "justification": "Safe exit must be consistently available but visually secondary." },
+      "attention_order": 5,
+      "attention_dependencies": [],
+      "interactive": true,
+      "focus_order": 4,
+      "adaptive_behavior": {
+        "desktop": { "region": "utility_zone", "visibility": "immediate", "order": 5 },
+        "mobile": { "region": "utility_zone", "visibility": "immediate", "order": 5 },
+        "invariant": "Close never precedes the primary add/update choice in visual emphasis."
+      },
+      "demotion_reason": "It exits rather than advances the primary task."
+    }
+  ],
+  "attention_sequence": ["connection_workflow", "connection_form", "connection_action", "security_note", "close_cancel"],
+  "focus_sequence": ["connection_workflow", "connection_form", "connection_action", "close_cancel"],
+  "responsive_invariants": {
+    "primary_decision_precedes_secondary": true,
+    "dom_order_matches_visual_order": true,
+    "focus_order_matches_task_order": true
+  },
+  "verification": {
+    "desktop_viewport": "1440x980",
+    "mobile_viewport": "390x900",
+    "geometry_required": true,
+    "keyboard_required": true,
+    "overflow_required": true
+  }
+}

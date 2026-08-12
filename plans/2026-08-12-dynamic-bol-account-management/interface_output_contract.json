@@ -1,0 +1,125 @@
+{
+  "schema_version": "creative-framework.interface-output-contract.v1",
+  "task": "Authenticated Bol connection management and dynamic scanner tabs",
+  "surface_has_interface_output": true,
+  "interface_output_producers": "applicable",
+  "not_applicable_reason": "",
+  "planned_output_channels": ["visible", "assistive", "telemetry"],
+  "producers": [
+    {
+      "id": "integration_list_loading",
+      "event_origin": "product_workflow",
+      "presentation_owner": "product_owner",
+      "channel": "visible",
+      "source_condition": "The authenticated user opened Bol connections and metadata is loading.",
+      "user_impact": "Connection actions are temporarily unavailable.",
+      "recovery": "Wait for the list to load or close the dialog.",
+      "copy_purpose": "Explain a bounded loading state.",
+      "final_copy": "Loading Bol connections…",
+      "external_proof": "Browser loading-state assertion"
+    },
+    {
+      "id": "integration_checking",
+      "event_origin": "product_workflow",
+      "presentation_owner": "product_owner",
+      "channel": "visible",
+      "source_condition": "The user submitted credentials and the server is validating Bol access before saving.",
+      "user_impact": "The form is temporarily locked and no account is available yet.",
+      "recovery": "Wait for the validation result.",
+      "copy_purpose": "Confirm that the requested connection check is in progress.",
+      "final_copy": "Checking Bol and saving the connection…",
+      "external_proof": "Browser pending-state assertion and request trace"
+    },
+    {
+      "id": "integration_connected",
+      "event_origin": "product_workflow",
+      "presentation_owner": "product_owner",
+      "channel": "visible",
+      "source_condition": "Bol accepted the credentials and the encrypted account record was committed.",
+      "user_impact": "The account can be used as a scanner tab after data refresh.",
+      "recovery": "Close management and choose the new tab.",
+      "copy_purpose": "Confirm the durable user result and next action.",
+      "final_copy": "Connected. This account is now available as a scanner tab.",
+      "external_proof": "Server transaction test plus browser tab assertion"
+    },
+    {
+      "id": "integration_credentials_rejected",
+      "event_origin": "product_workflow",
+      "presentation_owner": "product_owner",
+      "channel": "visible",
+      "source_condition": "Bol rejected the submitted client ID or client secret.",
+      "user_impact": "Nothing was saved and no new tab is created.",
+      "recovery": "Check both values and submit again.",
+      "copy_purpose": "Provide an actionable correction without exposing upstream details.",
+      "final_copy": "Bol did not accept these credentials. Check the client ID and secret.",
+      "external_proof": "Rejected-credential server and browser assertions"
+    },
+    {
+      "id": "integration_duplicate",
+      "event_origin": "product_workflow",
+      "presentation_owner": "product_owner",
+      "channel": "visible",
+      "source_condition": "The client ID fingerprint is already bound to another account.",
+      "user_impact": "A duplicate tab is not created.",
+      "recovery": "Update the existing connection instead.",
+      "copy_purpose": "Prevent accidental duplicate account identity.",
+      "final_copy": "These credentials are already connected. Update the existing account instead.",
+      "external_proof": "Duplicate-fingerprint transaction test and browser assertion"
+    },
+    {
+      "id": "integration_reauth_failed",
+      "event_origin": "product_workflow",
+      "presentation_owner": "product_owner",
+      "channel": "visible",
+      "source_condition": "The current warehouse password was not accepted for a credential change.",
+      "user_impact": "Nothing is saved.",
+      "recovery": "Enter the current warehouse password and submit again.",
+      "copy_purpose": "Explain the management authorization failure.",
+      "final_copy": "Warehouse password not accepted. Nothing was changed.",
+      "external_proof": "Management re-authentication API and browser assertions"
+    },
+    {
+      "id": "integration_unavailable",
+      "event_origin": "autonomous_condition",
+      "presentation_owner": "product_owner",
+      "channel": "visible",
+      "source_condition": "Bol validation, credential encryption, or the ampere datastore is unavailable.",
+      "user_impact": "The connection cannot be safely saved.",
+      "recovery": "Nothing changed; retry later or contact the owner if it persists.",
+      "copy_purpose": "Fail closed without raw provider, database, or encryption details.",
+      "final_copy": "The connection could not be saved. Nothing changed. Try again.",
+      "external_proof": "Failure-injection tests"
+    },
+    {
+      "id": "credential_privacy_note",
+      "event_origin": "product_workflow",
+      "presentation_owner": "product_owner",
+      "channel": "visible",
+      "source_condition": "The user is entering or replacing credentials.",
+      "user_impact": "The user must understand that existing secrets cannot be viewed.",
+      "recovery": "Enter both values when adding or replacing a connection.",
+      "copy_purpose": "Set a necessary privacy and safety expectation.",
+      "final_copy": "Credentials are saved securely and are never shown again.",
+      "external_proof": "Visual and response-shape inspection"
+    },
+    {
+      "id": "integration_diagnostics",
+      "event_origin": "autonomous_helper",
+      "presentation_owner": "none",
+      "channel": "telemetry",
+      "source_condition": "Internal crypto, cache, query, token, or migration operations complete.",
+      "user_impact": "No direct user impact.",
+      "recovery": "Not applicable.",
+      "copy_purpose": "Keep internal mechanics outside product chrome.",
+      "final_copy": "",
+      "external_proof": "Unit tests, sanitized logs, and repository inspection"
+    }
+  ],
+  "technical_status_exception": { "applicable": false, "direct_object_of_work": false, "producer_ids": [], "reason": "" },
+  "what_must_not_appear": [
+    "Existing or submitted client IDs, client secrets, access tokens, encryption keys, ciphertext, IVs, or tags after form submission",
+    "Internal account keys, database URLs, table names, provider response bodies, stack traces, or Vercel internals",
+    "Customer, order, or shipment data inside the connection manager",
+    "Fake connection success, fake account data, or test narration"
+  ]
+}

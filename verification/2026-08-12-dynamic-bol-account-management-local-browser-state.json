@@ -1,0 +1,53 @@
+{
+  "task_id": "2026-08-12-dynamic-bol-account-management",
+  "artifact": {
+    "kind": "local_file",
+    "path": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/index.html",
+    "sha256": "5415335122c3095d70eecbe42f17ab5c3cbe0ab2da67c8095ba2a6608b66aec9"
+  },
+  "route": "http://127.0.0.1:4188/index.html",
+  "inspector": "codex-main",
+  "inspected_at": "2026-08-12T16:51:04Z",
+  "states": [
+    {
+      "id": "connected-inventory-desktop",
+      "viewport": { "width": 1440, "height": 980 },
+      "observed": "The modal is visually subordinate to the scanner, the connected-account name and type are legible, and add/update actions are unambiguous."
+    },
+    {
+      "id": "add-form-desktop",
+      "viewport": { "width": 1440, "height": 980 },
+      "observed": "The single-column form has clear labels, one dominant connect action, a concise confidentiality note, and no overflow."
+    },
+    {
+      "id": "add-form-mobile",
+      "viewport": { "width": 390, "height": 844 },
+      "observed": "The dialog remains inside the viewport, preserves task order, uses full-width actions, focuses account name, and disables scanner input behind the modal."
+    },
+    {
+      "id": "connected-success-desktop",
+      "viewport": { "width": 1440, "height": 980 },
+      "observed": "A synthetic end-to-end connection produces a separate labelled tab, a Client badge, update-in-place action, and a truthful green success message only after the new snapshot loads."
+    },
+    {
+      "id": "failure-and-recovery",
+      "viewport": { "width": 1440, "height": 980 },
+      "observed": "Deterministic browser paths exercised rejected credentials, warehouse re-authentication failure, and saved-but-snapshot-paused states; secrets cleared and the scanner remained fail closed."
+    }
+  ],
+  "geometry": {
+    "desktop": { "dialog_client_width": 700, "dialog_scroll_width": 700 },
+    "mobile": { "dialog_client_width": 341, "dialog_scroll_width": 341, "page_horizontal_overflow": 0 }
+  },
+  "focus": {
+    "dialog_open": "accountName",
+    "dialog_close": "scanInput",
+    "scanner_disabled_behind_dialog": true
+  },
+  "console_errors": [],
+  "network_scope": "same-origin local handlers and synthetic Bol transport only",
+  "live_third_account_submitted": false,
+  "repair_history": [
+    "The first real-browser pass exposed a missing local /api/integrations route. The route and Vercel-entrypoint coverage were added before all evidence in the final receipt was recaptured."
+  ]
+}

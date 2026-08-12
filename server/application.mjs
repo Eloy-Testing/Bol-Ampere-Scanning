@@ -1,6 +1,8 @@
 import { randomUUID } from 'node:crypto';
-import { BolClient, BolClientPool } from './bol-client.mjs';
+import { BolClient } from './bol-client.mjs';
+import { BolAccountService } from './bol-account-service.mjs';
 import { loadConfig } from './config.mjs';
+import { CredentialVault } from './credential-vault.mjs';
 import { createDatabaseClient } from './database.mjs';
 import { AppError, ValidationError, publicError } from './errors.mjs';
 import { ScannerRepository } from './repository.mjs';
@@ -88,17 +90,22 @@ function statePayload(workday, records) {
   return { workday, records, scanned, cancelled, stops };
 }
 
-export function createApplication({ config, repository, bolClient, now = () => new Date(), requestId = () => randomUUID() }) {
-  const bolClients = bolClient && typeof bolClient.accountKeys === 'function' && typeof bolClient.get === 'function'
-    ? bolClient
-    : Object.freeze({
-      accountKeys: () => ['primary'],
-      get: (accountKey) => {
-        if (accountKey !== 'primary') throw new ValidationError();
-        return bolClient;
-      },
-    });
-  const scanService = new ScanService({ repository, bolClientForAccount: (accountKey) => bolClients.get(accountKey), now });
+export function createApplication({ config, repository, bolClient, bolAccountService, now = () => new Date(), requestId = () => randomUUID() }) {
+  const legacyKeys = bolClient && typeof bolClient.accountKeys === 'function' ? bolClient.accountKeys() : ['primary'];
+  const accounts = bolAccountService || Object.freeze({
+    listAccounts: async () => legacyKeys.map((key) => ({
+      key,
+      label: key === 'primary' ? 'Bankhoes' : key === 'secondary' ? 'Muisstil' : key,
+      kind: ['primary', 'secondary'].includes(key) ? 'internal' : 'client',
+      lastVerifiedAt: null,
+    })),
+    get: async (accountKey) => {
+      if (bolClient && typeof bolClient.get === 'function') return bolClient.get(accountKey);
+      if (accountKey !== 'primary') throw new ValidationError();
+      return bolClient;
+    },
+  });
+  const scanService = new ScanService({ repository, bolClientForAccount: (accountKey) => accounts.get(accountKey), now });
 
   function requestCookies(req) {
     return parseCookies(requestHeader(req, 'cookie'));
@@ -236,11 +243,11 @@ export function createApplication({ config, repository, bolClient, now = () => n
     if (!['accounts', 'orders', 'shipments', 'order', 'shipment'].includes(resource) || url.searchParams.getAll('resource').length !== 1) throw new ValidationError();
     if (resource === 'accounts') {
       if (url.searchParams.has('page') || url.searchParams.has('id') || url.searchParams.has('account')) throw new ValidationError();
-      return sendJson(res, 200, { accounts: bolClients.accountKeys() });
+      return sendJson(res, 200, { accounts: await accounts.listAccounts() });
     }
     const accountKey = url.searchParams.get('account');
     if (typeof accountKey !== 'string' || url.searchParams.getAll('account').length !== 1) throw new ValidationError();
-    const client = bolClients.get(accountKey);
+    const client = await accounts.get(accountKey);
     const identifier = url.searchParams.get('id');
     const detailResource = resource === 'order' || resource === 'shipment';
     if (identifier != null || detailResource) {
@@ -259,6 +266,37 @@ export function createApplication({ config, repository, bolClient, now = () => n
     return sendJson(res, 200, payload);
   }
 
+  async function integrationsRoute(req, res) {
+    const id = requestId();
+    if (req.method === 'GET') {
+      await requireSession(req, id);
+      return sendJson(res, 200, { accounts: await accounts.listAccounts() });
+    }
+    if (!['POST', 'PUT'].includes(req.method)) {
+      return sendJson(res, 405, { error: { code: 'method_not_allowed', message: 'Method not allowed.' } }, { Allow: 'GET, POST, PUT' });
+    }
+    enforceSameOrigin(req);
+    const session = await requireSession(req, id);
+    const body = await readJson(req);
+    if (req.method === 'POST') exactKeys(body, ['accountName', 'clientId', 'clientSecret', 'password']);
+    else exactKeys(body, ['accountKey', 'clientId', 'clientSecret', 'password']);
+    if (typeof body.password !== 'string' || body.password.length > 1024) throw new ValidationError();
+    if (!await verifyPassword(body.password, config.passwordHash)) {
+      throw new AppError('management_reauth_failed', 403, 'Warehouse password not accepted.');
+    }
+    if (!accounts || typeof accounts.connect !== 'function') throw new AppError('credential_store_unavailable', 503, 'The connection could not be saved.');
+    const account = await accounts.connect({
+      accountKey: req.method === 'PUT' ? body.accountKey : null,
+      label: req.method === 'POST' ? body.accountName : null,
+      clientId: body.clientId,
+      clientSecret: body.clientSecret,
+      session,
+      requestId: id,
+      now: now(),
+    });
+    return sendJson(res, req.method === 'POST' ? 201 : 200, { account });
+  }
+
   async function scanRoute(req, res) {
     if (req.method !== 'POST') return sendJson(res, 405, { error: { code: 'method_not_allowed', message: 'Method not allowed.' } }, { Allow: 'POST' });
     enforceSameOrigin(req);
@@ -271,7 +309,7 @@ export function createApplication({ config, repository, bolClient, now = () => n
     if (hasShipmentId) {
       validateIdentifier(body.shipmentId);
       if (typeof body.account !== 'string') throw new ValidationError();
-      bolClients.get(body.account);
+      await accounts.get(body.account);
     } else if (body.account !== undefined) {
       throw new ValidationError();
     }
@@ -301,6 +339,7 @@ export function createApplication({ config, repository, bolClient, now = () => n
     session: safe(sessionRoute),
     state: safe(stateRoute),
     retailer: safe(retailerRoute),
+    integrations: safe(integrationsRoute),
     scan: safe(scanRoute),
   });
 }
@@ -312,15 +351,15 @@ export function getDefaultApplication() {
   const config = loadConfig();
   const client = createDatabaseClient({ url: config.databaseUrl, authToken: config.databaseToken });
   const repository = new ScannerRepository(client);
-  const bolClient = new BolClientPool({
-    accounts: config.bolAccounts,
-    clientFactory: (account) => new BolClient({
-      clientId: account.clientId,
-      clientSecret: account.clientSecret,
-      nodeEnv: config.nodeEnv,
-    }),
+  const vault = new CredentialVault(config.bolCredentialEncryptionKey);
+  const bolAccountService = new BolAccountService({
+    repository,
+    staticAccounts: config.bolAccounts,
+    vault,
+    nodeEnv: config.nodeEnv,
+    clientFactory: (credentials) => new BolClient({ ...credentials, nodeEnv: config.nodeEnv }),
   });
-  defaultApplication = createApplication({ config, repository, bolClient });
+  defaultApplication = createApplication({ config, repository, bolAccountService });
   return defaultApplication;
 }
 

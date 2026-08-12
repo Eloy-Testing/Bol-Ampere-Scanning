@@ -1,4 +1,5 @@
 import { ConfigurationError } from './errors.mjs';
+import { parseCredentialEncryptionKey, validateBolCredentials } from './credential-vault.mjs';
 import { isPasswordHash } from './security.mjs';
 
 const nonEmpty = (value) => typeof value === 'string' && value.trim().length > 0;
@@ -28,20 +29,32 @@ export function loadConfig(env = process.env) {
     throw new ConfigurationError();
   }
   if (!isPasswordHash(env.WAREHOUSE_PASSWORD_HASH)) throw new ConfigurationError();
-  if (!nonEmpty(env.BOL_CLIENT_ID) || !nonEmpty(env.BOL_CLIENT_SECRET)) {
+  try {
+    validateBolCredentials({ clientId: env.BOL_CLIENT_ID, clientSecret: env.BOL_CLIENT_SECRET });
+  } catch {
     throw new ConfigurationError();
   }
+  parseCredentialEncryptionKey(env.BOL_CREDENTIAL_ENCRYPTION_KEY);
   const hasSecondaryClientId = nonEmpty(env.BOL_SECONDARY_CLIENT_ID);
   const hasSecondaryClientSecret = nonEmpty(env.BOL_SECONDARY_CLIENT_SECRET);
   if (hasSecondaryClientId !== hasSecondaryClientSecret) throw new ConfigurationError();
+  if (hasSecondaryClientId) {
+    try {
+      validateBolCredentials({ clientId: env.BOL_SECONDARY_CLIENT_ID, clientSecret: env.BOL_SECONDARY_CLIENT_SECRET });
+    } catch {
+      throw new ConfigurationError();
+    }
+  }
   const bolAccounts = [Object.freeze({
     key: 'primary',
+    label: 'Bankhoes',
     clientId: env.BOL_CLIENT_ID,
     clientSecret: env.BOL_CLIENT_SECRET,
   })];
   if (hasSecondaryClientId) {
     bolAccounts.push(Object.freeze({
       key: 'secondary',
+      label: 'Muisstil',
       clientId: env.BOL_SECONDARY_CLIENT_ID,
       clientSecret: env.BOL_SECONDARY_CLIENT_SECRET,
     }));
@@ -55,6 +68,7 @@ export function loadConfig(env = process.env) {
     bolClientId: env.BOL_CLIENT_ID,
     bolClientSecret: env.BOL_CLIENT_SECRET,
     bolAccounts: Object.freeze(bolAccounts),
+    bolCredentialEncryptionKey: env.BOL_CREDENTIAL_ENCRYPTION_KEY,
     nodeEnv: env.NODE_ENV || 'production',
     secureCookies: (env.NODE_ENV || 'production') !== 'test',
     sessionTtlSeconds: 8 * 60 * 60,

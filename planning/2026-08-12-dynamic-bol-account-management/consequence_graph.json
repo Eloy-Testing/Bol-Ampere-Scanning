@@ -1,0 +1,47 @@
+{
+  "generated": "2026-08-12",
+  "target_surface": "Ampere scanner dynamic Bol connection management",
+  "problem": "Two static environment credential slots cannot be managed in-product or extended safely.",
+  "source_artifacts": ["AGENTS.md", "index.html", "server/config.mjs", "server/bol-client.mjs", "server/application.mjs", "server/scan-service.mjs", "server/repository.mjs", "migrations/002_ampere_source_account.sql"],
+  "nodes": [
+    { "id": "n_request", "type": "intent", "label": "Manual multi-account Bol management", "evidence": "User request" },
+    { "id": "n_ui", "type": "file", "label": "Authenticated manager and dynamic tabs", "evidence": "index.html" },
+    { "id": "n_api", "type": "route", "label": "Protected integrations route", "evidence": "server/application.mjs" },
+    { "id": "n_vault", "type": "runtime", "label": "Account-bound encrypted credential vault", "evidence": "planned server/credential-vault.mjs" },
+    { "id": "n_registry", "type": "runtime", "label": "Static fallback plus dynamic account registry", "evidence": "planned server/bol-account-service.mjs" },
+    { "id": "n_schema", "type": "schema", "label": "Encrypted account/audit rows and dynamic provenance", "evidence": "planned migration 003" },
+    { "id": "n_scan", "type": "runtime", "label": "Account-qualified FIFO scan verification", "evidence": "server/scan-service.mjs" },
+    { "id": "n_risk_secret", "type": "risk", "label": "Credential exposure or unrecoverable encryption mismatch", "evidence": "Secret boundary" },
+    { "id": "n_risk_identity", "type": "risk", "label": "Wrong tab/source or duplicate account identity", "evidence": "Legacy fixed key contract" },
+    { "id": "n_verify", "type": "verification", "label": "Tests, migration, API, deployment, browser receipts", "evidence": "Project finish line" },
+    { "id": "n_outcome", "type": "outcome", "label": "New account equals secure connection equals new tab", "evidence": "Acceptance ledger" }
+  ],
+  "edges": [
+    { "from": "n_request", "to": "n_ui", "relation": "causes", "order": 1, "confidence": "high", "delay": "none", "risk": "medium", "evidence": "Manual management requires a user surface." },
+    { "from": "n_ui", "to": "n_api", "relation": "calls", "order": 1, "confidence": "high", "delay": "runtime", "risk": "high", "evidence": "Browser may call same-origin APIs only." },
+    { "from": "n_api", "to": "n_registry", "relation": "calls", "order": 1, "confidence": "high", "delay": "runtime", "risk": "high", "evidence": "Application currently resolves Bol clients in routes." },
+    { "from": "n_registry", "to": "n_vault", "relation": "depends_on", "order": 2, "confidence": "high", "delay": "runtime", "risk": "high", "evidence": "Dynamic credentials must be decrypted only server-side." },
+    { "from": "n_registry", "to": "n_schema", "relation": "depends_on", "order": 2, "confidence": "high", "delay": "runtime", "risk": "high", "evidence": "Serverless runtimes need shared durable configuration." },
+    { "from": "n_registry", "to": "n_scan", "relation": "updates", "order": 2, "confidence": "high", "delay": "runtime", "risk": "high", "evidence": "Scan service currently resolves fixed source keys synchronously." },
+    { "from": "n_schema", "to": "n_risk_identity", "relation": "can_create", "order": 2, "confidence": "high", "delay": "runtime", "risk": "high", "evidence": "Legacy source_account CHECK allows only primary/secondary." },
+    { "from": "n_vault", "to": "n_risk_secret", "relation": "can_create", "order": 2, "confidence": "high", "delay": "runtime", "risk": "high", "evidence": "Wrong key/AAD or response leakage defeats confidentiality." },
+    { "from": "n_risk_secret", "to": "n_outcome", "relation": "blocks", "order": 3, "confidence": "high", "delay": "runtime", "risk": "high", "evidence": "Unsafe storage cannot satisfy manual secret management." },
+    { "from": "n_risk_identity", "to": "n_outcome", "relation": "blocks", "order": 3, "confidence": "high", "delay": "runtime", "risk": "high", "evidence": "Wrong source may validate or count against the wrong client." },
+    { "from": "n_verify", "to": "n_outcome", "relation": "verifies", "order": 3, "confidence": "high", "delay": "deploy", "risk": "low", "evidence": "Task finish lines require exact release proof." }
+  ],
+  "order_1": ["UI to same-origin management API", "API to live Bol validation and encrypted storage"],
+  "order_2": ["Async dynamic account resolution affects retailer reads and scan verification", "Dynamic keys require new provenance columns", "Dedicated key management becomes a deployment prerequisite"],
+  "order_3": ["Bad account data can pause the complete snapshot", "Environment credentials must remain rollback fallback", "Future account growth raises snapshot and rate-limit pressure"],
+  "feedback_loops": ["Successful save refreshes account metadata and snapshot; the returned stable key produces the new tab and later scan provenance."],
+  "verification_edges": [
+    { "edge": "n_ui -> n_api", "verification": "Browser request/body/focus/state tests" },
+    { "edge": "n_api -> n_registry", "verification": "Application session/re-auth/exact-key tests" },
+    { "edge": "n_registry -> n_vault", "verification": "AES-GCM round-trip/tamper/AAD/no-secret tests" },
+    { "edge": "n_registry -> n_schema", "verification": "Atomic repository create/update/audit readback" },
+    { "edge": "n_registry -> n_scan", "verification": "Dynamic account retailer and scan success/forgery tests" },
+    { "edge": "n_schema -> n_risk_identity", "verification": "Migration from pre-003 plus dynamic source record/event readback" }
+  ],
+  "local_isolation_proof": null,
+  "blockers": [],
+  "decision": "Implement a dedicated encrypted dynamic account registry with protected management UI/API, while preserving environment fallbacks and current global fail-closed snapshot semantics."
+}

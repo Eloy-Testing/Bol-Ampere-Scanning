@@ -8,7 +8,8 @@ test('configuration permits tokenless local libSQL but requires all server-only 
     NODE_ENV: 'test',
     TURSO_DATABASE_URL: 'file:./local.db',
     BOL_CLIENT_ID: 'client',
-    BOL_CLIENT_SECRET: 'secret',
+    BOL_CLIENT_SECRET: 'primary-secret',
+    BOL_CREDENTIAL_ENCRYPTION_KEY: Buffer.alloc(32, 7).toString('base64url'),
     WAREHOUSE_PASSWORD_HASH: await hashPassword('warehouse password fixture'),
     SESSION_SECRET: 's'.repeat(32),
   };
@@ -39,6 +40,9 @@ test('configuration permits tokenless local libSQL but requires all server-only 
     authToken: 'token',
   });
   assert.throws(() => loadConfig({ ...complete, WAREHOUSE_PASSWORD_HASH: 'malformed' }), {
+    name: 'ConfigurationError',
+  });
+  assert.throws(() => loadConfig({ ...complete, BOL_CREDENTIAL_ENCRYPTION_KEY: 'not-a-key' }), {
     name: 'ConfigurationError',
   });
 });

@@ -1,4 +1,4 @@
-import { UpstreamError, ValidationError } from './errors.mjs';
+import { BolCredentialsRejectedError, UpstreamError, ValidationError } from './errors.mjs';
 import { validateIdentifier } from './security.mjs';
 
 const TOKEN_URL = 'https://login.bol.com/token';
@@ -214,6 +214,7 @@ export class BolClient {
       },
       body: 'grant_type=client_credentials',
     });
+    if ([401, 403].includes(response.status)) throw new BolCredentialsRejectedError();
     if (!response.ok) throw new UpstreamError();
     if (typeof payload?.access_token !== 'string' || payload.access_token.length < 8) throw new UpstreamError();
     const expiresIn = Math.min(600, Math.max(30, Number(payload.expires_in) || 299));
@@ -236,8 +237,15 @@ export class BolClient {
       await this.#accessToken(true);
       return this.#request(path, false);
     }
+    if ([401, 403].includes(response.status)) throw new BolCredentialsRejectedError();
     if (!response.ok) throw new UpstreamError();
     return payload;
+  }
+
+  async verifyConnection() {
+    await this.#accessToken(true);
+    await Promise.all([this.getOrdersPage(1), this.getShipmentsPage(1)]);
+    return true;
   }
 
   async getOrdersPage(page) {

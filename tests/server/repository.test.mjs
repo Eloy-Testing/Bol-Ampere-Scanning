@@ -16,6 +16,7 @@ test('migration is idempotent and creates only ampere application objects', asyn
   assert.ok(result.rows.every((row) => String(row.name).startsWith('ampere_')));
   const columns = await client.execute('PRAGMA table_info(ampere_package_state)');
   assert.ok(columns.rows.some((row) => row.name === 'source_account'));
+  assert.ok(columns.rows.some((row) => row.name === 'source_account_key'));
 });
 
 test('numbered migration upgrades a pre-002 ampere schema exactly once', async (t) => {
@@ -29,7 +30,11 @@ test('numbered migration upgrades a pre-002 ampere schema exactly once', async (
   await applyMigration({ client, source });
   await applyMigrations({ client, migrations: await loadMigrations() });
   const ledger = await client.execute('SELECT migration_id FROM ampere_schema_migrations ORDER BY migration_id');
-  assert.deepEqual(ledger.rows.map((row) => row.migration_id), ['001_ampere_scanner.sql', '002_ampere_source_account.sql']);
+  assert.deepEqual(ledger.rows.map((row) => row.migration_id), [
+    '001_ampere_scanner.sql',
+    '002_ampere_source_account.sql',
+    '003_ampere_dynamic_bol_accounts.sql',
+  ]);
 });
 
 test('migration guard rejects non-ampere index targets and DML', () => {
@@ -140,4 +145,53 @@ test('atomic state counts an accepted package once and cancellation cannot be do
   const events = await client.execute('SELECT source_account, attempted_outcome, effective_outcome FROM ampere_scan_events ORDER BY event_id');
   assert.equal(events.rows.length, 4);
   assert.deepEqual(events.rows.at(-1), { source_account: 'primary', attempted_outcome: 'unverified', effective_outcome: 'cancelled' });
+});
+
+test('dynamic account provenance and encrypted account metadata persist in ampere-only tables', async (t) => {
+  const { client, repository } = await databaseFixture(t);
+  const accountKey = `acct_${'z'.repeat(22)}`;
+  const envelope = {
+    envelopeVersion: 1,
+    credentialCiphertext: 'ciphertext-value',
+    credentialIv: 'iv-value',
+    credentialTag: 'tag-value',
+    credentialFingerprint: 'fingerprint-value',
+  };
+  const saved = await repository.saveBolAccount({
+    accountKey,
+    label: 'Client South',
+    accountKind: 'client',
+    envelope,
+    stationId: 'PACK-01',
+    principalId: 'operator-fixture',
+    requestId: 'request-account-create',
+    action: 'created',
+    now: new Date('2026-08-12T09:00:00.000Z'),
+  });
+  assert.equal(saved.accountKey, accountKey);
+  assert.equal(saved.revision, 1);
+  assert.equal((await repository.findBolAccountByFingerprint('fingerprint-value')).label, 'Client South');
+
+  const scan = await repository.recordScanDecision({
+    workday: '2026-08-12',
+    trackingCode: 'CLIENT-TRACK',
+    shipmentId: 'CLIENT-SHIPMENT',
+    orderId: 'CLIENT-ORDER',
+    sourceAccount: accountKey,
+    outcome: 'accepted',
+    reason: 'verified_live',
+    stationId: 'PACK-01',
+    principalId: 'operator-fixture',
+    sessionTokenHash: 'token-hash',
+    requestId: 'request-client-scan',
+    now: new Date('2026-08-12T09:01:00.000Z'),
+  });
+  assert.equal(scan.record.sourceAccount, accountKey);
+  const event = await client.execute({
+    sql: 'SELECT source_account, source_account_key FROM ampere_scan_events WHERE tracking_code = ?',
+    args: ['CLIENT-TRACK'],
+  });
+  assert.deepEqual(event.rows[0], { source_account: null, source_account_key: accountKey });
+  const audit = await client.execute('SELECT action, account_key, label FROM ampere_bol_account_audit');
+  assert.deepEqual(audit.rows[0], { action: 'created', account_key: accountKey, label: 'Client South' });
 });
