@@ -1,0 +1,56 @@
+{
+  "schema_version": "ampere-production-state.v1",
+  "captured_at": "2026-08-12T15:00:07Z",
+  "deployment": {
+    "id": "dpl_8ngcPZMEtY8bMkuv9mHQA5ZRSc8i",
+    "target": "production",
+    "status": "READY",
+    "url": "https://bol-ampere-scanning-9ogtg59so-zanders-projects-7225a5a2.vercel.app",
+    "alias": "https://bol-ampere-scanning.vercel.app/",
+    "git_commit": "dea3994450f1be2e62470daa0af8a12bc83d0881"
+  },
+  "artifact_identity": {
+    "production_html_sha256": "47e98047fe5358baffe847c235a32364981487c3e5022779ed9ecc86cc35c14e",
+    "local_index_html_sha256": "47e98047fe5358baffe847c235a32364981487c3e5022779ed9ecc86cc35c14e",
+    "byte_identical": true
+  },
+  "browser": {
+    "route": "/",
+    "desktop": {
+      "viewport": "1440x900",
+      "public_gate_visible": true,
+      "page_level_horizontal_overflow": false,
+      "console_errors_or_warnings": []
+    },
+    "mobile": {
+      "viewport": "390x900",
+      "public_gate_visible": true,
+      "page_level_horizontal_overflow": false,
+      "scroll_complete": true,
+      "console_errors_or_warnings": []
+    },
+    "states_checked_on_byte_identical_html": [
+      "paused_initial_load",
+      "paused_translated_nl_en_es",
+      "retry_recovery",
+      "ready_after_complete_snapshot",
+      "stale_refresh_preserves_last_real_decision"
+    ],
+    "interactions_checked_on_byte_identical_html": true
+  },
+  "api": {
+    "root_status": 200,
+    "session_without_cookie_status": 200,
+    "retailer_without_cookie_status": 401,
+    "cache_control_fail_closed": true,
+    "credential_or_upstream_detail_exposed": false
+  },
+  "database": {
+    "verified_live_in_this_cycle": false,
+    "reason": "The production station had no authenticated browser session, and the locally pulled production environment did not expose usable Turso values. No database claim is inferred."
+  },
+  "limits": [
+    "The authenticated production scan journey was not exercised because no warehouse password or saved production session was available.",
+    "The transient retry behavior is demonstrated by server tests and the deployed server bundle identity, but no new authenticated production Bol read occurred during this verification window."
+  ]
+}

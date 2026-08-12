@@ -1,0 +1,213 @@
+{
+  "schema_version": "visual-outcome-review.v1",
+  "task_id": "2026-08-12-transient-bol-read-recovery-production",
+  "project_root": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker",
+  "surface_profile": "browser_ui",
+  "review_mode": "main_agent_only",
+  "main_agent_id": "/root",
+  "frozen_contract": {
+    "path": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/verification/2026-08-12-transient-bol-read-recovery-visual-contract.md",
+    "sha256": "ecad4c926982393e2a7bbb12888a00863d0a1c1c9c4a7575e43594ce35eae3a1",
+    "quality_bar": "The scanner never presents readiness while shipment data is incomplete, returns to the existing ready flow after recovery, and remains readable and contained at desktop and mobile widths.",
+    "required_invariants": [
+      "Paused heading, WAIT flag, disabled input, Retry action, and paused decision agree when data is incomplete.",
+      "A complete retry restores the ready heading, READY flag, focused input, and normal decision state.",
+      "A stale refresh never erases the last real package decision.",
+      "No page-level horizontal overflow, JavaScript page error, upstream internals, or credentials appear."
+    ],
+    "browser_routes": [
+      "/"
+    ],
+    "browser_viewports": [
+      "desktop-1440",
+      "mobile-390"
+    ],
+    "browser_required_states": [
+      "paused_initial_load",
+      "paused_translated_nl_en_es",
+      "retry_recovery",
+      "ready_after_complete_snapshot",
+      "stale_refresh_preserves_last_real_decision"
+    ],
+    "shot_or_beat_ids": [],
+    "motion_duration_seconds": null,
+    "audio_required": false
+  },
+  "references": [
+    {
+      "path": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/index.html",
+      "sha256": "47e98047fe5358baffe847c235a32364981487c3e5022779ed9ecc86cc35c14e",
+      "role": "Byte-identical deployed HTML source used by deterministic paused and recovered-state inspection."
+    }
+  ],
+  "artifact": {
+    "kind": "deployed_url",
+    "path": null,
+    "url": "https://bol-ampere-scanning.vercel.app/",
+    "deployment_identity": "dpl_8ngcPZMEtY8bMkuv9mHQA5ZRSc8i",
+    "sha256": null,
+    "created_at": "2026-08-12T14:51:24Z"
+  },
+  "evidence": [
+    {
+      "id": "production-desktop",
+      "kind": "browser_screenshot",
+      "path": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/verification/screenshot-evidence/2026-08-12-transient-bol-read-recovery-production-desktop.png",
+      "sha256": "e0dd90e56e8653f3530e955cd432bb5dd7a712f6cad40bb13c2e37bbbb12fe7a",
+      "artifact_binding": "dpl_8ngcPZMEtY8bMkuv9mHQA5ZRSc8i",
+      "captured_at": "2026-08-12T14:57:20Z",
+      "coverage": {
+        "route": "/",
+        "viewport": "desktop-1440",
+        "full_surface": true,
+        "states_checked": [
+          "signed_out_gate"
+        ],
+        "notes": "Exact production alias at 1440x900; public gate is clean, contained, and credential-free."
+      }
+    },
+    {
+      "id": "production-mobile",
+      "kind": "browser_screenshot",
+      "path": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/verification/screenshot-evidence/2026-08-12-transient-bol-read-recovery-production-mobile.png",
+      "sha256": "d82fa05c0e2825303823492042d812838d49a6a11653016d5a9b5de806900d0a",
+      "artifact_binding": "dpl_8ngcPZMEtY8bMkuv9mHQA5ZRSc8i",
+      "captured_at": "2026-08-12T14:57:21Z",
+      "coverage": {
+        "route": "/",
+        "viewport": "mobile-390",
+        "full_surface": true,
+        "states_checked": [
+          "signed_out_gate"
+        ],
+        "notes": "Exact production alias at 390x900; public gate is clean, contained, and requires no scroll."
+      }
+    },
+    {
+      "id": "paused-desktop-byte-identical",
+      "kind": "browser_screenshot",
+      "path": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/verification/screenshot-evidence/2026-08-12-transient-bol-read-recovery-paused-desktop.png",
+      "sha256": "ef7cf2715862d655ba84fc1db95485e6414e0dbf3398358ad63a0a06a4ee291d",
+      "artifact_binding": "dpl_8ngcPZMEtY8bMkuv9mHQA5ZRSc8i",
+      "captured_at": "2026-08-12T14:41:43Z",
+      "coverage": {
+        "route": "/",
+        "viewport": "desktop-1440",
+        "full_surface": true,
+        "states_checked": [
+          "paused_initial_load"
+        ],
+        "notes": "Deterministic paused-state screenshot captured from index.html bytes later proven identical to the production response."
+      }
+    },
+    {
+      "id": "paused-mobile-byte-identical",
+      "kind": "browser_screenshot",
+      "path": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/verification/screenshot-evidence/2026-08-12-transient-bol-read-recovery-paused-mobile.png",
+      "sha256": "d0bafd384a6ac7f0e960ef7aaf2be1108694b2ca5e7ce6e9ca224a01beedf1a6",
+      "artifact_binding": "dpl_8ngcPZMEtY8bMkuv9mHQA5ZRSc8i",
+      "captured_at": "2026-08-12T14:41:43Z",
+      "coverage": {
+        "route": "/",
+        "viewport": "mobile-390",
+        "full_surface": true,
+        "states_checked": [
+          "paused_initial_load"
+        ],
+        "notes": "Deterministic paused-state screenshot captured from index.html bytes later proven identical to the production response."
+      }
+    },
+    {
+      "id": "ready-desktop-byte-identical",
+      "kind": "browser_screenshot",
+      "path": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/verification/screenshot-evidence/2026-08-12-transient-bol-read-recovery-ready-desktop.png",
+      "sha256": "7322811d2863e8e126f1d14eab7d190917239a69edcd5104c7ce1a4c0f43d5aa",
+      "artifact_binding": "dpl_8ngcPZMEtY8bMkuv9mHQA5ZRSc8i",
+      "captured_at": "2026-08-12T14:42:36Z",
+      "coverage": {
+        "route": "/",
+        "viewport": "desktop-1440",
+        "full_surface": true,
+        "states_checked": [
+          "ready_after_complete_snapshot"
+        ],
+        "notes": "Recovered state on byte-identical deployed HTML with READY, focused input, and existing decision hierarchy."
+      }
+    },
+    {
+      "id": "ready-mobile-byte-identical",
+      "kind": "browser_screenshot",
+      "path": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/verification/screenshot-evidence/2026-08-12-transient-bol-read-recovery-ready-mobile.png",
+      "sha256": "7d418c3a8e7a7d2047c04492085df2e128b1f23169533f25083fe37cf9b70a66",
+      "artifact_binding": "dpl_8ngcPZMEtY8bMkuv9mHQA5ZRSc8i",
+      "captured_at": "2026-08-12T14:44:16Z",
+      "coverage": {
+        "route": "/",
+        "viewport": "mobile-390",
+        "full_surface": false,
+        "states_checked": [
+          "ready_after_complete_snapshot"
+        ],
+        "notes": "Recovered mobile top surface on byte-identical deployed HTML."
+      }
+    },
+    {
+      "id": "production-browser-state",
+      "kind": "browser_state",
+      "path": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/verification/2026-08-12-transient-bol-read-recovery-production-state.json",
+      "sha256": "56de0ef2ec65977bfd6406f2237f64d8bcf90a2fb51db54179e3f55376ec4598",
+      "artifact_binding": "dpl_8ngcPZMEtY8bMkuv9mHQA5ZRSc8i",
+      "captured_at": "2026-08-12T15:00:07Z",
+      "coverage": {
+        "routes": [
+          "/"
+        ],
+        "interactions_checked": true,
+        "states_checked": [
+          "paused_initial_load",
+          "paused_translated_nl_en_es",
+          "retry_recovery",
+          "ready_after_complete_snapshot",
+          "stale_refresh_preserves_last_real_decision"
+        ],
+        "scroll_complete": true,
+        "overflow_checked": true,
+        "console_checked": true,
+        "notes": "Production gate and console were inspected directly. Authenticated states were inspected on the exact byte-identical deployed HTML using deterministic API fixtures and actual local handlers; live production authentication remained unavailable."
+      }
+    }
+  ],
+  "review_cycles": [
+    {
+      "cycle": 1,
+      "artifact_binding": "dpl_8ngcPZMEtY8bMkuv9mHQA5ZRSc8i",
+      "inspected_at": "2026-08-12T15:01:00Z",
+      "main_agent": {
+        "inspector_id": "/root",
+        "inspection_complete": true,
+        "verdict": "PASS",
+        "evidence_ids": [
+          "production-desktop",
+          "production-mobile",
+          "paused-desktop-byte-identical",
+          "paused-mobile-byte-identical",
+          "ready-desktop-byte-identical",
+          "ready-mobile-byte-identical",
+          "production-browser-state"
+        ],
+        "summary": "The exact production HTML matches the reviewed artifact byte for byte. Its public gate is clean at both required widths, and the corrected paused and recovered states satisfy the visual contract on those same bytes with no in-contract defect."
+      },
+      "critic": null,
+      "findings": [],
+      "resolved_finding_ids": [],
+      "advisories": [
+        "The authenticated production scan journey and live database read remain separate operational-verification gaps because no warehouse password or authenticated production session was available."
+      ],
+      "verdict": "PASS"
+    }
+  ],
+  "final_verdict": "PASS",
+  "limits": [
+    "The visual PASS is bound by exact production HTML byte identity plus direct production-gate inspection; it does not claim an authenticated production scan or database read occurred."
+  ]
+}
