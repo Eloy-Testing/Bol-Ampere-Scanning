@@ -1,0 +1,40 @@
+{
+  "schema_version": "ampere-browser-state.v1",
+  "artifact_binding": "47e98047fe5358baffe847c235a32364981487c3e5022779ed9ecc86cc35c14e",
+  "captured_at": "2026-08-12T14:47:36Z",
+  "route": "/",
+  "states_checked": [
+    "paused_initial_load",
+    "paused_translated_nl_en_es",
+    "retry_recovery",
+    "ready_after_complete_snapshot",
+    "stale_refresh_preserves_last_real_decision"
+  ],
+  "viewports": {
+    "desktop-1440": {
+      "width": 1440,
+      "paused_full_surface": true,
+      "ready_full_surface": true,
+      "page_level_horizontal_overflow": false
+    },
+    "mobile-390": {
+      "width": 390,
+      "paused_full_surface": true,
+      "ready_surface_checked_with_top_and_scrolled_evidence": true,
+      "page_level_horizontal_overflow": false
+    }
+  },
+  "interactions": {
+    "retry_restores_ready_only_after_complete_snapshot": true,
+    "scan_input_disabled_while_paused": true,
+    "scan_input_enabled_and_focused_when_ready": true,
+    "last_real_package_decision_survives_stale_refresh": true
+  },
+  "scroll_complete": true,
+  "overflow_checked": true,
+  "console_checked": true,
+  "console_result": "The synthetic paused fixture emitted only its expected failed-request network entry. The recovered local handler state had no browser errors or warnings. No JavaScript page error was observed.",
+  "limits": [
+    "The production station is authentication-gated and no authenticated production scanner session was available during this local artifact review."
+  ]
+}

@@ -1,0 +1,95 @@
+{
+  "schema_version": "creative-framework.interface-output-contract.v1",
+  "task": "Recover transient Bol reads and make the paused scanner state truthful",
+  "surface_has_interface_output": true,
+  "interface_output_producers": "applicable",
+  "not_applicable_reason": "",
+  "planned_output_channels": ["visible", "assistive", "telemetry"],
+  "producers": [
+    {
+      "id": "snapshot_health",
+      "event_origin": "product_workflow",
+      "presentation_owner": "product_owner",
+      "channel": "visible",
+      "source_condition": "The complete multi-source snapshot is loading, ready, refreshing, fresh-with-warning, stale, or unavailable.",
+      "user_impact": "The operator can or cannot safely scan packages.",
+      "recovery": "Wait for completion, continue on the last complete fresh snapshot, or use Retry when scanning is paused.",
+      "copy_purpose": "Communicate snapshot readiness and the safe recovery action.",
+      "final_copy": "Data complete / Scanning paused — shipment data is incomplete. Retry before scanning.",
+      "external_proof": "Data-health browser assertions and current desktop/mobile state inspection"
+    },
+    {
+      "id": "scanner_readiness",
+      "event_origin": "product_workflow",
+      "presentation_owner": "product_owner",
+      "channel": "visible",
+      "source_condition": "canScan changes between false for unhealthy data and true after a complete healthy snapshot commits.",
+      "user_impact": "The operator must know whether the scanner input is safe to use.",
+      "recovery": "Use Retry while paused; resume scanning only after READY returns.",
+      "copy_purpose": "Keep heading, hint, WAIT/READY flag, current status, and input enablement consistent.",
+      "final_copy": "Scanning paused / Ready for scanner",
+      "external_proof": "Browser copy, disabled/enabled input, focus, and recovery assertions"
+    },
+    {
+      "id": "empty_decision_state",
+      "event_origin": "product_workflow",
+      "presentation_owner": "product_owner",
+      "channel": "visible",
+      "source_condition": "No real package decision exists and the scanner is either ready-idle or paused for unhealthy data.",
+      "user_impact": "The operator needs a truthful first decision-zone message instead of a contradictory idle claim.",
+      "recovery": "Retry when paused; scan the first package when ready.",
+      "copy_purpose": "Use the decision zone to reinforce the current safe action without replacing a real prior decision.",
+      "final_copy": "No parcel scanned yet / Shipment data is incomplete — retry before scanning.",
+      "external_proof": "Data-health state assertions and screenshot inspection"
+    },
+    {
+      "id": "scan_decision",
+      "event_origin": "product_workflow",
+      "presentation_owner": "product_owner",
+      "channel": "visible",
+      "source_condition": "A package scan resolves as GO, duplicate, cancelled, unknown, or unverified.",
+      "user_impact": "The operator needs the dispatch or pull-aside decision to remain visible.",
+      "recovery": "Continue with GO/duplicate or remove/review STOP packages; retry data separately if the station later pauses.",
+      "copy_purpose": "Preserve the authoritative package decision through later snapshot state changes.",
+      "final_copy": "Existing GO, duplicate, and STOP decision copy.",
+      "external_proof": "Existing scan-flow and new paused-after-decision browser assertions"
+    },
+    {
+      "id": "transient_retry_mechanics",
+      "event_origin": "autonomous_helper",
+      "presentation_owner": "none",
+      "channel": "telemetry",
+      "source_condition": "A server-only Bol request retries a transport or retryable status failure within its bounded attempt budget.",
+      "user_impact": "No visible impact when recovery succeeds; exhausted recovery is mapped by snapshot_health.",
+      "recovery": "Not applicable in product chrome.",
+      "copy_purpose": "Keep attempt counts, statuses, delays, and raw upstream detail outside visible and assistive output.",
+      "final_copy": "",
+      "external_proof": "Focused Bol client unit tests and sanitized Vercel request-status logs"
+    },
+    {
+      "id": "snapshot_health_assistive",
+      "event_origin": "product_workflow",
+      "presentation_owner": "product_owner",
+      "channel": "assistive",
+      "source_condition": "Health or decision status changes after data load or retry.",
+      "user_impact": "Assistive-technology users receive the same actionable ready/paused result.",
+      "recovery": "Use the labeled Retry control when paused.",
+      "copy_purpose": "Expose the product-owned health and decision state through existing live regions.",
+      "final_copy": "Same localized health, readiness, and decision copy as the visible channel.",
+      "external_proof": "Role, aria-live, disabled-state, and accessible-name browser assertions"
+    }
+  ],
+  "technical_status_exception": {
+    "applicable": false,
+    "direct_object_of_work": false,
+    "producer_ids": [],
+    "reason": ""
+  },
+  "what_must_not_appear": [
+    "HTTP status codes, retry attempt counts, retry delays, stack traces, raw API errors, or implementation narration",
+    "Bol client credentials, OAuth tokens, account identifiers, or raw upstream payloads",
+    "A ready heading or idle-ready decision while unhealthy data disables the scanner",
+    "A paused empty-state replacement that erases a real prior package decision",
+    "Vercel, Turso, test, receipt, or verification proof chrome"
+  ]
+}

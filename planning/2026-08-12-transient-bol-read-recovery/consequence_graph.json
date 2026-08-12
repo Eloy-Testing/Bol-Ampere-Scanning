@@ -1,0 +1,44 @@
+{
+  "generated": "2026-08-12",
+  "target_surface": "Ampere scanner transient Bol read recovery and paused-state truth",
+  "problem": "One transient production /api/retailer failure aborts a complete snapshot and the blocked UI still claims the scanner is ready.",
+  "source_artifacts": [
+    "AGENTS.md",
+    "server/bol-client.mjs",
+    "server/errors.mjs",
+    "server/application.mjs",
+    "index.html",
+    "tests/server/bol-client.test.mjs",
+    "tests/data-health.spec.mjs",
+    "vercel.json"
+  ],
+  "nodes": [
+    { "id": "production_failure", "type": "runtime", "label": "intermittent /api/retailer 503", "evidence": "Vercel logs on 2026-08-12" },
+    { "id": "bol_boundary", "type": "file", "label": "server/bol-client.mjs", "evidence": "Only 401 is retried" },
+    { "id": "snapshot", "type": "browser", "label": "atomic complete snapshot", "evidence": "index.html buildSnapshot/refreshSnapshot" },
+    { "id": "paused_ui", "type": "browser", "label": "paused scanner state", "evidence": "supplied screenshot and render functions" },
+    { "id": "tests", "type": "verification", "label": "server and browser regression suites", "evidence": "package scripts and current tests" },
+    { "id": "release", "type": "runtime", "label": "approved Vercel deployment", "evidence": "AGENTS.md and .vercel/project.json" }
+  ],
+  "edges": [
+    { "from": "production_failure", "to": "bol_boundary", "relation": "originates_at", "order": 1, "confidence": "high", "delay": "runtime", "risk": "high", "evidence": "Failed external verification is mapped to retailer 503" },
+    { "from": "bol_boundary", "to": "snapshot", "relation": "blocks", "order": 1, "confidence": "high", "delay": "runtime", "risk": "high", "evidence": "Any list/detail rejection aborts buildSnapshot" },
+    { "from": "snapshot", "to": "paused_ui", "relation": "controls", "order": 2, "confidence": "high", "delay": "runtime", "risk": "medium", "evidence": "refreshSnapshot sets phase=error and render disables scanning" },
+    { "from": "tests", "to": "bol_boundary", "relation": "constrains", "order": 2, "confidence": "high", "delay": "build", "risk": "high", "evidence": "retry and malformed-payload tests prove the boundary" },
+    { "from": "tests", "to": "paused_ui", "relation": "constrains", "order": 2, "confidence": "high", "delay": "build", "risk": "medium", "evidence": "data-health tests inspect blocked state" },
+    { "from": "release", "to": "production_failure", "relation": "changes", "order": 3, "confidence": "high", "delay": "deploy", "risk": "high", "evidence": "Only the deployed artifact changes warehouse behavior" }
+  ],
+  "order_1": ["bounded transient retries at the server request boundary", "truthful blocked UI copy"],
+  "order_2": ["reduced false pause rate", "bounded request amplification", "preserved strict validation"],
+  "order_3": ["operator trust improves because ready/paused language matches actual input availability", "future changes remain constrained by recovery and exhaustion tests"],
+  "feedback_loops": ["A retryable failure consumes a bounded attempt; success completes the atomic snapshot, while exhaustion returns the existing fail-closed pause."],
+  "verification_edges": [
+    { "edge": "production_failure -> bol_boundary", "verification": "Vercel logs plus focused unit tests" },
+    { "edge": "bol_boundary -> snapshot", "verification": "full server and browser suites" },
+    { "edge": "snapshot -> paused_ui", "verification": "desktop/mobile paused and ready screenshots plus interface contract" },
+    { "edge": "release -> production_failure", "verification": "exact deployment identity and post-deploy logs/browser check" }
+  ],
+  "local_isolation_proof": null,
+  "blockers": [],
+  "decision": "Use bounded server retries for transient external failures only, preserve all fail-closed validators, and make the browser's blocked state internally consistent."
+}

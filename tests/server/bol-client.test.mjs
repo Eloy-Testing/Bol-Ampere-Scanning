@@ -54,6 +54,70 @@ test('complete pagination continues until an explicit empty collection', async (
   assert.deepEqual(pages, [1, 2, 3]);
 });
 
+test('transient retailer status and transport failures recover within a bounded attempt budget', async () => {
+  const delays = [];
+  let retailerCalls = 0;
+  const client = new BolClient({
+    clientId: 'client-id',
+    clientSecret: 'client-secret',
+    nodeEnv: 'test',
+    tokenUrl: 'https://bol.test/token',
+    apiBaseUrl: 'https://bol.test/retailer',
+    sleepImpl: async (delayMs) => delays.push(delayMs),
+    fetchImpl: async (url) => {
+      if (url.endsWith('/token')) return json({ access_token: 'token-value', expires_in: 299 });
+      retailerCalls += 1;
+      if (retailerCalls === 1) throw new TypeError('transient transport failure');
+      if (retailerCalls === 2) return json({}, { status: 503 });
+      return json({ orders: [{ orderId: 'ORDER-RECOVERED', orderPlacedDateTime: '2026-08-05T10:00:00Z' }] });
+    },
+  });
+  const result = await client.getOrdersPage(1);
+  assert.equal(result.orders[0].orderId, 'ORDER-RECOVERED');
+  assert.equal(retailerCalls, 3);
+  assert.deepEqual(delays, [150, 400]);
+});
+
+test('retryable failures exhaust after three attempts and honor only a bounded Retry-After delay', async () => {
+  const delays = [];
+  let retailerCalls = 0;
+  const client = new BolClient({
+    clientId: 'client-id',
+    clientSecret: 'client-secret',
+    nodeEnv: 'test',
+    tokenUrl: 'https://bol.test/token',
+    apiBaseUrl: 'https://bol.test/retailer',
+    sleepImpl: async (delayMs) => delays.push(delayMs),
+    fetchImpl: async (url) => {
+      if (url.endsWith('/token')) return json({ access_token: 'token-value', expires_in: 299 });
+      retailerCalls += 1;
+      return json({}, { status: 429, headers: { 'retry-after': '60' } });
+    },
+  });
+  await assert.rejects(() => client.getShipmentsPage(1), { code: 'verification_unavailable' });
+  assert.equal(retailerCalls, 3);
+  assert.deepEqual(delays, [2_000, 2_000]);
+});
+
+test('malformed successful JSON is rejected immediately without transient retry', async () => {
+  let retailerCalls = 0;
+  const client = new BolClient({
+    clientId: 'client-id',
+    clientSecret: 'client-secret',
+    nodeEnv: 'test',
+    tokenUrl: 'https://bol.test/token',
+    apiBaseUrl: 'https://bol.test/retailer',
+    sleepImpl: async () => assert.fail('malformed successful data must not enter retry delay'),
+    fetchImpl: async (url) => {
+      if (url.endsWith('/token')) return json({ access_token: 'token-value', expires_in: 299 });
+      retailerCalls += 1;
+      return new Response('{', { status: 200, headers: { 'content-type': 'application/json' } });
+    },
+  });
+  await assert.rejects(() => client.getOrdersPage(1), { code: 'verification_unavailable' });
+  assert.equal(retailerCalls, 1);
+});
+
 test('malformed page envelopes and collection values are rejected rather than normalized', async () => {
   for (const [resource, body] of [
     ['orders', null],
@@ -85,6 +149,7 @@ test('upstream error bodies and credentials are not exposed', async () => {
     nodeEnv: 'test',
     tokenUrl: 'https://bol.test/token',
     apiBaseUrl: 'https://bol.test/retailer',
+    sleepImpl: async () => {},
     fetchImpl: async () => new Response('secret upstream payload', { status: 500 }),
   });
   await assert.rejects(() => client.getOrdersPage(1), (error) => {

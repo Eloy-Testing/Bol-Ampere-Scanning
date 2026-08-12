@@ -1,0 +1,163 @@
+{
+  "schema_version": 3,
+  "marker": "PLAN_CRITIC_REVIEW_V2",
+  "envelope": {
+    "review_id": "bhp-transient-bol-read-recovery-2026-08-12",
+    "literal_request": "Repair the production scanner error visible in the supplied screenshot.",
+    "intended_outcome": "The Ampere scanner recovers from bounded transient Bol read failures, remains fail-closed for exhausted or invalid data, and presents a truthful paused state before the exact tested release is deployed and verified.",
+    "outcomes": [
+      {
+        "id": "OUT-1",
+        "text": "The released scanner uses bounded server-side transient retry, preserves strict snapshot and scan fail-closed rules, and presents internally consistent paused and ready browser states with exact local and production verification."
+      }
+    ],
+    "unacceptable_narrow_interpretation": "Hiding the error, enabling scans from incomplete data, retrying malformed successful payloads, or changing copy without repairing the transient upstream failure path.",
+    "in_scope": [
+      "Bounded transport and retryable-status recovery in the existing server-only Bol client.",
+      "Truthful translated paused-state copy in the existing scanner UI.",
+      "Focused and full repository tests, current desktop/mobile visual verification, and approved production release."
+    ],
+    "out_of_scope": [
+      "Bol writes, credential changes, auth changes, database mutation, account routing changes, and unrelated UI redesign.",
+      "Relaxing structural validation, identifier matching, snapshot completeness, or non-counting failure behavior.",
+      "Other repositories, Vercel projects, external accounts, or non-ampere database tables."
+    ],
+    "acceptance_evidence": [
+      "Focused unit tests prove transient recovery, bounded exhaustion, Retry-After handling, malformed-200 rejection, and retained 401 behavior.",
+      "Browser tests prove paused copy, disabled scanning, recovery to ready, and retained fail-closed state across languages.",
+      "Local migration, complete server and browser suites, desktop/mobile inspection, and visual/adoption validators pass for the exact artifact.",
+      "The approved production deployment has exact identity plus runtime/API/browser evidence; missing authenticated state is explicitly classified."
+    ],
+    "dependency_expansion_rule": "Only inspected causal dependencies from OUT-1 may become required."
+  },
+  "context": {
+    "context_root": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker",
+    "project_index_paths": [
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/README.md"
+    ],
+    "project_context_paths": [
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/AGENTS.md",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/README.md"
+    ],
+    "governing_instructions": [
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/AGENTS.md"
+    ],
+    "inspected_paths": [
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/AGENTS.md",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/README.md",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/package.json",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/vercel.json",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/server/bol-client.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/server/errors.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/server/application.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/index.html",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/server/bol-client.test.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/data-health.spec.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/fixtures/mock-bol.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/fixtures/data.mjs"
+    ]
+  },
+  "target": {
+    "target_system_root": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker",
+    "governing_instructions": [
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/AGENTS.md"
+    ],
+    "existing_direct_target_paths": [
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/AGENTS.md",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/package.json",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/vercel.json",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/server/bol-client.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/server/bol-client.test.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/index.html",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/data-health.spec.mjs"
+    ],
+    "planned_target_paths": [],
+    "inspected_paths": [
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/AGENTS.md",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/README.md",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/package.json",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/vercel.json",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/server/bol-client.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/server/errors.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/server/application.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/index.html",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/server/bol-client.test.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/data-health.spec.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/fixtures/mock-bol.mjs",
+      "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/fixtures/data.mjs"
+    ],
+    "cross_root_authority_reason": "The project context and implementation roots are identical."
+  },
+  "plan_manifest": {
+    "draft_text": "# Reviewed plan\n\n1. Update `server/bol-client.mjs` so token and Retailer API requests retry only transport failures and explicitly retryable HTTP statuses within a fixed attempt cap. Honor `Retry-After` only within a bounded maximum; retain the existing single 401 token-refresh path. Do not retry or normalize malformed successful payloads, identifier mismatches, partial data, or exhausted failures.\n2. Add focused unit coverage in `tests/server/bol-client.test.mjs` for transient status recovery, transient transport recovery, bounded exhaustion, bounded Retry-After, retained 401 behavior, and no retry for malformed 200 data.\n3. Update `index.html` so an unhealthy initial/stale snapshot changes the scanner heading, hint, WAIT flag, current status, and empty decision panel to a translated paused/actionable state. Preserve a real prior scan decision and restore ready/idle copy only after a complete healthy snapshot commits. Add browser coverage in `tests/data-health.spec.mjs` for NL, EN, ES, and recovery.\n4. Run local migration, focused tests, full server and browser suites, and current desktop/mobile visual inspection of paused and recovered-ready states. Build and validate exact-artifact visual/adoption receipts, commit and push to the approved GitHub repository, deploy only the approved Vercel project, then verify deployment identity, production logs/API, and current browser surface. Report authenticated production interaction as unique_access_required if no authorized session exists.\n",
+    "steps": [
+      {
+        "id": "P1",
+        "text": "Implement bounded transient recovery at the server-only Bol request boundary without retrying or accepting structurally invalid successful data.",
+        "provenance": "required_dependency",
+        "required": true,
+        "required_surfaces": [
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/server/bol-client.mjs"
+        ],
+        "requirement_source": "OUT-1",
+        "dependency_evidence": [
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/server/bol-client.mjs",
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/server/errors.mjs",
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/server/application.mjs"
+        ]
+      },
+      {
+        "id": "P2",
+        "text": "Freeze transient recovery and exhaustion behavior with focused server tests.",
+        "provenance": "existing_contract",
+        "required": true,
+        "required_surfaces": [
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/server/bol-client.test.mjs"
+        ],
+        "requirement_source": "OUT-1",
+        "dependency_evidence": [
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/server/bol-client.mjs",
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/server/bol-client.test.mjs"
+        ]
+      },
+      {
+        "id": "P3",
+        "text": "Make paused and ready browser states internally consistent across supported languages while preserving real prior decisions and fail-closed input behavior.",
+        "provenance": "user_request",
+        "required": true,
+        "required_surfaces": [
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/index.html",
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/data-health.spec.mjs"
+        ],
+        "requirement_source": "OUT-1",
+        "dependency_evidence": [
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/index.html",
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/tests/data-health.spec.mjs"
+        ]
+      },
+      {
+        "id": "P4",
+        "text": "Run repository, visual, release, and exact production verification on only the approved targets.",
+        "provenance": "existing_contract",
+        "required": true,
+        "required_surfaces": [
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/AGENTS.md",
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/package.json",
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/vercel.json"
+        ],
+        "requirement_source": "OUT-1",
+        "dependency_evidence": [
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/AGENTS.md",
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/README.md",
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/package.json",
+          "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/vercel.json"
+        ]
+      }
+    ]
+  },
+  "hashes": {
+    "envelope_sha256": "",
+    "draft_sha256": "",
+    "packet_sha256": ""
+  }
+}

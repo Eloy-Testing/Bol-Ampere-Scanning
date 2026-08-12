@@ -1,0 +1,189 @@
+{
+  "schema_version": "visual-outcome-review.v1",
+  "task_id": "2026-08-12-transient-bol-read-recovery",
+  "project_root": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker",
+  "surface_profile": "browser_ui",
+  "review_mode": "main_agent_only",
+  "main_agent_id": "/root",
+  "frozen_contract": {
+    "path": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/verification/2026-08-12-transient-bol-read-recovery-visual-contract.md",
+    "sha256": "ecad4c926982393e2a7bbb12888a00863d0a1c1c9c4a7575e43594ce35eae3a1",
+    "quality_bar": "The scanner never presents readiness while shipment data is incomplete, returns to the existing ready flow after recovery, and remains readable and contained at desktop and mobile widths.",
+    "required_invariants": [
+      "Paused heading, WAIT flag, disabled input, Retry action, and paused decision agree when data is incomplete.",
+      "A complete retry restores the ready heading, READY flag, focused input, and normal decision state.",
+      "A stale refresh never erases the last real package decision.",
+      "No page-level horizontal overflow, JavaScript page error, upstream internals, or credentials appear."
+    ],
+    "browser_routes": [
+      "/"
+    ],
+    "browser_viewports": [
+      "desktop-1440",
+      "mobile-390"
+    ],
+    "browser_required_states": [
+      "paused_initial_load",
+      "paused_translated_nl_en_es",
+      "retry_recovery",
+      "ready_after_complete_snapshot",
+      "stale_refresh_preserves_last_real_decision"
+    ],
+    "shot_or_beat_ids": [],
+    "motion_duration_seconds": null,
+    "audio_required": false
+  },
+  "references": [],
+  "artifact": {
+    "kind": "local_file",
+    "path": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/index.html",
+    "url": null,
+    "deployment_identity": null,
+    "sha256": "47e98047fe5358baffe847c235a32364981487c3e5022779ed9ecc86cc35c14e",
+    "created_at": "2026-08-12T14:38:31Z"
+  },
+  "evidence": [
+    {
+      "id": "paused-desktop",
+      "kind": "browser_screenshot",
+      "path": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/verification/screenshot-evidence/2026-08-12-transient-bol-read-recovery-paused-desktop.png",
+      "sha256": "ef7cf2715862d655ba84fc1db95485e6414e0dbf3398358ad63a0a06a4ee291d",
+      "artifact_binding": "47e98047fe5358baffe847c235a32364981487c3e5022779ed9ecc86cc35c14e",
+      "captured_at": "2026-08-12T14:41:43Z",
+      "coverage": {
+        "route": "/",
+        "viewport": "desktop-1440",
+        "full_surface": true,
+        "states_checked": [
+          "paused_initial_load"
+        ],
+        "notes": "Full paused scanner surface with a consistent error state and visible Retry action."
+      }
+    },
+    {
+      "id": "paused-mobile",
+      "kind": "browser_screenshot",
+      "path": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/verification/screenshot-evidence/2026-08-12-transient-bol-read-recovery-paused-mobile.png",
+      "sha256": "d0bafd384a6ac7f0e960ef7aaf2be1108694b2ca5e7ce6e9ca224a01beedf1a6",
+      "artifact_binding": "47e98047fe5358baffe847c235a32364981487c3e5022779ed9ecc86cc35c14e",
+      "captured_at": "2026-08-12T14:41:43Z",
+      "coverage": {
+        "route": "/",
+        "viewport": "mobile-390",
+        "full_surface": true,
+        "states_checked": [
+          "paused_initial_load"
+        ],
+        "notes": "Full paused mobile surface with contained controls and no page-level overflow."
+      }
+    },
+    {
+      "id": "ready-desktop",
+      "kind": "browser_screenshot",
+      "path": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/verification/screenshot-evidence/2026-08-12-transient-bol-read-recovery-ready-desktop.png",
+      "sha256": "7322811d2863e8e126f1d14eab7d190917239a69edcd5104c7ce1a4c0f43d5aa",
+      "artifact_binding": "47e98047fe5358baffe847c235a32364981487c3e5022779ed9ecc86cc35c14e",
+      "captured_at": "2026-08-12T14:42:36Z",
+      "coverage": {
+        "route": "/",
+        "viewport": "desktop-1440",
+        "full_surface": true,
+        "states_checked": [
+          "ready_after_complete_snapshot"
+        ],
+        "notes": "Recovered desktop surface showing the normal READY state and established operational hierarchy."
+      }
+    },
+    {
+      "id": "ready-mobile-top",
+      "kind": "browser_screenshot",
+      "path": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/verification/screenshot-evidence/2026-08-12-transient-bol-read-recovery-ready-mobile.png",
+      "sha256": "7d418c3a8e7a7d2047c04492085df2e128b1f23169533f25083fe37cf9b70a66",
+      "artifact_binding": "47e98047fe5358baffe847c235a32364981487c3e5022779ed9ecc86cc35c14e",
+      "captured_at": "2026-08-12T14:44:16Z",
+      "coverage": {
+        "route": "/",
+        "viewport": "mobile-390",
+        "full_surface": false,
+        "states_checked": [
+          "ready_after_complete_snapshot"
+        ],
+        "notes": "Recovered mobile top surface showing READY, focused scan flow, and contained decision hierarchy."
+      }
+    },
+    {
+      "id": "ready-mobile-scrolled",
+      "kind": "browser_screenshot",
+      "path": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/verification/screenshot-evidence/2026-08-12-transient-bol-read-recovery-ready-mobile-mid.png",
+      "sha256": "9d72640d11d383154435688e862e7435e45517b18fb07dbef7f9f32565f12fd2",
+      "artifact_binding": "47e98047fe5358baffe847c235a32364981487c3e5022779ed9ecc86cc35c14e",
+      "captured_at": "2026-08-12T14:43:57Z",
+      "coverage": {
+        "route": "/",
+        "viewport": "mobile-390",
+        "full_surface": false,
+        "states_checked": [
+          "ready_after_complete_snapshot"
+        ],
+        "notes": "Scrolled mobile evidence covering the remaining operational cards and contained table scrollers."
+      }
+    },
+    {
+      "id": "browser-state",
+      "kind": "browser_state",
+      "path": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/verification/2026-08-12-transient-bol-read-recovery-browser-state.json",
+      "sha256": "f6c855d70a0513cc05a96c21d9ff1ce43fc8724ca8f767d34bbb6d38e58961c5",
+      "artifact_binding": "47e98047fe5358baffe847c235a32364981487c3e5022779ed9ecc86cc35c14e",
+      "captured_at": "2026-08-12T14:47:36Z",
+      "coverage": {
+        "routes": [
+          "/"
+        ],
+        "interactions_checked": true,
+        "states_checked": [
+          "paused_initial_load",
+          "paused_translated_nl_en_es",
+          "retry_recovery",
+          "ready_after_complete_snapshot",
+          "stale_refresh_preserves_last_real_decision"
+        ],
+        "scroll_complete": true,
+        "overflow_checked": true,
+        "console_checked": true,
+        "notes": "Main-session browser inspection plus deterministic browser coverage confirmed state transitions, focus recovery, scrolling, overflow containment, and console behavior."
+      }
+    }
+  ],
+  "review_cycles": [
+    {
+      "cycle": 1,
+      "artifact_binding": "47e98047fe5358baffe847c235a32364981487c3e5022779ed9ecc86cc35c14e",
+      "inspected_at": "2026-08-12T14:47:36Z",
+      "main_agent": {
+        "inspector_id": "/root",
+        "inspection_complete": true,
+        "verdict": "PASS",
+        "evidence_ids": [
+          "paused-desktop",
+          "paused-mobile",
+          "ready-desktop",
+          "ready-mobile-top",
+          "ready-mobile-scrolled",
+          "browser-state"
+        ],
+        "summary": "The paused state is now internally consistent and actionable, the complete retry path restores the existing ready state, desktop and mobile surfaces remain contained and legible, and no in-contract visual defect remains."
+      },
+      "critic": null,
+      "findings": [],
+      "resolved_finding_ids": [],
+      "advisories": [
+        "The production scanner remains authentication-gated; deployment-bound inspection must separately record the public gate and API checks and identify any unavailable authenticated production journey."
+      ],
+      "verdict": "PASS"
+    }
+  ],
+  "final_verdict": "PASS",
+  "limits": [
+    "No authenticated production scanner session was available for this local artifact-bound review."
+  ]
+}

@@ -1,4 +1,4 @@
-import { test, expect, selectors, waitForReady, waitForSignedOut, signIn } from './fixtures/mock-bol.mjs';
+import { test, expect, selectors, waitForReady, waitForSignedOut, signIn, scan } from './fixtures/mock-bol.mjs';
 import { healthyScenario, orderSummary, parcel, snapshot } from './fixtures/data.mjs';
 
 const mismatchedParcel = parcel({ n: 88, shippedAt: '2026-08-05T09:00:00Z' });
@@ -36,9 +36,53 @@ for (const failure of [
       await expect(page.locator(selectors.scanInput)).toBeDisabled();
       await expect(page.locator(selectors.dataStatus)).toHaveAttribute('data-state', 'error');
       await expect(page.locator(selectors.retryData)).toBeVisible();
+      await expect(page.locator('#scanTitle')).toHaveText('Scanning paused');
+      await expect(page.locator('#scanHint')).toContainText(/retry before scanning/i);
+      await expect(page.locator('#readyFlag')).toHaveText('WAIT');
+      await expect(page.locator(selectors.feedback)).toHaveAttribute('data-kind', 'paused');
+      await expect(page.locator(selectors.feedback)).toContainText(/shipment data is incomplete/i);
     });
   });
 }
+
+test.describe('translated paused-state recovery', () => {
+  test.use({ scenario: healthyScenario({ failures: [{ kind: 'shipments', page: 1 }] }) });
+
+  test('keeps each supported language truthful while blocked and restores ready state only after retry succeeds', async ({ page }) => {
+    const states = [
+      ['nl', 'Scannen gepauzeerd', /verzenddata is niet compleet/i],
+      ['en', 'Scanning paused', /shipment data is incomplete/i],
+      ['es', 'Escaneo pausado', /datos de envíos están incompletos/i],
+    ];
+    for (const [language, title, decision] of states) {
+      await page.locator(`#langSwitch button[data-lang="${language}"]`).click();
+      await expect(page.locator('#scanTitle')).toHaveText(title);
+      await expect(page.locator(selectors.feedback)).toContainText(decision);
+      await expect(page.locator(selectors.scanInput)).toBeDisabled();
+    }
+    await page.locator('#langSwitch button[data-lang="en"]').click();
+    await page.evaluate(() => window.__apiMock.clearFailures());
+    await page.locator(selectors.retryData).click();
+    await waitForReady(page);
+    await expect(page.locator('#scanTitle')).toHaveText('Ready for scanner');
+    await expect(page.locator(selectors.feedback)).toHaveAttribute('data-kind', 'idle');
+    await expect(page.locator(selectors.feedback)).toContainText(/no parcel scanned yet/i);
+  });
+});
+
+test('keeps the last real package decision visible when a stale snapshot refresh is paused', async ({ page }) => {
+  await waitForReady(page);
+  await scan(page, 'TRACK-1');
+  await expect(page.locator(selectors.feedback)).toHaveAttribute('data-kind', 'success');
+  await page.evaluate(() => window.__apiMock.addFailure({ kind: 'shipments', page: 1 }));
+  await page.clock.setFixedTime(new Date('2026-08-05T10:31:00Z'));
+  await page.locator(selectors.refreshData).click();
+  await expect(page.locator(selectors.dataStatus)).toHaveAttribute('data-state', 'error');
+  await expect(page.locator('#scanTitle')).toHaveText('Scanning paused');
+  await expect(page.locator(selectors.scanInput)).toBeDisabled();
+  await expect(page.locator(selectors.feedback)).toHaveAttribute('data-kind', 'success');
+  await expect(page.locator(selectors.feedback)).toContainText(/ORDER-1 cleared/i);
+});
 
 test.describe('pending initial snapshot', () => {
   test.use({ scenario: healthyScenario({ delays: { shipments: 250 } }) });

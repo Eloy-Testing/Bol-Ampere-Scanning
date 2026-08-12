@@ -6,6 +6,9 @@ const API_BASE_URL = 'https://api.bol.com/retailer';
 const ACCEPT = 'application/vnd.retailer.v10+json';
 const USER_AGENT = 'Ampere-Warehouse-Scanner/1.0';
 const PAGE_LIMIT = 100;
+const REQUEST_ATTEMPTS = 3;
+const RETRY_DELAYS_MS = [150, 400];
+const MAX_RETRY_AFTER_MS = 2_000;
 const ISO_INSTANT = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d{1,9})?(?:Z|[+-](\d{2}):(\d{2}))$/;
 
 function text(value, maxLength = 256) {
@@ -62,6 +65,21 @@ function optionalIso(value, maxLength = 64) {
 
 function compact(object) {
   return Object.fromEntries(Object.entries(object).filter(([, value]) => value !== undefined));
+}
+
+function retryableStatus(status) {
+  return [408, 425, 429].includes(status) || status >= 500;
+}
+
+function retryDelay(response, attempt, now) {
+  const raw = response?.headers?.get('retry-after');
+  if (raw != null) {
+    const seconds = Number(raw);
+    if (Number.isFinite(seconds) && seconds >= 0) return Math.min(MAX_RETRY_AFTER_MS, Math.round(seconds * 1_000));
+    const timestamp = Date.parse(raw);
+    if (Number.isFinite(timestamp)) return Math.min(MAX_RETRY_AFTER_MS, Math.max(0, timestamp - now()));
+  }
+  return RETRY_DELAYS_MS[Math.min(attempt - 1, RETRY_DELAYS_MS.length - 1)];
 }
 
 function sanitizeOrderItem(item) {
@@ -143,8 +161,9 @@ export class BolClient {
     nodeEnv = 'production',
     tokenUrl,
     apiBaseUrl,
+    sleepImpl = (delayMs) => new Promise((resolve) => setTimeout(resolve, delayMs)),
   }) {
-    if (!clientId || !clientSecret || typeof fetchImpl !== 'function') throw new UpstreamError();
+    if (!clientId || !clientSecret || typeof fetchImpl !== 'function' || typeof sleepImpl !== 'function') throw new UpstreamError();
     if ((tokenUrl || apiBaseUrl) && nodeEnv !== 'test') throw new UpstreamError();
     this.clientId = clientId;
     this.clientSecret = clientSecret;
@@ -153,23 +172,33 @@ export class BolClient {
     this.timeoutMs = timeoutMs;
     this.tokenUrl = tokenUrl || TOKEN_URL;
     this.apiBaseUrl = apiBaseUrl || API_BASE_URL;
+    this.sleep = sleepImpl;
     this.token = null;
   }
 
   async #boundedJson(url, options) {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
-    try {
-      const response = await this.fetch(url, { ...options, signal: controller.signal });
-      if (!response.ok) return { response, payload: null };
-      let payload;
-      try { payload = await response.json(); } catch { throw new UpstreamError(); }
-      return { response, payload };
-    } catch {
-      throw new UpstreamError();
-    } finally {
-      clearTimeout(timeout);
+    for (let attempt = 1; attempt <= REQUEST_ATTEMPTS; attempt += 1) {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
+      let response;
+      try {
+        response = await this.fetch(url, { ...options, signal: controller.signal });
+      } catch {
+        if (attempt === REQUEST_ATTEMPTS) throw new UpstreamError();
+        try { await this.sleep(retryDelay(null, attempt, this.now)); } catch { throw new UpstreamError(); }
+        continue;
+      } finally {
+        clearTimeout(timeout);
+      }
+      if (response.ok) {
+        let payload;
+        try { payload = await response.json(); } catch { throw new UpstreamError(); }
+        return { response, payload };
+      }
+      if (!retryableStatus(response.status) || attempt === REQUEST_ATTEMPTS) return { response, payload: null };
+      try { await this.sleep(retryDelay(response, attempt, this.now)); } catch { throw new UpstreamError(); }
     }
+    throw new UpstreamError();
   }
 
   async #accessToken(force = false) {
