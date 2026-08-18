@@ -15,14 +15,17 @@ import {
   logoutPendingCookie,
   normalizeTrackingCode,
   parseCookies,
+  preferenceCookie,
   randomSessionToken,
   sessionCookie,
+  signPreference,
   signSessionToken,
   sourceAddress,
   tokenHash,
   validateAuditLabel,
   validateIdentifier,
   verifyPassword,
+  verifySignedPreference,
   verifySignedSessionToken,
 } from './security.mjs';
 import { scannerWorkday } from './workday.mjs';
@@ -120,14 +123,23 @@ export function createApplication({ config, repository, bolClient, bolAccountSer
     return repository.getSession(tokenHash(token), now(), id);
   }
 
+  function rememberedPreference(req) {
+    return verifySignedPreference(requestCookies(req).ampere_preference, config.sessionSecret, now());
+  }
+
   async function sessionRoute(req, res) {
     if (req.method === 'GET') {
+      const remembered = rememberedPreference(req);
       if (requestCookies(req).ampere_logout_pending === '1') {
-        return sendJson(res, 200, { authenticated: false, logoutPending: true });
+        return sendJson(res, 200, {
+          authenticated: false,
+          logoutPending: true,
+          ...(remembered ? { remembered } : {}),
+        });
       }
       const id = requestId();
       const session = await authenticate(req, id);
-      if (!session) return sendJson(res, 200, { authenticated: false });
+      if (!session) return sendJson(res, 200, { authenticated: false, ...(remembered ? { remembered } : {}) });
       return sendJson(res, 200, {
         authenticated: true,
         session: { stationId: session.stationId, operatorLabel: session.operatorLabel, expiresAt: session.expiresAt },
@@ -169,6 +181,7 @@ export function createApplication({ config, repository, bolClient, bolAccountSer
       const digest = tokenHash(token);
       const currentTime = now();
       const expiresAt = new Date(currentTime.getTime() + config.sessionTtlSeconds * 1000);
+      const preferenceExpiresAt = new Date(currentTime.getTime() + config.preferenceTtlSeconds * 1000);
       const principalId = `operator-${hmac(config.sessionSecret, 'operator-label', operatorLabel.toLocaleLowerCase('en')).slice(0, 24)}`;
       await repository.createSession({
         tokenHash: digest,
@@ -187,6 +200,10 @@ export function createApplication({ config, repository, bolClient, bolAccountSer
         'Set-Cookie': [
           sessionCookie(signSessionToken(token, config.sessionSecret), {
             maxAge: config.sessionTtlSeconds,
+            secure: config.secureCookies,
+          }),
+          preferenceCookie(signPreference({ stationId, operatorLabel }, config.sessionSecret, preferenceExpiresAt), {
+            maxAge: config.preferenceTtlSeconds,
             secure: config.secureCookies,
           }),
           clearLogoutPendingCookie({ secure: config.secureCookies }),

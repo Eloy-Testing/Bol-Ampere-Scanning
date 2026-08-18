@@ -10,6 +10,7 @@ import { AppError, ValidationError } from './errors.mjs';
 
 const scrypt = promisify(scryptCallback);
 const HASH_PREFIX = 'scrypt-v1';
+const PREFERENCE_PREFIX = 'preference-v1';
 const SCRYPT_OPTIONS = Object.freeze({ N: 16384, r: 8, p: 1, maxmem: 64 * 1024 * 1024 });
 
 function decodeBase64Url(value) {
@@ -76,6 +77,42 @@ export function verifySignedSessionToken(value, secret) {
   return match[1];
 }
 
+export function signPreference({ stationId, operatorLabel }, secret, expiresAt) {
+  const preference = {
+    stationId: validateAuditLabel(stationId, 64),
+    operatorLabel: validateAuditLabel(operatorLabel, 64),
+  };
+  const expiry = Math.floor(new Date(expiresAt).getTime() / 1000);
+  if (!Number.isSafeInteger(expiry) || expiry <= 0) throw new ValidationError();
+  const payload = Buffer.from(JSON.stringify(preference), 'utf8').toString('base64url');
+  const signed = `${PREFERENCE_PREFIX}.${expiry}.${payload}`;
+  return `${signed}.${hmac(secret, 'preference-signature', signed)}`;
+}
+
+export function verifySignedPreference(value, secret, now = new Date()) {
+  try {
+    if (typeof value !== 'string') return null;
+    const match = value.match(/^preference-v1\.([1-9]\d*)\.([A-Za-z0-9_-]+)\.([A-Za-z0-9_-]{43})$/);
+    if (!match) return null;
+    const signed = `${PREFERENCE_PREFIX}.${match[1]}.${match[2]}`;
+    const expected = Buffer.from(hmac(secret, 'preference-signature', signed), 'base64url');
+    const actual = Buffer.from(match[3], 'base64url');
+    if (expected.length !== actual.length || !timingSafeEqual(expected, actual)) return null;
+    const expiry = Number(match[1]);
+    const currentTime = new Date(now).getTime();
+    if (!Number.isSafeInteger(expiry) || !Number.isFinite(currentTime) || expiry * 1000 <= currentTime) return null;
+    const parsed = JSON.parse(Buffer.from(match[2], 'base64url').toString('utf8'));
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return null;
+    if (Object.keys(parsed).length !== 2 || !Object.hasOwn(parsed, 'stationId') || !Object.hasOwn(parsed, 'operatorLabel')) return null;
+    return {
+      stationId: validateAuditLabel(parsed.stationId, 64),
+      operatorLabel: validateAuditLabel(parsed.operatorLabel, 64),
+    };
+  } catch {
+    return null;
+  }
+}
+
 export function parseCookies(header) {
   const cookies = {};
   if (typeof header !== 'string') return cookies;
@@ -104,6 +141,18 @@ export function sessionCookie(value, { maxAge, secure }) {
 
 export function clearSessionCookie({ secure }) {
   return sessionCookie('', { maxAge: 0, secure });
+}
+
+export function preferenceCookie(value, { maxAge, secure }) {
+  const parts = [
+    `ampere_preference=${encodeURIComponent(value)}`,
+    'Path=/',
+    'HttpOnly',
+    'SameSite=Strict',
+    `Max-Age=${Math.max(0, Math.floor(maxAge))}`,
+  ];
+  if (secure) parts.push('Secure');
+  return parts.join('; ');
 }
 
 export function logoutPendingCookie({ maxAge, secure }) {

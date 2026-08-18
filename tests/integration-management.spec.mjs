@@ -1,4 +1,5 @@
-import { test, expect, selectors, waitForReady } from './fixtures/mock-bol.mjs';
+import { test, expect, selectors, waitForReady, scan } from './fixtures/mock-bol.mjs';
+import { healthyScenario, parcel, snapshot } from './fixtures/data.mjs';
 
 async function openConnections(page) {
   await waitForReady(page);
@@ -49,6 +50,31 @@ test('new Bol connection becomes a separate scanner tab and submitted secrets ar
   await expect(page.locator(selectors.scanInput)).toBeFocused();
   await clientTab.click();
   await expect(clientTab).toHaveAttribute('aria-selected', 'true');
+});
+
+test.describe('managed account scan-state projection', () => {
+  const managedKey = 'acct_abcdefghijklmnopqrstuv';
+  const primary = snapshot({ parcels: [parcel({ n: 1, track: 'PRIMARY-TRACK' })] });
+  const managed = { label: 'Client North', ...snapshot({ parcels: [parcel({ n: 2, track: 'MANAGED-TRACK' })] }) };
+  test.use({ scenario: healthyScenario({ snapshots: [{ accounts: { primary, [managedKey]: managed } }] }) });
+
+  test('keeps an accepted managed-account package counted after refresh and reload', async ({ page }) => {
+    await waitForReady(page);
+    const managedTab = page.locator(`[data-testid="account-tab-${managedKey}"]`);
+    await expect(managedTab).toHaveText('Client North');
+    await managedTab.click();
+    await scan(page, 'MANAGED-TRACK');
+    await expect(page.locator(selectors.scannedCount)).toHaveText('1');
+
+    await page.evaluate(() => window.__scannerTest.refresh());
+    await expect(page.locator(selectors.scannedCount)).toHaveText('1');
+
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await waitForReady(page);
+    await page.locator(`[data-testid="account-tab-${managedKey}"]`).click();
+    await expect(page.locator(selectors.scannedCount)).toHaveText('1');
+    await expect(page.locator(selectors.shipmentList)).toContainText('MANAGED-TRACK');
+  });
 });
 
 test('Bol-rejected credentials create no tab and clear secret fields before retry', async ({ page }) => {

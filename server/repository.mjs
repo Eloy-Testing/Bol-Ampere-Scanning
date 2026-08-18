@@ -24,6 +24,39 @@ function stateRecord(row) {
   };
 }
 
+function workdayStateStatement(workday) {
+  return {
+    sql: `WITH candidates AS (
+            SELECT workday, tracking_code, shipment_id, order_id, source_account, source_account_key,
+                   outcome, reason, first_seen_at, accepted_at, cancelled_at, updated_at,
+                   identity_source, identity_shipment
+            FROM ampere_package_state_v2
+            WHERE workday = ? OR (workday = date(?, '-1 day') AND outcome IN ('accepted', 'cancelled'))
+            UNION ALL
+            SELECT workday, tracking_code, shipment_id, order_id, source_account, source_account_key,
+                   outcome, reason, first_seen_at, accepted_at, cancelled_at, updated_at,
+                   COALESCE(source_account_key, source_account, '') AS identity_source,
+                   COALESCE(shipment_id, '') AS identity_shipment
+            FROM ampere_package_state
+            WHERE workday = ? OR (workday = date(?, '-1 day') AND outcome IN ('accepted', 'cancelled'))
+          ), ranked AS (
+            SELECT *, ROW_NUMBER() OVER (
+              PARTITION BY tracking_code, identity_source, identity_shipment
+              ORDER BY CASE outcome WHEN 'cancelled' THEN 2 WHEN 'accepted' THEN 1 ELSE 0 END DESC,
+                       updated_at DESC, workday DESC
+            ) AS state_rank
+            FROM candidates
+          )
+          SELECT workday, tracking_code, shipment_id, order_id,
+                 COALESCE(source_account_key, source_account) AS source_account, outcome, reason,
+                 first_seen_at, accepted_at, cancelled_at, updated_at
+          FROM ranked
+          WHERE state_rank = 1
+          ORDER BY updated_at DESC, tracking_code ASC`,
+    args: [workday, workday, workday, workday],
+  };
+}
+
 function bolAccountRecord(row) {
   if (!row) return null;
   return {
@@ -236,15 +269,7 @@ export class ScannerRepository {
   }
 
   async getWorkdayState(workday) {
-    const result = await this.#execute({
-      sql: `SELECT workday, tracking_code, shipment_id, order_id,
-                   COALESCE(source_account_key, source_account) AS source_account, outcome, reason,
-                   first_seen_at, accepted_at, cancelled_at, updated_at
-            FROM ampere_package_state
-            WHERE workday = ?
-            ORDER BY updated_at DESC, tracking_code ASC`,
-      args: [workday],
-    });
+    const result = await this.#execute(workdayStateStatement(workday));
     return result.rows.map(stateRecord);
   }
 
@@ -265,27 +290,85 @@ export class ScannerRepository {
     const timestamp = iso(now);
     const legacySourceAccount = ['primary', 'secondary'].includes(sourceAccount) ? sourceAccount : null;
     const sourceAccountKey = nullable(sourceAccount);
+    const identitySource = sourceAccountKey || '';
+    const identityShipment = nullable(shipmentId) || '';
     const acceptedAt = outcome === 'accepted' ? timestamp : null;
     const cancelledAt = outcome === 'cancelled' ? timestamp : null;
+    const carryForward = {
+      sql: `INSERT INTO ampere_package_state_v2
+              (workday, tracking_code, identity_source, identity_shipment, shipment_id, order_id,
+               source_account, source_account_key, outcome, reason, first_seen_at, accepted_at, cancelled_at,
+               updated_at, station_id, principal_id, session_token_hash, request_id)
+            SELECT ?, tracking_code, identity_source, identity_shipment, shipment_id, order_id,
+                   source_account, source_account_key, outcome, reason, first_seen_at, accepted_at, cancelled_at,
+                   updated_at, station_id, principal_id, session_token_hash, request_id
+            FROM (
+              SELECT * FROM (
+                SELECT tracking_code, shipment_id, order_id, source_account, source_account_key, outcome, reason,
+                       first_seen_at, accepted_at, cancelled_at, updated_at, station_id, principal_id,
+                       session_token_hash, request_id,
+                       COALESCE(source_account_key, source_account, '') AS identity_source,
+                       COALESCE(shipment_id, '') AS identity_shipment
+                FROM ampere_package_state
+                WHERE workday IN (?, date(?, '-1 day'))
+                  AND (workday = ? OR outcome IN ('accepted', 'cancelled'))
+                  AND tracking_code = ?
+                  AND COALESCE(source_account_key, source_account, '') = ?
+                  AND COALESCE(shipment_id, '') = ?
+                UNION ALL
+                SELECT tracking_code, shipment_id, order_id, source_account, source_account_key, outcome, reason,
+                       first_seen_at, accepted_at, cancelled_at, updated_at, station_id, principal_id,
+                       session_token_hash, request_id, identity_source, identity_shipment
+                FROM ampere_package_state_v2
+                WHERE workday = date(?, '-1 day') AND outcome IN ('accepted', 'cancelled')
+                  AND tracking_code = ? AND identity_source = ? AND identity_shipment = ?
+              ) AS rollover_candidates
+              ORDER BY CASE outcome WHEN 'cancelled' THEN 2 WHEN 'accepted' THEN 1 ELSE 0 END DESC,
+                       updated_at DESC
+              LIMIT 1
+            ) AS carried_state
+            WHERE 1 = 1
+            ON CONFLICT(workday, tracking_code, identity_source, identity_shipment) DO UPDATE SET
+              shipment_id = COALESCE(excluded.shipment_id, ampere_package_state_v2.shipment_id),
+              order_id = COALESCE(excluded.order_id, ampere_package_state_v2.order_id),
+              source_account = COALESCE(excluded.source_account, ampere_package_state_v2.source_account),
+              source_account_key = COALESCE(excluded.source_account_key, ampere_package_state_v2.source_account_key),
+              outcome = excluded.outcome,
+              reason = excluded.reason,
+              accepted_at = COALESCE(ampere_package_state_v2.accepted_at, excluded.accepted_at),
+              cancelled_at = COALESCE(ampere_package_state_v2.cancelled_at, excluded.cancelled_at),
+              updated_at = excluded.updated_at,
+              station_id = excluded.station_id,
+              principal_id = excluded.principal_id,
+              session_token_hash = excluded.session_token_hash,
+              request_id = excluded.request_id
+            WHERE ampere_package_state_v2.outcome IN ('unknown', 'unverified')
+               OR (excluded.outcome = 'cancelled' AND ampere_package_state_v2.outcome != 'cancelled')`,
+      args: [
+        workday, workday, workday, workday, trackingCode, identitySource, identityShipment,
+        workday, trackingCode, identitySource, identityShipment,
+      ],
+    };
     const upsert = {
-      sql: `INSERT INTO ampere_package_state
-              (workday, tracking_code, shipment_id, order_id, source_account, source_account_key, outcome, reason, first_seen_at,
+      sql: `INSERT INTO ampere_package_state_v2
+              (workday, tracking_code, identity_source, identity_shipment, shipment_id, order_id,
+               source_account, source_account_key, outcome, reason, first_seen_at,
                accepted_at, cancelled_at, updated_at, station_id, principal_id, session_token_hash, request_id)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ON CONFLICT(workday, tracking_code) DO UPDATE SET
-              shipment_id = COALESCE(excluded.shipment_id, ampere_package_state.shipment_id),
-              order_id = COALESCE(excluded.order_id, ampere_package_state.order_id),
-              source_account = COALESCE(excluded.source_account, ampere_package_state.source_account),
-              source_account_key = COALESCE(excluded.source_account_key, ampere_package_state.source_account_key),
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(workday, tracking_code, identity_source, identity_shipment) DO UPDATE SET
+              shipment_id = COALESCE(excluded.shipment_id, ampere_package_state_v2.shipment_id),
+              order_id = COALESCE(excluded.order_id, ampere_package_state_v2.order_id),
+              source_account = COALESCE(excluded.source_account, ampere_package_state_v2.source_account),
+              source_account_key = COALESCE(excluded.source_account_key, ampere_package_state_v2.source_account_key),
               outcome = excluded.outcome,
               reason = excluded.reason,
               accepted_at = CASE
-                WHEN excluded.outcome = 'accepted' THEN COALESCE(ampere_package_state.accepted_at, excluded.accepted_at)
-                ELSE ampere_package_state.accepted_at
+                WHEN excluded.outcome = 'accepted' THEN COALESCE(ampere_package_state_v2.accepted_at, excluded.accepted_at)
+                ELSE ampere_package_state_v2.accepted_at
               END,
               cancelled_at = CASE
-                WHEN excluded.outcome = 'cancelled' THEN COALESCE(ampere_package_state.cancelled_at, excluded.cancelled_at)
-                ELSE ampere_package_state.cancelled_at
+                WHEN excluded.outcome = 'cancelled' THEN COALESCE(ampere_package_state_v2.cancelled_at, excluded.cancelled_at)
+                ELSE ampere_package_state_v2.cancelled_at
               END,
               updated_at = excluded.updated_at,
               station_id = excluded.station_id,
@@ -293,11 +376,12 @@ export class ScannerRepository {
               session_token_hash = excluded.session_token_hash,
               request_id = excluded.request_id
             WHERE
-              (excluded.outcome = 'cancelled' AND ampere_package_state.outcome != 'cancelled')
-              OR (excluded.outcome = 'accepted' AND ampere_package_state.outcome IN ('unknown', 'unverified'))
-              OR (excluded.outcome IN ('unknown', 'unverified') AND ampere_package_state.outcome IN ('unknown', 'unverified'))`,
+              (excluded.outcome = 'cancelled' AND ampere_package_state_v2.outcome != 'cancelled')
+              OR (excluded.outcome = 'accepted' AND ampere_package_state_v2.outcome IN ('unknown', 'unverified'))
+              OR (excluded.outcome IN ('unknown', 'unverified') AND ampere_package_state_v2.outcome IN ('unknown', 'unverified'))`,
       args: [
-        workday, trackingCode, nullable(shipmentId), nullable(orderId), legacySourceAccount, sourceAccountKey, outcome, reason, timestamp,
+        workday, trackingCode, identitySource, identityShipment, nullable(shipmentId), nullable(orderId),
+        legacySourceAccount, sourceAccountKey, outcome, reason, timestamp,
         acceptedAt, cancelledAt, timestamp, stationId, principalId, sessionTokenHash, requestId,
       ],
     };
@@ -306,33 +390,27 @@ export class ScannerRepository {
               (workday, tracking_code, shipment_id, order_id, source_account, source_account_key, attempted_outcome, reason,
                effective_outcome, station_id, principal_id, session_token_hash, request_id, occurred_at)
             SELECT ?, ?, ?, ?, ?, ?, ?, ?, outcome, ?, ?, ?, ?, ?
-            FROM ampere_package_state WHERE workday = ? AND tracking_code = ?`,
+            FROM ampere_package_state_v2
+            WHERE workday = ? AND tracking_code = ? AND identity_source = ? AND identity_shipment = ?`,
       args: [
         workday, trackingCode, nullable(shipmentId), nullable(orderId), legacySourceAccount, sourceAccountKey, outcome, reason,
-        stationId, principalId, sessionTokenHash, requestId, timestamp, workday, trackingCode,
+        stationId, principalId, sessionTokenHash, requestId, timestamp,
+        workday, trackingCode, identitySource, identityShipment,
       ],
     };
     const state = {
       sql: `SELECT workday, tracking_code, shipment_id, order_id,
                    COALESCE(source_account_key, source_account) AS source_account, outcome, reason,
                    first_seen_at, accepted_at, cancelled_at, updated_at
-            FROM ampere_package_state WHERE workday = ? AND tracking_code = ? LIMIT 1`,
-      args: [workday, trackingCode],
+            FROM ampere_package_state_v2
+            WHERE workday = ? AND tracking_code = ? AND identity_source = ? AND identity_shipment = ? LIMIT 1`,
+      args: [workday, trackingCode, identitySource, identityShipment],
     };
-    const workdayState = {
-      sql: `SELECT workday, tracking_code, shipment_id, order_id,
-                   COALESCE(source_account_key, source_account) AS source_account, outcome, reason,
-                   first_seen_at, accepted_at, cancelled_at, updated_at
-            FROM ampere_package_state
-            WHERE workday = ?
-            ORDER BY updated_at DESC, tracking_code ASC`,
-      args: [workday],
-    };
-    const results = await this.#batch([upsert, event, state, workdayState]);
+    const results = await this.#batch([carryForward, upsert, event, state, workdayStateStatement(workday)]);
     return {
-      changed: Number(results[0].rowsAffected || 0) > 0,
-      record: stateRecord(results[2].rows[0]),
-      records: results[3].rows.map(stateRecord),
+      changed: Number(results[1].rowsAffected || 0) > 0,
+      record: stateRecord(results[3].rows[0]),
+      records: results[4].rows.map(stateRecord),
     };
   }
 

@@ -1,0 +1,84 @@
+{
+  "schema_version": "creative-framework.interface-output-contract.v1",
+  "task": "Fix scanner login recall, package-grain counts, and rollover-safe scan state",
+  "surface_has_interface_output": true,
+  "interface_output_producers": "applicable",
+  "not_applicable_reason": "",
+  "planned_output_channels": ["visible", "assistive", "telemetry"],
+  "producers": [
+    {
+      "id": "login_identity_prefill",
+      "event_origin": "product_workflow",
+      "presentation_owner": "product_owner",
+      "channel": "visible",
+      "source_condition": "No authenticated session exists and the server returns a valid signed Station and Operator preference from a prior successful login.",
+      "user_impact": "The operator does not need to retype non-secret identity labels, while the warehouse password remains required.",
+      "recovery": "Edit the labels if the station or operator changed, then enter the warehouse password.",
+      "copy_purpose": "Populate existing labelled fields without claiming authenticated access.",
+      "final_copy": "Existing Station ID, Operator label, and Warehouse password field labels; no new authentication claim.",
+      "external_proof": "Browser assertions for prefill, editable values, blank password, focus order, tampered preference, and expired session"
+    },
+    {
+      "id": "package_summary_metrics",
+      "event_origin": "product_workflow",
+      "presentation_owner": "product_owner",
+      "channel": "visible",
+      "source_condition": "A complete active-account bol snapshot and durable server package decisions are available.",
+      "user_impact": "The operator can compare labelled packages, accepted scans, and remaining packages without mixed order/package arithmetic.",
+      "recovery": "Refresh only when the existing health surface reports stale or incomplete data.",
+      "copy_purpose": "State package-grain totals and keep no-label orders separate.",
+      "final_copy": "Packages with label / Scanned / Awaiting scan / No label / After cutoff",
+      "external_proof": "Browser assertions across primary, secondary, dynamic-account, cancelled, and refreshed states"
+    },
+    {
+      "id": "durable_scan_projection",
+      "event_origin": "product_workflow",
+      "presentation_owner": "product_owner",
+      "channel": "visible",
+      "source_condition": "An accepted or cancelled package remains in the active bol shipment window across refresh, reload, station change, or 16:00 rollover.",
+      "user_impact": "The package keeps its scanned or STOP status and is not presented as unread/open again.",
+      "recovery": "Continue scanning; only an authoritative cancellation may change an accepted package to STOP.",
+      "copy_purpose": "Preserve the existing authoritative package status badge and summary count.",
+      "final_copy": "Existing Scanned timestamp, STOP, GO, and duplicate decision copy.",
+      "external_proof": "Rollover, refresh, reload, two-station, and duplicate browser/server tests"
+    },
+    {
+      "id": "auth_and_state_diagnostics",
+      "event_origin": "autonomous_helper",
+      "presentation_owner": "none",
+      "channel": "telemetry",
+      "source_condition": "Preference signature validation, state merge, or persistence diagnostics execute.",
+      "user_impact": "No direct visible output; mapped product states use existing actionable login or health copy.",
+      "recovery": "Not applicable in product chrome.",
+      "copy_purpose": "Keep implementation, signature, SQL, and test details outside visible and assistive channels.",
+      "final_copy": "",
+      "external_proof": "Unit/integration tests and sanitized console/runtime evidence"
+    },
+    {
+      "id": "scanner_assistive_state",
+      "event_origin": "product_workflow",
+      "presentation_owner": "product_owner",
+      "channel": "assistive",
+      "source_condition": "Authentication, health, scan decision, or package summary state changes.",
+      "user_impact": "Assistive-technology users receive the same actionable state and labelled metrics.",
+      "recovery": "Use the existing password, Retry, scanner input, or STOP handling action as applicable.",
+      "copy_purpose": "Preserve existing field labels, live regions, disabled state, and metric labels.",
+      "final_copy": "Same localized product-owned labels and decision/health copy as the visible channel.",
+      "external_proof": "Accessible-name, role, aria-live, disabled-state, and focus assertions"
+    }
+  ],
+  "technical_status_exception": {
+    "applicable": false,
+    "direct_object_of_work": false,
+    "producer_ids": [],
+    "reason": ""
+  },
+  "what_must_not_appear": [
+    "The warehouse password, password hash, session token, preference signature, credentials, or secrets",
+    "A claim that remembered Station or Operator means the station is authenticated",
+    "Mixed order-plus-package arithmetic under a package total",
+    "HTTP, SQL, signature, workday-key, retry, test, receipt, or implementation narration",
+    "A scanned package reverting to Open while its same bol shipment remains active",
+    "Vercel, Turso, framework, or verification proof chrome"
+  ]
+}

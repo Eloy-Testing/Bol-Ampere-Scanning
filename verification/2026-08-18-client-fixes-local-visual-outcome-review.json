@@ -1,0 +1,140 @@
+{
+  "schema_version": "visual-outcome-review.v1",
+  "task_id": "2026-08-18-client-fixes-local",
+  "project_root": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker",
+  "surface_profile": "browser_ui",
+  "review_mode": "main_agent_only",
+  "main_agent_id": "codex-main",
+  "frozen_contract": {
+    "path": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/plans/2026-08-18-client-issues-1-3/design_contract.md",
+    "sha256": "89f4b928ae8dfa90ac3d15904a70c4b85b17e61885f782f5eef0b9a12a9a51d3",
+    "quality_bar": "The existing scanner hierarchy remains intact while remembered Station and Operator values reduce entry work, the password stays blank and required, and all five summary cards state their package or order grain clearly on desktop and mobile.",
+    "required_invariants": [
+      "station and operator are prefilled only on the unauthenticated gate",
+      "warehouse password remains blank, required, and next in focus order",
+      "scanner input and authoritative GO or STOP decision remain dominant",
+      "package metrics use labelled shipment packages without mixed order arithmetic",
+      "cancelled packages are excluded from awaiting scan",
+      "all five metric cards remain legible at desktop and mobile widths",
+      "there is no page-level horizontal overflow or console error"
+    ],
+    "browser_routes": ["/index.html"],
+    "browser_viewports": ["1440x980", "390x900"],
+    "browser_required_states": [
+      "remembered unauthenticated login",
+      "accepted package counts",
+      "cancelled package counts",
+      "all localized metric labels",
+      "exact 16:00 rollover",
+      "dynamic account refresh and reload",
+      "logout and session-expiry focus"
+    ],
+    "shot_or_beat_ids": [],
+    "motion_duration_seconds": null,
+    "audio_required": false
+  },
+  "references": [],
+  "artifact": {
+    "kind": "local_file",
+    "path": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/index.html",
+    "url": null,
+    "deployment_identity": null,
+    "sha256": "f5648f0aed380e1333fc8bd8be2458f0954dfa8739aed99baf498f7c703f554d",
+    "created_at": "2026-08-18T09:39:17Z"
+  },
+  "evidence": [
+    {
+      "id": "EV-LOGIN-DESKTOP",
+      "kind": "browser_screenshot",
+      "path": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/verification/screenshot-evidence/2026-08-18-client-fixes-remembered-login-desktop.png",
+      "sha256": "4fccc19f34b5800661b1b23fa56df71c7d3c6786189ffc0e2cefa5201ddca3f9",
+      "artifact_binding": "f5648f0aed380e1333fc8bd8be2458f0954dfa8739aed99baf498f7c703f554d",
+      "captured_at": "2026-08-18T09:45:57Z",
+      "coverage": {
+        "viewport": "1440x980",
+        "route": "/index.html",
+        "full_surface": true
+      }
+    },
+    {
+      "id": "EV-METRICS-DESKTOP",
+      "kind": "browser_screenshot",
+      "path": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/verification/screenshot-evidence/2026-08-18-client-fixes-package-metrics-desktop.png",
+      "sha256": "c614653675e0ffc3403b720195564b6f96ef36d3c0118e99e5af873b3ad931a5",
+      "artifact_binding": "f5648f0aed380e1333fc8bd8be2458f0954dfa8739aed99baf498f7c703f554d",
+      "captured_at": "2026-08-18T09:45:57Z",
+      "coverage": {
+        "viewport": "1440x980",
+        "route": "/index.html",
+        "full_surface": true
+      }
+    },
+    {
+      "id": "EV-METRICS-MOBILE",
+      "kind": "browser_screenshot",
+      "path": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/verification/screenshot-evidence/2026-08-18-client-fixes-package-metrics-mobile.png",
+      "sha256": "097aed6e94dcc1398e634119895c3bf0d24a0661e50d95eb642ec0fc178c8394",
+      "artifact_binding": "f5648f0aed380e1333fc8bd8be2458f0954dfa8739aed99baf498f7c703f554d",
+      "captured_at": "2026-08-18T09:45:57Z",
+      "coverage": {
+        "viewport": "390x900",
+        "route": "/index.html",
+        "full_surface": true
+      }
+    },
+    {
+      "id": "EV-BROWSER-STATE",
+      "kind": "browser_state",
+      "path": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/verification/2026-08-18-client-fixes-local-browser-state.json",
+      "sha256": "281533c9a59deaf09bed6ea8324214131cbde1c8d7cac3361426363a2f5f1cfe",
+      "artifact_binding": "f5648f0aed380e1333fc8bd8be2458f0954dfa8739aed99baf498f7c703f554d",
+      "captured_at": "2026-08-18T09:46:42Z",
+      "coverage": {
+        "routes": ["/index.html"],
+        "interactions_checked": true,
+        "states_checked": [
+          "remembered unauthenticated login",
+          "accepted package counts",
+          "cancelled package counts",
+          "all localized metric labels",
+          "exact 16:00 rollover",
+          "dynamic account refresh and reload",
+          "logout and session-expiry focus"
+        ],
+        "scroll_complete": true,
+        "overflow_checked": true,
+        "console_checked": true
+      }
+    }
+  ],
+  "review_cycles": [
+    {
+      "cycle": 1,
+      "artifact_binding": "f5648f0aed380e1333fc8bd8be2458f0954dfa8739aed99baf498f7c703f554d",
+      "inspected_at": "2026-08-18T09:46:42Z",
+      "main_agent": {
+        "inspector_id": "codex-main",
+        "inspection_complete": true,
+        "verdict": "PASS",
+        "evidence_ids": [
+          "EV-LOGIN-DESKTOP",
+          "EV-METRICS-DESKTOP",
+          "EV-METRICS-MOBILE",
+          "EV-BROWSER-STATE"
+        ],
+        "summary": "The current artifact keeps the scanner visually dominant, prefills only Station and Operator, focuses the empty password, presents explicit package-grain metrics, excludes cancelled packages from awaiting scan, and contains the complete mobile surface without page-level overflow or runtime errors."
+      },
+      "critic": null,
+      "findings": [],
+      "resolved_finding_ids": [],
+      "advisories": [
+        "The package summary is bounded to the current complete bol shipment window and does not claim historical printed-label or Excel parity."
+      ],
+      "verdict": "PASS"
+    }
+  ],
+  "final_verdict": "PASS",
+  "limits": [
+    "Visual evidence uses synthetic local bol fixtures; authenticated production scan transitions require an approved real operator session and no test package was scanned."
+  ]
+}

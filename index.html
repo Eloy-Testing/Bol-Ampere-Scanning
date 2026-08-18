@@ -278,11 +278,11 @@
     </section>
 
     <div class="summary" id="summary">
-      <div class="metric"><div class="metric-value" id="totalCount">0</div><div class="metric-label" id="totalLabel">Total today</div></div>
+      <div class="metric"><div class="metric-value" id="totalCount">0</div><div class="metric-label" id="totalLabel">Packages with label</div></div>
       <div class="metric" data-tone="go"><div class="metric-value" id="scannedCount" data-testid="scanned-count">0</div><div class="metric-label" id="scannedLabel">Scanned</div></div>
-      <div class="metric" data-tone="stop"><div class="metric-value" id="openCount">0</div><div class="metric-label" id="openLabel">Still open</div></div>
-      <div class="metric" data-tone="warn"><div class="metric-value" id="noLabelCount">0</div><div class="metric-label" id="noLabelLabel">No label</div></div>
-      <div class="metric"><div class="metric-value" id="tomorrowCount">0</div><div class="metric-label" id="tomorrowLabel">After cutoff</div></div>
+      <div class="metric" data-tone="stop"><div class="metric-value" id="openCount">0</div><div class="metric-label" id="openLabel">Awaiting scan</div></div>
+      <div class="metric" data-tone="warn"><div class="metric-value" id="noLabelCount">0</div><div class="metric-label" id="noLabelLabel">Orders without label</div></div>
+      <div class="metric"><div class="metric-value" id="tomorrowCount">0</div><div class="metric-label" id="tomorrowLabel">Orders after cutoff</div></div>
     </div>
 
     <div class="content-grid">
@@ -384,7 +384,7 @@
         idleStatus: 'Scanner klaar. Focus blijft op het invoerveld.', checking: order => `Live annulering controleren · order ${order}`, refreshingUnknown: 'Code niet gevonden; volledige data één keer verversen…', queued: n => n ? `${n} scan${n === 1 ? '' : 's'} wacht${n === 1 ? '' : 'en'}.` : 'Scanner klaar voor de volgende code.', blocked: 'Wacht op een volledige, gezonde datasnapshot.', pausedStatus: 'Scannen blijft uit tot de verzenddata compleet is. Probeer opnieuw.',
         lastDecision: 'Laatste beslissing', idleTitle: 'Nog geen pakket gescand', idleDetail: 'Het resultaat blijft staan terwijl de volgende scan wordt gecontroleerd.', pausedDecisionKicker: 'SCANNEN GEPAUZEERD', pausedDecisionTitle: 'Verzenddata is niet compleet', pausedDecisionDetail: 'Probeer opnieuw voordat je een pakket scant.', successKicker: 'GO · verzenden', duplicateKicker: 'DUBBEL · niet opnieuw tellen', stopKicker: 'STOP · niet verzenden',
         successTitle: o => `Order ${o} vrijgegeven`, successDetail: c => `${c} is live gecontroleerd en geteld. Scan de volgende.`, duplicateTitle: o => `Order ${o} was al gescand`, duplicateDetail: c => `${c} is niet opnieuw geteld. Scan de volgende.`, pendingDuplicateTitle: 'Scan al in de wachtrij', pendingDuplicateDetail: c => `${c} wordt maar één keer live gecontroleerd.`, cancelledDecisionTitle: o => `Order ${o} is geannuleerd`, cancelledDetail: c => `${c} is geblokkeerd en telt niet mee. Haal het pakket eruit.`, unknownTitle: 'Onbekende code', unknownDetail: c => `${c} bleef onbekend na verversen. Handmatig controleren.`, unverifiedTitle: o => o ? `Order ${o} kon niet worden geverifieerd` : 'Code kon niet worden geverifieerd', unverifiedDetail: c => `${c} telt niet mee. Controleer handmatig voordat het pakket vertrekt.`,
-        total: 'Totaal vandaag', scanned: 'Gescand', open: 'Nog open', noLabel: 'Geen label', afterCutoff: 'Na cutoff', shippedTitle: 'Verzendingen wachten op scan', shippedNote: 'Volledig huidig verzendvenster.', noLabelTitle: 'Orders voor 16:00 zonder label', noLabelNote: 'Label maken of handmatig beoordelen.', tomorrowTitle: 'Orders na 16:00', tomorrowNote: 'Volgend Amsterdams cutoffvenster.', cancelledTitle: 'STOP — geannuleerd', cancelledNote: 'Haal deze pakketten uit de verzending.', stopTitle: 'STOP — controle nodig', stopNote: 'Onbekende of onbevestigde scans tellen nooit mee.',
+        total: 'Pakketten met label', scanned: 'Gescand', open: 'Wachten op scan', noLabel: 'Orders zonder label', afterCutoff: 'Orders na cutoff', shippedTitle: 'Verzendingen wachten op scan', shippedNote: 'Volledig huidig verzendvenster.', noLabelTitle: 'Orders voor 16:00 zonder label', noLabelNote: 'Label maken of handmatig beoordelen.', tomorrowTitle: 'Orders na 16:00', tomorrowNote: 'Volgend Amsterdams cutoffvenster.', cancelledTitle: 'STOP — geannuleerd', cancelledNote: 'Haal deze pakketten uit de verzending.', stopTitle: 'STOP — controle nodig', stopNote: 'Onbekende of onbevestigde scans tellen nooit mee.',
         thOrder: 'Order', thTrack: 'Track & trace', thPlaced: 'Geplaatst', thShipped: 'Verzonden', thItems: 'Items', thStatus: 'Status', thAge: 'Leeftijd', thExpected: 'Verwacht', thFound: 'Gevonden', thReason: 'Reden', openBadge: 'Open', scannedBadge: t => `Gescand ${t}`, laterBadge: 'later', unknownValue: 'onbekend', emptyShipments: 'Geen verzendingen in dit venster.', emptyOrders: 'Geen orders in deze groep.', emptyCancelled: 'Geen geannuleerde pakketten gevonden.', emptyStops: 'Geen scans die handmatige controle nodig hebben.', reasonUnknown: 'Onbekend na verversen', reasonUnverified: 'Live controle mislukt', age: (h,m) => h < 1 ? `${m}m` : `${h}u ${m}m`
       },
       en: {
@@ -394,7 +394,7 @@
         idleStatus: 'Scanner ready. Focus stays on the input.', checking: order => `Live cancellation check · order ${order}`, refreshingUnknown: 'Code not found; refreshing all data once…', queued: n => n ? `${n} scan${n === 1 ? '' : 's'} waiting.` : 'Scanner ready for the next code.', blocked: 'Waiting for a complete, healthy data snapshot.', pausedStatus: 'Scanning stays off until shipment data is complete. Retry now.',
         lastDecision: 'Last decision', idleTitle: 'No parcel scanned yet', idleDetail: 'The result remains here while the next scan is checked.', pausedDecisionKicker: 'SCANNING PAUSED', pausedDecisionTitle: 'Shipment data is incomplete', pausedDecisionDetail: 'Retry before scanning a parcel.', successKicker: 'GO · dispatch', duplicateKicker: 'DUPLICATE · not counted twice', stopKicker: 'STOP · do not dispatch',
         successTitle: o => `Order ${o} cleared`, successDetail: c => `${c} was live checked and counted. Scan the next parcel.`, duplicateTitle: o => `Order ${o} was already scanned`, duplicateDetail: c => `${c} was not counted twice. Scan the next parcel.`, pendingDuplicateTitle: 'Scan already queued', pendingDuplicateDetail: c => `${c} will only be live checked once.`, cancelledDecisionTitle: o => `Order ${o} is cancelled`, cancelledDetail: c => `${c} is blocked and not counted. Remove the parcel.`, unknownTitle: 'Unknown code', unknownDetail: c => `${c} remained unknown after refresh. Review it manually.`, unverifiedTitle: o => o ? `Order ${o} could not be verified` : 'Code could not be verified', unverifiedDetail: c => `${c} is not counted. Review it before dispatch.`,
-        total: 'Total today', scanned: 'Scanned', open: 'Still open', noLabel: 'No label', afterCutoff: 'After cutoff', shippedTitle: 'Shipments awaiting scan', shippedNote: 'Current complete shipment window.', noLabelTitle: 'Orders before 16:00 without label', noLabelNote: 'Create a label or review manually.', tomorrowTitle: 'Orders after 16:00', tomorrowNote: 'Next Amsterdam cutoff window.', cancelledTitle: 'STOP — cancelled', cancelledNote: 'Remove these parcels from dispatch.', stopTitle: 'STOP — needs review', stopNote: 'Unknown or unverifiable scans never count as complete.',
+        total: 'Packages with label', scanned: 'Scanned', open: 'Awaiting scan', noLabel: 'Orders without label', afterCutoff: 'Orders after cutoff', shippedTitle: 'Shipments awaiting scan', shippedNote: 'Current complete shipment window.', noLabelTitle: 'Orders before 16:00 without label', noLabelNote: 'Create a label or review manually.', tomorrowTitle: 'Orders after 16:00', tomorrowNote: 'Next Amsterdam cutoff window.', cancelledTitle: 'STOP — cancelled', cancelledNote: 'Remove these parcels from dispatch.', stopTitle: 'STOP — needs review', stopNote: 'Unknown or unverifiable scans never count as complete.',
         thOrder: 'Order', thTrack: 'Tracking', thPlaced: 'Placed', thShipped: 'Shipped', thItems: 'Items', thStatus: 'Status', thAge: 'Age', thExpected: 'Expected', thFound: 'Found', thReason: 'Reason', openBadge: 'Open', scannedBadge: t => `Scanned ${t}`, laterBadge: 'later', unknownValue: 'unknown', emptyShipments: 'No shipments in this window.', emptyOrders: 'No orders in this group.', emptyCancelled: 'No cancelled parcels found.', emptyStops: 'No scans need manual review.', reasonUnknown: 'Unknown after refresh', reasonUnverified: 'Live check failed', age: (h,m) => h < 1 ? `${m}m` : `${h}h ${m}m`
       },
       es: {
@@ -404,7 +404,7 @@
         idleStatus: 'Escáner listo. El foco permanece en la entrada.', checking: order => `Comprobación de cancelación · pedido ${order}`, refreshingUnknown: 'Código no encontrado; actualizando todos los datos una vez…', queued: n => n ? `${n} escaneo${n === 1 ? '' : 's'} en espera.` : 'Escáner listo para el siguiente código.', blocked: 'Esperando datos completos y sanos.', pausedStatus: 'El escaneo permanece desactivado hasta completar los datos. Reintenta ahora.',
         lastDecision: 'Última decisión', idleTitle: 'Aún no se escaneó ningún paquete', idleDetail: 'El resultado permanece visible mientras se comprueba el siguiente.', pausedDecisionKicker: 'ESCANEO PAUSADO', pausedDecisionTitle: 'Los datos de envíos están incompletos', pausedDecisionDetail: 'Reintenta antes de escanear un paquete.', successKicker: 'ADELANTE · enviar', duplicateKicker: 'DUPLICADO · no contar dos veces', stopKicker: 'PARADA · no enviar',
         successTitle: o => `Pedido ${o} aprobado`, successDetail: c => `${c} fue comprobado y contado. Escanea el siguiente.`, duplicateTitle: o => `Pedido ${o} ya estaba escaneado`, duplicateDetail: c => `${c} no se contó dos veces. Escanea el siguiente.`, pendingDuplicateTitle: 'Escaneo ya en cola', pendingDuplicateDetail: c => `${c} solo se comprobará una vez.`, cancelledDecisionTitle: o => `Pedido ${o} cancelado`, cancelledDetail: c => `${c} está bloqueado y no cuenta. Retira el paquete.`, unknownTitle: 'Código desconocido', unknownDetail: c => `${c} siguió desconocido tras actualizar. Revísalo manualmente.`, unverifiedTitle: o => o ? `No se pudo verificar el pedido ${o}` : 'No se pudo verificar el código', unverifiedDetail: c => `${c} no cuenta. Revísalo antes del envío.`,
-        total: 'Total de hoy', scanned: 'Escaneados', open: 'Pendientes', noLabel: 'Sin etiqueta', afterCutoff: 'Tras el corte', shippedTitle: 'Envíos pendientes de escaneo', shippedNote: 'Ventana completa de envíos actual.', noLabelTitle: 'Pedidos antes de las 16:00 sin etiqueta', noLabelNote: 'Crear etiqueta o revisar.', tomorrowTitle: 'Pedidos después de las 16:00', tomorrowNote: 'Siguiente ventana de Ámsterdam.', cancelledTitle: 'PARADA — cancelado', cancelledNote: 'Retira estos paquetes.', stopTitle: 'PARADA — revisar', stopNote: 'Los escaneos desconocidos o no verificables nunca cuentan.',
+        total: 'Paquetes con etiqueta', scanned: 'Escaneados', open: 'Por escanear', noLabel: 'Pedidos sin etiqueta', afterCutoff: 'Pedidos tras el corte', shippedTitle: 'Envíos pendientes de escaneo', shippedNote: 'Ventana completa de envíos actual.', noLabelTitle: 'Pedidos antes de las 16:00 sin etiqueta', noLabelNote: 'Crear etiqueta o revisar.', tomorrowTitle: 'Pedidos después de las 16:00', tomorrowNote: 'Siguiente ventana de Ámsterdam.', cancelledTitle: 'PARADA — cancelado', cancelledNote: 'Retira estos paquetes.', stopTitle: 'PARADA — revisar', stopNote: 'Los escaneos desconocidos o no verificables nunca cuentan.',
         thOrder: 'Pedido', thTrack: 'Seguimiento', thPlaced: 'Realizado', thShipped: 'Enviado', thItems: 'Artículos', thStatus: 'Estado', thAge: 'Edad', thExpected: 'Previsto', thFound: 'Detectado', thReason: 'Motivo', openBadge: 'Pendiente', scannedBadge: t => `Escaneado ${t}`, laterBadge: 'posterior', unknownValue: 'desconocido', emptyShipments: 'No hay envíos en esta ventana.', emptyOrders: 'No hay pedidos en este grupo.', emptyCancelled: 'No se encontraron paquetes cancelados.', emptyStops: 'Ningún escaneo necesita revisión.', reasonUnknown: 'Desconocido tras actualizar', reasonUnverified: 'Falló el control en vivo', age: (h,m) => h < 1 ? `${m}m` : `${h}h ${m}m`
       }
     };
@@ -522,7 +522,10 @@
     }
 
     function blankWorkState(workday = scannerWorkdayKey()) { return { workday, records: [], scanned: {}, cancelled: [], stops: [] }; }
-    function sourceAccount(value) { return ['primary', 'secondary'].includes(plainText(value)) ? plainText(value) : null; }
+    function sourceAccount(value) {
+      const account = plainText(value);
+      return /^(?:primary|secondary|acct_[A-Za-z0-9_-]{22})$/.test(account) ? account : null;
+    }
 
     function normalizeSharedState(payload) {
       const raw = payload && payload.state ? payload.state : payload;
@@ -1183,12 +1186,12 @@
     function renderSummary(groups) {
       const source = activeSnapshot();
       const state = scopedState();
-      const shipments = source ? source.shipments : [];
-      const scanned = shipments.filter(item => state.scanned[item.trackAndTrace]).length;
-      const total = groups.before.length + shipments.length;
-      el('totalCount').textContent = String(total);
-      el('scannedCount').textContent = String(scanned);
-      el('openCount').textContent = String(total - scanned);
+      const packages = source ? source.shipments.filter(item => Boolean(item.trackAndTrace)) : [];
+      const accepted = packages.filter(item => state.scanned[item.trackAndTrace]).length;
+      const awaiting = packages.filter(item => !state.scanned[item.trackAndTrace] && !recordedCancellation(item.trackAndTrace, state)).length;
+      el('totalCount').textContent = String(packages.length);
+      el('scannedCount').textContent = String(accepted);
+      el('openCount').textContent = String(awaiting);
       el('noLabelCount').textContent = String(groups.before.length);
       el('tomorrowCount').textContent = String(groups.after.length);
     }
@@ -1246,6 +1249,23 @@
       return { stationId, operatorLabel, expiresAt };
     }
 
+    function prefillSessionLabels(session) {
+      if (!session) return;
+      el('stationId').value = session.stationId;
+      el('operatorLabel').value = session.operatorLabel;
+      el('warehousePassword').value = '';
+    }
+
+    function prefillRememberedSession(payload) {
+      if (!payload || payload.authenticated !== false) return;
+      el('warehousePassword').value = '';
+      if (!payload.remembered || typeof payload.remembered !== 'object') return;
+      const stationId = plainText(payload.remembered.stationId).trim();
+      const operatorLabel = plainText(payload.remembered.operatorLabel).trim();
+      if (stationId && stationId.length <= 64) el('stationId').value = stationId;
+      if (operatorLabel && operatorLabel.length <= 64) el('operatorLabel').value = operatorLabel;
+    }
+
     async function openAuthenticatedStation() {
       app.phase = 'loading';
       app.progress = tx().loading;
@@ -1263,7 +1283,8 @@
         const payload = await requestJson('/api/session');
         if (payload.logoutPending === true) { safeLogoutPendingSet(true); expireSession('logoutFailed'); return; }
         const session = sessionFromPayload(payload);
-        if (!session) { expireSession('signedOut'); return; }
+        if (!session) { prefillRememberedSession(payload); expireSession('signedOut'); return; }
+        prefillSessionLabels(session);
         app.sessionGeneration += 1;
         app.session = session;
         app.accessPhase = 'authenticated';

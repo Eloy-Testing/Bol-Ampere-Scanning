@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { createApplication, createWebRoute, statePayload } from '../../server/application.mjs';
 import { BolCredentialsRejectedError, DatabaseError } from '../../server/errors.mjs';
-import { hashPassword, signSessionToken, tokenHash } from '../../server/security.mjs';
+import { hashPassword, signPreference, signSessionToken, tokenHash } from '../../server/security.mjs';
 import { databaseFixture, invoke, mutationHeaders } from './helpers.mjs';
 
 async function configFixture() {
@@ -11,6 +11,7 @@ async function configFixture() {
     passwordHash: await hashPassword('warehouse password fixture'),
     secureCookies: false,
     sessionTtlSeconds: 3600,
+    preferenceTtlSeconds: 30 * 24 * 60 * 60,
     authWindowSeconds: 900,
     authLockSeconds: 900,
     authFailureLimit: 5,
@@ -41,6 +42,12 @@ function cookiePair(setCookie) {
   return String(setCookie).split(';')[0];
 }
 
+function namedCookiePair(setCookie, name) {
+  const cookies = Array.isArray(setCookie) ? setCookie : [setCookie];
+  const match = cookies.find((cookie) => String(cookie).startsWith(`${name}=`));
+  return match ? String(match).split(';')[0] : null;
+}
+
 test('state projection retains non-secret source provenance for scoped cancellation and STOP rendering', () => {
   const payload = statePayload('2026-08-05', [
     { trackingCode: 'PRIMARY-CANCELLED', orderId: 'ORDER-1', sourceAccount: 'primary', outcome: 'cancelled', cancelledAt: '2026-08-05T10:00:00.000Z', updatedAt: '2026-08-05T10:00:00.000Z' },
@@ -48,6 +55,48 @@ test('state projection retains non-secret source provenance for scoped cancellat
   ]);
   assert.equal(payload.cancelled[0].sourceAccount, 'primary');
   assert.equal(payload.stops[0].sourceAccount, null);
+});
+
+test('successful password login alone issues a normalized non-authentication preference', async () => {
+  const config = await configFixture();
+  let createdSession;
+  const app = createApplication({
+    config,
+    repository: {
+      getLockout: async () => null,
+      clearAuthFailures: async () => {},
+      createSession: async (session) => { createdSession = session; },
+    },
+    bolClient: {},
+    now: () => new Date('2026-08-05T10:00:00.000Z'),
+    requestId: () => 'request-preference-login',
+  });
+  const login = await invoke(app.session, {
+    method: 'POST',
+    body: { stationId: ' PACK-01 ', operatorLabel: 'Alex   Smith', password: 'warehouse password fixture' },
+    headers: mutationHeaders(),
+  });
+  assert.equal(login.statusCode, 200);
+  assert.deepEqual(login.body.session, {
+    stationId: 'PACK-01',
+    operatorLabel: 'Alex Smith',
+    expiresAt: '2026-08-05T11:00:00.000Z',
+  });
+  assert.equal(createdSession.stationId, 'PACK-01');
+  assert.equal(createdSession.operatorLabel, 'Alex Smith');
+  assert.deepEqual(
+    login.headers['set-cookie'].map((cookie) => String(cookie).split('=')[0]),
+    ['ampere_session', 'ampere_preference', 'ampere_logout_pending'],
+  );
+  assert.doesNotMatch(String(login.headers['set-cookie']), /warehouse password fixture/);
+
+  const preference = namedCookiePair(login.headers['set-cookie'], 'ampere_preference');
+  const remembered = await invoke(app.session, { method: 'GET', headers: { cookie: preference } });
+  assert.deepEqual(remembered.body, {
+    authenticated: false,
+    remembered: { stationId: 'PACK-01', operatorLabel: 'Alex Smith' },
+  });
+  assert.equal(remembered.headers['set-cookie'], undefined);
 });
 
 test('actual handlers sign in, hydrate, read bol, verify a scan, persist it, and revoke', async (t) => {
@@ -71,6 +120,8 @@ test('actual handlers sign in, hydrate, read bol, verify a scan, persist it, and
   assert.equal(login.body.authenticated, true);
   assert.doesNotMatch(String(login.headers['set-cookie']), /warehouse password fixture/);
   const cookie = cookiePair(login.headers['set-cookie']);
+  const preference = namedCookiePair(login.headers['set-cookie'], 'ampere_preference');
+  assert.ok(preference);
 
   const initial = await invoke(app.state, { method: 'GET', url: '/api/state', headers: { cookie } });
   assert.equal(initial.statusCode, 200);
@@ -126,8 +177,75 @@ test('actual handlers sign in, hydrate, read bol, verify a scan, persist it, and
   });
   assert.equal(logout.statusCode, 200);
   assert.match(String(logout.headers['set-cookie']), /Max-Age=0/);
-  const afterLogout = await invoke(app.session, { method: 'GET', headers: { cookie } });
-  assert.deepEqual(afterLogout.body, { authenticated: false });
+  assert.doesNotMatch(String(logout.headers['set-cookie']), /ampere_preference/);
+  const afterLogout = await invoke(app.session, { method: 'GET', headers: { cookie: preference } });
+  assert.deepEqual(afterLogout.body, {
+    authenticated: false,
+    remembered: { stationId: 'PACK-01', operatorLabel: 'Alex' },
+  });
+  assert.equal(afterLogout.headers['set-cookie'], undefined);
+});
+
+test('unauthenticated session lookup ignores malformed, tampered, and expired preferences without creating a session', async () => {
+  const config = await configFixture();
+  const now = () => new Date('2026-08-05T10:00:00.000Z');
+  let sessionLookups = 0;
+  const app = createApplication({
+    config,
+    repository: { getSession: async () => { sessionLookups += 1; return null; } },
+    bolClient: {},
+    now,
+  });
+  const valid = signPreference(
+    { stationId: 'PACK-01', operatorLabel: 'Alex' },
+    config.sessionSecret,
+    new Date('2026-08-06T10:00:00.000Z'),
+  );
+  const expired = signPreference(
+    { stationId: 'PACK-OLD', operatorLabel: 'Former Operator' },
+    config.sessionSecret,
+    new Date('2026-08-05T09:59:59.000Z'),
+  );
+
+  const remembered = await invoke(app.session, { method: 'GET', headers: { cookie: `ampere_preference=${valid}` } });
+  assert.deepEqual(remembered.body, {
+    authenticated: false,
+    remembered: { stationId: 'PACK-01', operatorLabel: 'Alex' },
+  });
+  assert.equal(remembered.headers['set-cookie'], undefined);
+
+  for (const value of [`${valid.slice(0, -1)}x`, expired, 'malformed']) {
+    const response = await invoke(app.session, { method: 'GET', headers: { cookie: `ampere_preference=${value}` } });
+    assert.deepEqual(response.body, { authenticated: false });
+    assert.equal(response.headers['set-cookie'], undefined);
+  }
+  assert.equal(sessionLookups, 0);
+});
+
+test('failed password login neither issues nor refreshes a remembered preference', async () => {
+  const config = await configFixture();
+  const prior = signPreference(
+    { stationId: 'PACK-01', operatorLabel: 'Alex' },
+    config.sessionSecret,
+    new Date('2026-08-06T10:00:00.000Z'),
+  );
+  const app = createApplication({
+    config,
+    repository: {
+      getLockout: async () => null,
+      recordAuthFailure: async () => ({ failedCount: 1, lockedUntil: null }),
+    },
+    bolClient: {},
+    now: () => new Date('2026-08-05T10:00:00.000Z'),
+  });
+  const response = await invoke(app.session, {
+    method: 'POST',
+    body: { stationId: 'PACK-02', operatorLabel: 'Mallory', password: 'wrong password' },
+    headers: mutationHeaders(`ampere_preference=${prior}`),
+  });
+  assert.equal(response.statusCode, 401);
+  assert.equal(response.headers['set-cookie'], undefined);
+  assert.doesNotMatch(response.rawBody, /PACK-01|Alex|PACK-02|Mallory|wrong password/);
 });
 
 test('mutations reject cross-origin requests before authentication work', async () => {
@@ -164,31 +282,79 @@ test('database failures are generic, fail closed, and carry no-store headers', a
   assert.equal(response.headers['cache-control'], 'no-store, max-age=0');
 });
 
-test('failed logout retains the revocation credential and locks normal session use', async () => {
+test('failed logout retains auth and preference, blocks normal use, and clears auth only after a successful retry', async () => {
   const config = await configFixture();
   const token = 'a'.repeat(43);
+  const signedSession = signSessionToken(token, config.sessionSecret);
+  const signedPreference = signPreference(
+    { stationId: 'PACK-01', operatorLabel: 'Alex' },
+    config.sessionSecret,
+    new Date('2026-08-06T10:00:00.000Z'),
+  );
+  let revokeAttempts = 0;
+  let sessionLookups = 0;
   const app = createApplication({
     config,
     repository: {
-      getSession: async () => ({ tokenHash: token, stationId: 'PACK-01', principalId: 'operator-1' }),
-      revokeSession: async () => { throw new DatabaseError(); },
+      getSession: async () => {
+        sessionLookups += 1;
+        return { tokenHash: tokenHash(token), stationId: 'PACK-01', operatorLabel: 'Alex', principalId: 'operator-1' };
+      },
+      revokeSession: async () => {
+        revokeAttempts += 1;
+        if (revokeAttempts === 1) throw new DatabaseError();
+      },
     },
     bolClient: {},
+    now: () => new Date('2026-08-05T10:00:00.000Z'),
   });
+  const initialCookies = `ampere_session=${signedSession}; ampere_preference=${signedPreference}`;
   const response = await invoke(app.session, {
     method: 'DELETE',
-    headers: mutationHeaders(`ampere_session=${signSessionToken(token, config.sessionSecret)}`),
+    headers: mutationHeaders(initialCookies),
   });
   assert.equal(response.statusCode, 503);
   assert.equal(response.body.error.code, 'database_unavailable');
   assert.match(response.headers['set-cookie'], /ampere_logout_pending=1/);
   assert.doesNotMatch(response.headers['set-cookie'], /ampere_session=.*Max-Age=0/);
+  assert.doesNotMatch(response.headers['set-cookie'], /ampere_preference/);
 
   const pending = await invoke(app.session, {
     method: 'GET',
-    headers: { cookie: `ampere_session=${signSessionToken(token, config.sessionSecret)}; ampere_logout_pending=1` },
+    headers: { cookie: `${initialCookies}; ampere_logout_pending=1` },
   });
-  assert.deepEqual(pending.body, { authenticated: false, logoutPending: true });
+  assert.deepEqual(pending.body, {
+    authenticated: false,
+    logoutPending: true,
+    remembered: { stationId: 'PACK-01', operatorLabel: 'Alex' },
+  });
+  assert.equal(sessionLookups, 1);
+
+  const blocked = await invoke(app.state, {
+    method: 'GET',
+    headers: { cookie: `${initialCookies}; ampere_logout_pending=1` },
+  });
+  assert.equal(blocked.statusCode, 401);
+  assert.equal(sessionLookups, 1);
+
+  const retried = await invoke(app.session, {
+    method: 'DELETE',
+    headers: mutationHeaders(`${initialCookies}; ampere_logout_pending=1`),
+  });
+  assert.equal(retried.statusCode, 200);
+  assert.match(String(retried.headers['set-cookie']), /ampere_session=.*Max-Age=0/);
+  assert.match(String(retried.headers['set-cookie']), /ampere_logout_pending=.*Max-Age=0/);
+  assert.doesNotMatch(String(retried.headers['set-cookie']), /ampere_preference/);
+  assert.equal(revokeAttempts, 2);
+
+  const signedOut = await invoke(app.session, {
+    method: 'GET',
+    headers: { cookie: `ampere_preference=${signedPreference}` },
+  });
+  assert.deepEqual(signedOut.body, {
+    authenticated: false,
+    remembered: { stationId: 'PACK-01', operatorLabel: 'Alex' },
+  });
 });
 
 test('locked login performs no password work or audit write', async () => {

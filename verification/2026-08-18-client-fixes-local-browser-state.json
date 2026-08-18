@@ -1,0 +1,47 @@
+{
+  "schema_version": "browser-state.v1",
+  "task_id": "2026-08-18-client-fixes-local",
+  "artifact_path": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/index.html",
+  "artifact_sha256": "f5648f0aed380e1333fc8bd8be2458f0954dfa8739aed99baf498f7c703f554d",
+  "captured_at": "2026-08-18T09:46:42Z",
+  "route": "/index.html",
+  "viewports": ["1440x980", "390x900"],
+  "states_checked": [
+    "remembered unauthenticated login",
+    "accepted package counts",
+    "cancelled package counts",
+    "all localized metric labels",
+    "exact 16:00 rollover",
+    "dynamic account refresh and reload",
+    "logout and session-expiry focus"
+  ],
+  "interactions": {
+    "remembered_fields_editable": true,
+    "password_blank_and_focused": true,
+    "scan_enter_flow_preserved": true,
+    "logout_returns_to_password": true
+  },
+  "content_truth": {
+    "packages_with_label": 4,
+    "scanned": 1,
+    "awaiting_scan_before_cancellation": 3,
+    "awaiting_scan_after_cancellation": 2,
+    "orders_without_label": 1,
+    "orders_after_cutoff": 1
+  },
+  "checks": {
+    "scroll_complete": true,
+    "page_level_overflow": false,
+    "console_errors": [],
+    "page_errors": [],
+    "desktop_metric_cards_legible": true,
+    "mobile_metric_cards_legible": true,
+    "password_visible_or_persisted": false
+  },
+  "inspection": {
+    "inspector": "codex-main",
+    "method": "current full-page Playwright screenshots inspected directly after the latest index.html change",
+    "visible_defects": [],
+    "verdict": "PASS"
+  }
+}

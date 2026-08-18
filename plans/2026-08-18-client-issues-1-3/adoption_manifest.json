@@ -1,0 +1,50 @@
+{
+  "schema_version": "creative-framework.adoption.v2",
+  "task_id": "2026-08-18-client-fixes-local",
+  "surface_kind": "browser_visible",
+  "plan_review_mode": "advisory",
+  "framework_control_root": "/Users/zanderbrilleman/Documents/Codex/2026-07-06/co",
+  "active_project_root": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker",
+  "contracts": {
+    "retrieval": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/plans/2026-08-18-client-issues-1-3/retrieval_contract.json",
+    "design": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/plans/2026-08-18-client-issues-1-3/design_contract.md",
+    "implementation_plan": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/plans/2026-08-18-client-issues-1-3/implementation_plan.md",
+    "review_packet": null,
+    "plan_review": null,
+    "interface_output": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/plans/2026-08-18-client-issues-1-3/interface_output_contract.json"
+  },
+  "contract_sha256": {
+    "retrieval": "edfae3a2dec86ee08a30084eadf602ebc441cb22d0d14ac881d48fea70586726",
+    "design": "89f4b928ae8dfa90ac3d15904a70c4b85b17e61885f782f5eef0b9a12a9a51d3",
+    "implementation_plan": "7ad06714ba522bc01233cf538ad6b2d0589bef23f429dcfed4c382a181fb58f9",
+    "interface_output": "bad8b704e6dcfc88f760cb215644424cf3da4b8288e0461781761b98b41a9b08"
+  },
+  "artifact": {
+    "path": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/index.html",
+    "sha256": "f5648f0aed380e1333fc8bd8be2458f0954dfa8739aed99baf498f7c703f554d"
+  },
+  "verification": {
+    "visual_evidence": [
+      {
+        "path": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/verification/screenshot-evidence/2026-08-18-client-fixes-remembered-login-desktop.png",
+        "sha256": "4fccc19f34b5800661b1b23fa56df71c7d3c6786189ffc0e2cefa5201ddca3f9",
+        "viewport": "desktop"
+      },
+      {
+        "path": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/verification/screenshot-evidence/2026-08-18-client-fixes-package-metrics-desktop.png",
+        "sha256": "c614653675e0ffc3403b720195564b6f96ef36d3c0118e99e5af873b3ad931a5",
+        "viewport": "desktop"
+      },
+      {
+        "path": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/verification/screenshot-evidence/2026-08-18-client-fixes-package-metrics-mobile.png",
+        "sha256": "097aed6e94dcc1398e634119895c3bf0d24a0661e50d95eb642ec0fc178c8394",
+        "viewport": "mobile"
+      }
+    ],
+    "visual_outcome_review": {
+      "path": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/verification/2026-08-18-client-fixes-local-visual-outcome-review.json",
+      "sha256": "9d863a5e9045402362559babd418e6d4c5586f9aa73135b632d7bfdd2834b74d",
+      "status": "PASS"
+    }
+  }
+}

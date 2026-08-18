@@ -68,13 +68,40 @@ function failureMatches(rule, call, priorCalls) {
   return rule.fromCall == null || priorCalls.filter((entry) => entry.kind === call.kind).length >= rule.fromCall;
 }
 
+function isTerminalRecord(record) {
+  return ['success', 'accepted', 'cancelled'].includes(record?.outcome);
+}
+
+function projectedRecords(state) {
+  const current = [...(state.recordsByWorkday.get(state.workday) || [])];
+  const historicalTerminals = new Map();
+  const previousDate = new Date(`${state.workday}T00:00:00.000Z`);
+  previousDate.setUTCDate(previousDate.getUTCDate() - 1);
+  const previousWorkday = previousDate.toISOString().slice(0, 10);
+  for (const record of state.recordsByWorkday.get(previousWorkday) || []) {
+    if (isTerminalRecord(record)) historicalTerminals.set(record.trackingCode, record);
+  }
+  const projected = current.map((record) => {
+    if (isTerminalRecord(record)) {
+      historicalTerminals.delete(record.trackingCode);
+      return record;
+    }
+    const terminal = historicalTerminals.get(record.trackingCode);
+    if (!terminal) return record;
+    historicalTerminals.delete(record.trackingCode);
+    return terminal;
+  });
+  projected.push(...historicalTerminals.values());
+  return projected;
+}
+
 function currentCanonicalState(state) {
-  const records = [...(state.recordsByWorkday.get(state.workday) || [])];
+  const records = projectedRecords(state);
   const scanned = {};
   const cancelled = [];
   const stops = [];
   for (const record of records) {
-    if (record.outcome === 'success') scanned[record.trackingCode] = record.recordedAt;
+    if (record.outcome === 'success' || record.outcome === 'accepted') scanned[record.trackingCode] = record.recordedAt;
     else if (record.outcome === 'cancelled') cancelled.push({ code: record.trackingCode, orderId: record.orderId, time: record.recordedAt, sourceAccount: record.sourceAccount || null });
     else if (record.outcome === 'unknown' || record.outcome === 'unverified') stops.push({ code: record.trackingCode, orderId: record.orderId, reason: record.outcome, time: record.recordedAt, sourceAccount: record.sourceAccount || null });
   }
@@ -100,6 +127,7 @@ export const test = base.extend({
         operatorLabel: cloned.session?.operatorLabel || 'Warehouse operator',
         expiresAt: cloned.session?.expiresAt || '2026-08-05T18:00:00Z',
       },
+      remembered: cloned.remembered && typeof cloned.remembered === 'object' ? { ...cloned.remembered } : null,
       password: cloned.password || 'warehouse-pass',
       activeSnapshot: cloned.activeSnapshot || 0,
       workday: cloned.workday || '2026-08-05',
@@ -187,7 +215,9 @@ export const test = base.extend({
         call.finishedAt = Date.now();
         await jsonResponse(route, state.logoutPending
           ? { authenticated: false, logoutPending: true }
-          : state.authenticated ? { authenticated: true, session: state.session } : { authenticated: false });
+          : state.authenticated
+            ? { authenticated: true, session: state.session }
+            : { authenticated: false, ...(state.remembered ? { remembered: state.remembered } : {}) });
         return;
       }
       if (url.pathname === '/api/session' && method === 'POST') {
@@ -205,6 +235,7 @@ export const test = base.extend({
         }
         state.authenticated = true;
         state.session = { stationId: body.stationId, operatorLabel: body.operatorLabel, expiresAt: state.session.expiresAt };
+        state.remembered = { stationId: body.stationId, operatorLabel: body.operatorLabel };
         call.finishedAt = Date.now();
         await jsonResponse(route, { authenticated: true, session: state.session });
         return;
@@ -325,6 +356,7 @@ export const test = base.extend({
         const records = state.recordsByWorkday.get(state.workday) || [];
         const existingIndex = records.findIndex((entry) => entry.trackingCode === trackingCode);
         const existing = records[existingIndex];
+        const terminal = projectedRecords(state).find((entry) => entry.trackingCode === trackingCode && isTerminalRecord(entry));
         const shipmentItemIds = new Set((detail?.shipmentItems || []).map((item) => item.orderItemId));
         const relevantVerifierItems = (verifier?.orderItems || []).filter((item) => shipmentItemIds.has(item.orderItemId));
         const hasRelevantCancellation = relevantVerifierItems.some((item) => item.cancellationRequest === true || item.cancellationRequested === true || Number(item.quantityCancelled || 0) > 0);
@@ -333,7 +365,8 @@ export const test = base.extend({
         else if (detail && body?.shipmentId !== detail.shipmentId) outcome = 'unverified';
         else if (verifier?.fail) outcome = 'unverified';
         else if (detail && (hasRelevantCancellation || (verifier?.cancelled && relevantVerifierItems.length === 0))) outcome = 'cancelled';
-        else if (detail && existing?.outcome === 'success') outcome = 'duplicate';
+        else if (detail && ['success', 'accepted'].includes(terminal?.outcome)) outcome = 'duplicate';
+        else if (detail && terminal?.outcome === 'cancelled') outcome = 'cancelled';
         else if (detail) outcome = 'success';
         const canonicalOutcome = outcome === 'duplicate' ? 'success' : outcome;
         const record = {
@@ -344,7 +377,7 @@ export const test = base.extend({
           outcome: canonicalOutcome,
           recordedAt: new Date().toISOString(),
         };
-        if (!existing || outcome === 'cancelled' || !['success', 'cancelled'].includes(existing.outcome)) {
+        if (!terminal && (!existing || outcome === 'cancelled' || !['success', 'accepted', 'cancelled'].includes(existing.outcome))) {
           if (existingIndex >= 0) records[existingIndex] = record;
           else records.unshift(record);
           state.recordsByWorkday.set(state.workday, records);
@@ -417,7 +450,10 @@ export { expect };
 export async function waitForSignedOut(page) {
   await expect(page.locator(selectors.accessGate)).toBeVisible();
   await expect(page.locator(selectors.accessForm)).toBeVisible();
-  await expect(page.locator('#stationId')).toBeFocused();
+  const stationId = await page.locator('#stationId').inputValue();
+  const operatorLabel = await page.locator('#operatorLabel').inputValue();
+  const nextRequiredField = !stationId ? '#stationId' : !operatorLabel ? '#operatorLabel' : '#warehousePassword';
+  await expect(page.locator(nextRequiredField)).toBeFocused();
 }
 
 export async function signIn(page, { stationId = 'PACK-01', operatorLabel = 'Warehouse operator', password = 'warehouse-pass' } = {}) {

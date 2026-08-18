@@ -72,6 +72,7 @@ export function loadConfig(env = process.env) {
     nodeEnv: env.NODE_ENV || 'production',
     secureCookies: (env.NODE_ENV || 'production') !== 'test',
     sessionTtlSeconds: 8 * 60 * 60,
+    preferenceTtlSeconds: 90 * 24 * 60 * 60,
     authWindowSeconds: 15 * 60,
     authLockSeconds: 15 * 60,
     authFailureLimit: 5,

@@ -217,6 +217,75 @@ test.describe('session gate', () => {
   });
 });
 
+test.describe('remembered station labels', () => {
+  test.use({ scenario: healthyScenario({
+    authenticated: false,
+    remembered: { stationId: 'PACK-REMEMBERED', operatorLabel: 'Morning operator' },
+  }) });
+
+  test('prefills only station and operator while requiring a fresh warehouse password', async ({ page }) => {
+    await expect(page.locator(selectors.accessGate)).toBeVisible();
+    await expect(page.locator('#stationId')).toHaveValue('PACK-REMEMBERED');
+    await expect(page.locator('#operatorLabel')).toHaveValue('Morning operator');
+    await expect(page.locator('#warehousePassword')).toHaveValue('');
+    await expect(page.locator('#warehousePassword')).toHaveAttribute('required', '');
+    await expect(page.locator('#warehousePassword')).toBeFocused();
+
+    const storage = await page.evaluate(() => JSON.stringify({ local: { ...localStorage }, session: { ...sessionStorage } }));
+    expect(storage).not.toContain('PACK-REMEMBERED');
+    expect(storage).not.toContain('Morning operator');
+
+    await page.locator('#warehousePassword').fill('warehouse-pass');
+    await page.locator('#loginButton').click();
+    await waitForReady(page);
+    await expect(page.locator('#sessionLabel')).toContainText('PACK-REMEMBERED · Morning operator');
+  });
+});
+
+test.describe('package-grain summary', () => {
+  const primary = snapshot({
+    orders: [
+      orderSummary({ orderId: 'NO-LABEL-BEFORE', placedAt: '2026-08-05T08:00:00Z' }),
+      orderSummary({ orderId: 'AFTER-CUTOFF', placedAt: '2026-08-05T15:00:00Z' }),
+    ],
+    parcels: [
+      parcel({ n: 1, track: 'ACCEPTED-PACKAGE' }),
+      parcel({ n: 2, track: 'CANCELLED-PACKAGE' }),
+      parcel({ n: 3, track: 'AWAITING-PACKAGE' }),
+    ],
+  });
+  test.use({ scenario: healthyScenario({
+    snapshots: [primary],
+    records: [
+      { trackingCode: 'ACCEPTED-PACKAGE', orderId: 'ORDER-1', sourceAccount: 'primary', outcome: 'success', recordedAt: '2026-08-05T09:30:00Z' },
+      { trackingCode: 'CANCELLED-PACKAGE', orderId: 'ORDER-2', sourceAccount: 'primary', outcome: 'cancelled', recordedAt: '2026-08-05T09:31:00Z' },
+    ],
+  }) });
+
+  test('keeps shipment-package metrics separate from open-order counts in every language', async ({ page }) => {
+    await waitForReady(page);
+    await expect(page.locator('#totalCount')).toHaveText('3');
+    await expect(page.locator('#scannedCount')).toHaveText('1');
+    await expect(page.locator('#openCount')).toHaveText('1');
+    await expect(page.locator('#noLabelCount')).toHaveText('1');
+    await expect(page.locator('#tomorrowCount')).toHaveText('1');
+
+    const labels = {
+      nl: ['Pakketten met label', 'Gescand', 'Wachten op scan', 'Orders zonder label', 'Orders na cutoff'],
+      en: ['Packages with label', 'Scanned', 'Awaiting scan', 'Orders without label', 'Orders after cutoff'],
+      es: ['Paquetes con etiqueta', 'Escaneados', 'Por escanear', 'Pedidos sin etiqueta', 'Pedidos tras el corte'],
+    };
+    for (const [language, expected] of Object.entries(labels)) {
+      await page.locator(`#langSwitch button[data-lang="${language}"]`).click();
+      await expect(page.locator('#totalLabel')).toHaveText(expected[0]);
+      await expect(page.locator('#scannedLabel')).toHaveText(expected[1]);
+      await expect(page.locator('#openLabel')).toHaveText(expected[2]);
+      await expect(page.locator('#noLabelLabel')).toHaveText(expected[3]);
+      await expect(page.locator('#tomorrowLabel')).toHaveText(expected[4]);
+    }
+  });
+});
+
 test('session expiry clears operational state and returns focus to the gate', async ({ page }) => {
   await waitForReady(page);
   await page.evaluate(() => window.__apiMock.expireSession());
@@ -224,7 +293,10 @@ test('session expiry clears operational state and returns focus to the gate', as
   await expect(page.locator(selectors.accessGate)).toBeVisible();
   await expect(page.locator(selectors.authStatus)).toContainText(/expired/i);
   await expect(page.locator(selectors.operationalSurface)).toBeHidden();
-  await expect(page.locator('#stationId')).toBeFocused();
+  await expect(page.locator('#stationId')).toHaveValue('PACK-01');
+  await expect(page.locator('#operatorLabel')).toHaveValue('Warehouse operator');
+  await expect(page.locator('#warehousePassword')).toHaveValue('');
+  await expect(page.locator('#warehousePassword')).toBeFocused();
 });
 
 test.describe('session expiry during scanner input', () => {
@@ -258,6 +330,10 @@ test('logout hides retailer data and returns to the station gate', async ({ page
   await page.locator('#logoutButton').click();
   await waitForSignedOut(page);
   await expect(page.locator(selectors.operationalSurface)).toBeHidden();
+  await expect(page.locator('#stationId')).toHaveValue('PACK-01');
+  await expect(page.locator('#operatorLabel')).toHaveValue('Warehouse operator');
+  await expect(page.locator('#warehousePassword')).toHaveValue('');
+  await expect(page.locator('#warehousePassword')).toBeFocused();
 });
 
 test.describe('logout failure', () => {

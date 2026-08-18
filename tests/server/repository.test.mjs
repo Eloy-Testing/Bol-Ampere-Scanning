@@ -17,6 +17,9 @@ test('migration is idempotent and creates only ampere application objects', asyn
   const columns = await client.execute('PRAGMA table_info(ampere_package_state)');
   assert.ok(columns.rows.some((row) => row.name === 'source_account'));
   assert.ok(columns.rows.some((row) => row.name === 'source_account_key'));
+  const rolloverColumns = await client.execute('PRAGMA table_info(ampere_package_state_v2)');
+  assert.ok(rolloverColumns.rows.some((row) => row.name === 'identity_source'));
+  assert.ok(rolloverColumns.rows.some((row) => row.name === 'identity_shipment'));
 });
 
 test('numbered migration upgrades a pre-002 ampere schema exactly once', async (t) => {
@@ -34,6 +37,7 @@ test('numbered migration upgrades a pre-002 ampere schema exactly once', async (
     '001_ampere_scanner.sql',
     '002_ampere_source_account.sql',
     '003_ampere_dynamic_bol_accounts.sql',
+    '004_ampere_rollover_state.sql',
   ]);
 });
 
@@ -145,6 +149,230 @@ test('atomic state counts an accepted package once and cancellation cannot be do
   const events = await client.execute('SELECT source_account, attempted_outcome, effective_outcome FROM ampere_scan_events ORDER BY event_id');
   assert.equal(events.rows.length, 4);
   assert.deepEqual(events.rows.at(-1), { source_account: 'primary', attempted_outcome: 'unverified', effective_outcome: 'cancelled' });
+});
+
+test('workday rollover projects only the immediately previous terminal package state', async (t) => {
+  const { repository } = await databaseFixture(t);
+  const base = {
+    shipmentId: 'SHIPMENT-ROLLOVER',
+    orderId: 'ORDER-ROLLOVER',
+    sourceAccount: 'primary',
+    reason: 'verified_live',
+    stationId: 'PACK-01',
+    principalId: 'operator-1',
+    sessionTokenHash: 'token-hash',
+    now: new Date('2026-08-17T13:59:00.000Z'),
+  };
+  await repository.recordScanDecision({
+    ...base,
+    workday: '2026-08-17',
+    trackingCode: 'TERMINAL-PREVIOUS',
+    outcome: 'accepted',
+    requestId: 'request-previous-terminal',
+  });
+  await repository.recordScanDecision({
+    ...base,
+    workday: '2026-08-17',
+    trackingCode: 'STOP-PREVIOUS',
+    shipmentId: null,
+    orderId: null,
+    sourceAccount: null,
+    outcome: 'unverified',
+    reason: 'live_verification_failed',
+    requestId: 'request-previous-stop',
+  });
+  await repository.recordScanDecision({
+    ...base,
+    workday: '2026-08-16',
+    trackingCode: 'TERMINAL-TOO-OLD',
+    outcome: 'accepted',
+    requestId: 'request-too-old',
+  });
+  await repository.recordScanDecision({
+    ...base,
+    workday: '2026-08-18',
+    trackingCode: 'STOP-CURRENT',
+    shipmentId: null,
+    orderId: null,
+    sourceAccount: null,
+    outcome: 'unknown',
+    reason: 'not_in_complete_snapshot',
+    requestId: 'request-current-stop',
+  });
+
+  const state = await repository.getWorkdayState('2026-08-18');
+  assert.deepEqual(state.map((record) => [record.trackingCode, record.outcome]).sort(), [
+    ['STOP-CURRENT', 'unknown'],
+    ['TERMINAL-PREVIOUS', 'accepted'],
+  ]);
+});
+
+test('pre-migration package history is projected and prevents a rollover recount', async (t) => {
+  const { client, repository } = await databaseFixture(t);
+  await client.execute({
+    sql: `INSERT INTO ampere_package_state
+            (workday, tracking_code, shipment_id, order_id, source_account, source_account_key, outcome, reason,
+             first_seen_at, accepted_at, cancelled_at, updated_at, station_id, principal_id, session_token_hash, request_id)
+          VALUES (?, ?, ?, ?, ?, ?, 'accepted', 'verified_live', ?, ?, NULL, ?, ?, ?, ?, ?)`,
+    args: [
+      '2026-08-17', 'LEGACY-ROLLOVER', 'LEGACY-SHIPMENT', 'LEGACY-ORDER', 'primary', 'primary',
+      '2026-08-17T13:59:00.000Z', '2026-08-17T13:59:00.000Z', '2026-08-17T13:59:00.000Z',
+      'PACK-01', 'operator-1', 'token-hash', 'legacy-request',
+    ],
+  });
+
+  const projected = await repository.getWorkdayState('2026-08-18');
+  assert.equal(projected.length, 1);
+  assert.equal(projected[0].trackingCode, 'LEGACY-ROLLOVER');
+  const duplicate = await repository.recordScanDecision({
+    workday: '2026-08-18',
+    trackingCode: 'LEGACY-ROLLOVER',
+    shipmentId: 'LEGACY-SHIPMENT',
+    orderId: 'LEGACY-ORDER',
+    sourceAccount: 'primary',
+    outcome: 'accepted',
+    reason: 'verified_live',
+    stationId: 'PACK-02',
+    principalId: 'operator-2',
+    sessionTokenHash: 'token-hash-2',
+    requestId: 'request-after-migration',
+    now: new Date('2026-08-17T14:00:01.000Z'),
+  });
+  assert.equal(duplicate.changed, false);
+  assert.equal(duplicate.record.outcome, 'accepted');
+  assert.equal(duplicate.record.workday, '2026-08-18');
+});
+
+test('accepted rollover duplicates stay atomic and can transition only to cancellation', async (t) => {
+  const { client, url, repository } = await databaseFixture(t);
+  const secondClient = createDatabaseClient({ url });
+  t.after(() => secondClient.close());
+  const secondRepository = new ScannerRepository(secondClient);
+  const base = {
+    trackingCode: 'ROLLOVER-DUPLICATE',
+    shipmentId: 'SHIPMENT-DUPLICATE',
+    orderId: 'ORDER-DUPLICATE',
+    sourceAccount: 'primary',
+    outcome: 'accepted',
+    reason: 'verified_live',
+    stationId: 'PACK-01',
+    principalId: 'operator-1',
+    sessionTokenHash: 'token-hash',
+  };
+  await repository.recordScanDecision({
+    ...base,
+    workday: '2026-08-17',
+    requestId: 'request-before-cutoff',
+    now: new Date('2026-08-17T13:59:59.000Z'),
+  });
+
+  const attempts = await Promise.all([
+    repository.recordScanDecision({
+      ...base,
+      workday: '2026-08-18',
+      requestId: 'request-after-cutoff-1',
+      now: new Date('2026-08-17T14:00:01.000Z'),
+    }),
+    secondRepository.recordScanDecision({
+      ...base,
+      workday: '2026-08-18',
+      stationId: 'PACK-02',
+      requestId: 'request-after-cutoff-2',
+      now: new Date('2026-08-17T14:00:02.000Z'),
+    }),
+  ]);
+  assert.deepEqual(attempts.map((attempt) => attempt.changed), [false, false]);
+  assert.ok(attempts.every((attempt) => attempt.record.outcome === 'accepted'));
+
+  const cancelled = await repository.recordScanDecision({
+    ...base,
+    workday: '2026-08-18',
+    outcome: 'cancelled',
+    reason: 'order_item_cancelled',
+    requestId: 'request-cancelled',
+    now: new Date('2026-08-17T14:01:00.000Z'),
+  });
+  assert.equal(cancelled.changed, true);
+  assert.equal(cancelled.record.outcome, 'cancelled');
+
+  const uncertain = await repository.recordScanDecision({
+    ...base,
+    workday: '2026-08-18',
+    outcome: 'unverified',
+    reason: 'live_verification_failed',
+    requestId: 'request-after-cancellation',
+    now: new Date('2026-08-17T14:02:00.000Z'),
+  });
+  assert.equal(uncertain.changed, false);
+  assert.equal(uncertain.record.outcome, 'cancelled');
+
+  const events = await client.execute({
+    sql: `SELECT attempted_outcome, effective_outcome
+          FROM ampere_scan_events WHERE workday = ? AND tracking_code = ? ORDER BY event_id`,
+    args: ['2026-08-18', 'ROLLOVER-DUPLICATE'],
+  });
+  assert.deepEqual(events.rows, [
+    { attempted_outcome: 'accepted', effective_outcome: 'accepted' },
+    { attempted_outcome: 'accepted', effective_outcome: 'accepted' },
+    { attempted_outcome: 'cancelled', effective_outcome: 'cancelled' },
+    { attempted_outcome: 'unverified', effective_outcome: 'cancelled' },
+  ]);
+});
+
+test('rollover identity keeps dynamic accounts and shipment packages distinct', async (t) => {
+  const { repository } = await databaseFixture(t);
+  const accountOne = `acct_${'a'.repeat(22)}`;
+  const accountTwo = `acct_${'b'.repeat(22)}`;
+  const base = {
+    trackingCode: 'SHARED-TRACKING-CODE',
+    orderId: 'ORDER-SHARED',
+    outcome: 'accepted',
+    reason: 'verified_live',
+    stationId: 'PACK-01',
+    principalId: 'operator-1',
+    sessionTokenHash: 'token-hash',
+    now: new Date('2026-08-17T13:59:00.000Z'),
+  };
+  await repository.recordScanDecision({
+    ...base,
+    workday: '2026-08-17',
+    shipmentId: 'SHIPMENT-A1',
+    sourceAccount: accountOne,
+    requestId: 'request-account-one-previous',
+  });
+  const differentAccount = await repository.recordScanDecision({
+    ...base,
+    workday: '2026-08-18',
+    shipmentId: 'SHIPMENT-A1',
+    sourceAccount: accountTwo,
+    requestId: 'request-account-two-current',
+  });
+  const differentShipment = await repository.recordScanDecision({
+    ...base,
+    workday: '2026-08-18',
+    shipmentId: 'SHIPMENT-A2',
+    sourceAccount: accountOne,
+    requestId: 'request-account-one-second-shipment',
+  });
+  const exactDuplicate = await repository.recordScanDecision({
+    ...base,
+    workday: '2026-08-18',
+    shipmentId: 'SHIPMENT-A1',
+    sourceAccount: accountOne,
+    requestId: 'request-account-one-duplicate',
+  });
+
+  assert.equal(differentAccount.changed, true);
+  assert.equal(differentShipment.changed, true);
+  assert.equal(exactDuplicate.changed, false);
+  const identities = (await repository.getWorkdayState('2026-08-18'))
+    .map((record) => [record.sourceAccount, record.shipmentId, record.outcome])
+    .sort((left, right) => left.join(':').localeCompare(right.join(':')));
+  assert.deepEqual(identities, [
+    [accountOne, 'SHIPMENT-A1', 'accepted'],
+    [accountOne, 'SHIPMENT-A2', 'accepted'],
+    [accountTwo, 'SHIPMENT-A1', 'accepted'],
+  ]);
 });
 
 test('dynamic account provenance and encrypted account metadata persist in ampere-only tables', async (t) => {

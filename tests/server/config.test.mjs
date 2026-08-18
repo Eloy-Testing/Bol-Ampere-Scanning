@@ -14,6 +14,7 @@ test('configuration permits tokenless local libSQL but requires all server-only 
     SESSION_SECRET: 's'.repeat(32),
   };
   assert.equal(loadConfig(complete).databaseToken, undefined);
+  assert.ok(loadConfig(complete).preferenceTtlSeconds > loadConfig(complete).sessionTtlSeconds);
   assert.deepEqual(loadConfig(complete).bolAccounts.map(({ key }) => key), ['primary']);
   assert.deepEqual(loadConfig({
     ...complete,
