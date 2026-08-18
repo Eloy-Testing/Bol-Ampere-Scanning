@@ -14,6 +14,20 @@ export const selectors = Object.freeze({
   primaryAccountTab: '[data-testid="account-tab-primary"]',
   secondaryAccountTab: '[data-testid="account-tab-secondary"]',
   connectionsButton: '[data-testid="connections-button"]',
+  dailyReportButton: '[data-testid="daily-report-button"]',
+  dailyReportDialog: '[data-testid="daily-report-dialog"]',
+  reconciliationDecision: '[data-testid="reconciliation-decision"]',
+  reconciliationRows: '[data-testid="reconciliation-rows"]',
+  reconciliationRefresh: '[data-testid="reconciliation-refresh"]',
+  reconciliationDownload: '[data-testid="reconciliation-download"]',
+  reconciliationWorkday: '[data-testid="reconciliation-workday"]',
+  reconciliationObserved: '[data-testid="reconciliation-observed"]',
+  reconciliationCancelled: '[data-testid="reconciliation-cancelled"]',
+  reconciliationExpected: '[data-testid="reconciliation-expected"]',
+  reconciliationScanned: '[data-testid="reconciliation-scanned"]',
+  reconciliationMissing: '[data-testid="reconciliation-missing"]',
+  reconciliationAdjustments: '[data-testid="reconciliation-adjustments"]',
+  reconciliationStatus: '[data-testid="reconciliation-status"]',
   integrationDialog: '[data-testid="integration-dialog"]',
   integrationList: '[data-testid="integration-list"]',
   addAccountButton: '[data-testid="add-account-button"]',
@@ -108,6 +122,93 @@ function currentCanonicalState(state) {
   return { workday: state.workday, records, scanned, cancelled, stops };
 }
 
+function emptyReconciliationReport(activeRoot, account, workday) {
+  const label = accountDirectory(activeRoot).find((entry) => entry.key === account)?.label || account;
+  return {
+    workday,
+    account: { key: account, label },
+    sourceMode: 'bol_shipment_observed',
+    exactLabelCreated: false,
+    recorded: false,
+    closedAt: null,
+    lastRefreshedAt: null,
+    metrics: { observed: 0, cancelled: 0, expected: 0, scanned: 0, missing: 0, adjustments: 0 },
+    rows: [],
+  };
+}
+
+function buildReconciliationReport(state, activeRoot, account, workday) {
+  const active = accountSnapshot(activeRoot, account);
+  if (!active) return null;
+  const label = accountDirectory(activeRoot).find((entry) => entry.key === account)?.label || account;
+  const packages = new Map();
+  for (const detail of Object.values(active.shipmentDetails || {})) {
+    const trackingCode = String(detail?.transport?.trackAndTrace || '').trim().toUpperCase();
+    if (!trackingCode) continue;
+    const shipmentItems = Array.isArray(detail.shipmentItems) ? detail.shipmentItems : [];
+    const verifier = active.verifiers?.[detail.order?.orderId];
+    const verifierItems = new Map((verifier?.orderItems || []).map((item) => [item.orderItemId, item]));
+    const cancelledItems = shipmentItems.map((item) => {
+      const verified = verifierItems.get(item.orderItemId);
+      return Boolean(verified && (verified.cancellationRequest === true || verified.cancellationRequested === true
+        || Number(verified.quantityCancelled || 0) > 0 || String(verified.fulfilmentStatus || '').toUpperCase() === 'CANCELLED'));
+    });
+    const packageRow = packages.get(trackingCode) || {
+      trackingCode,
+      shipmentIds: [],
+      orderIds: [],
+      sourceCreatedAt: detail.shipmentDateTime,
+      cancelledFlags: [],
+    };
+    packageRow.shipmentIds.push(detail.shipmentId);
+    packageRow.orderIds.push(detail.order.orderId);
+    if (detail.shipmentDateTime < packageRow.sourceCreatedAt) packageRow.sourceCreatedAt = detail.shipmentDateTime;
+    packageRow.cancelledFlags.push(...cancelledItems);
+    packages.set(trackingCode, packageRow);
+  }
+  const observedAt = state.scenario.reconciliationObservedAt || '2026-08-05T10:00:00.000Z';
+  const closedAt = state.scenario.reconciliationClosedAt || null;
+  const records = state.recordsByWorkday.get(workday) || [];
+  const rows = [...packages.values()].map((entry) => {
+    const scan = records.find((record) => ['success', 'accepted'].includes(record.outcome)
+      && record.trackingCode === entry.trackingCode && record.sourceAccount === account);
+    const cancelledAt = entry.cancelledFlags.length && entry.cancelledFlags.every(Boolean) ? observedAt : null;
+    const acceptedAt = scan?.recordedAt || null;
+    return {
+      trackingCode: entry.trackingCode,
+      shipmentIds: [...new Set(entry.shipmentIds)].sort(),
+      orderIds: [...new Set(entry.orderIds)].sort(),
+      sourceCreatedAt: entry.sourceCreatedAt,
+      firstObservedAt: observedAt,
+      acceptedAt,
+      cancelledAt,
+      status: cancelledAt && acceptedAt ? 'cancelled_after_scan' : cancelledAt ? 'cancelled' : acceptedAt ? 'scanned' : 'missing',
+      adjustment: Boolean(closedAt && [observedAt, acceptedAt, cancelledAt].some((value) => value && value > closedAt)),
+      identityQuality: 'exact',
+    };
+  }).sort((left, right) => left.sourceCreatedAt.localeCompare(right.sourceCreatedAt) || left.trackingCode.localeCompare(right.trackingCode));
+  const cancelled = rows.filter((row) => row.cancelledAt).length;
+  const expectedRows = rows.filter((row) => !row.cancelledAt);
+  return {
+    workday,
+    account: { key: account, label },
+    sourceMode: 'bol_shipment_observed',
+    exactLabelCreated: false,
+    recorded: true,
+    closedAt,
+    lastRefreshedAt: observedAt,
+    metrics: {
+      observed: rows.length,
+      cancelled,
+      expected: expectedRows.length,
+      scanned: expectedRows.filter((row) => row.acceptedAt).length,
+      missing: expectedRows.filter((row) => !row.acceptedAt).length,
+      adjustments: rows.filter((row) => row.adjustment).length,
+    },
+    rows,
+  };
+}
+
 export const test = base.extend({
   scenario: [healthyScenario(), { option: true }],
   now: ['2026-08-05T10:00:00Z', { option: true }],
@@ -133,6 +234,7 @@ export const test = base.extend({
       workday: cloned.workday || '2026-08-05',
       calls: [],
       recordsByWorkday: new Map(),
+      reconciliationReports: new Map(),
       activeScans: 0,
       maxConcurrentScans: 0,
       nextManagedAccount: 1,
@@ -261,6 +363,23 @@ export const test = base.extend({
       }
 
       const activeRoot = state.scenario.snapshots[state.activeSnapshot] || state.scenario.snapshots[0];
+      if (url.pathname === '/api/reconciliation' && ['GET', 'POST'].includes(method)) {
+        const selectedAccount = account || body?.account || 'primary';
+        const workday = url.searchParams.get('workday') || body?.workday || state.workday;
+        const key = `${selectedAccount}:${workday}`;
+        let report = state.reconciliationReports.get(key);
+        if (method === 'POST' || (!report && state.scenario.reconciliationRecorded === true)) {
+          report = buildReconciliationReport(state, activeRoot, selectedAccount, workday);
+          if (report) state.reconciliationReports.set(key, report);
+        }
+        call.finishedAt = Date.now();
+        if (!report && !accountSnapshot(activeRoot, selectedAccount)) {
+          await jsonResponse(route, { error: { code: 'not_found' } }, 404);
+          return;
+        }
+        await jsonResponse(route, { report: report || emptyReconciliationReport(activeRoot, selectedAccount, workday) });
+        return;
+      }
       if (url.pathname === '/api/retailer' && resource === 'accounts') {
         call.finishedAt = Date.now();
         await jsonResponse(route, { accounts: accountDirectory(activeRoot) });

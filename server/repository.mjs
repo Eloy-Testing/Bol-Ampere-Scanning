@@ -279,6 +279,7 @@ export class ScannerRepository {
     shipmentId,
     orderId,
     sourceAccount,
+    sourceAccountIncarnation = null,
     outcome,
     reason,
     stationId,
@@ -387,13 +388,13 @@ export class ScannerRepository {
     };
     const event = {
       sql: `INSERT INTO ampere_scan_events
-              (workday, tracking_code, shipment_id, order_id, source_account, source_account_key, attempted_outcome, reason,
+              (workday, tracking_code, shipment_id, order_id, source_account, source_account_key, source_account_incarnation, attempted_outcome, reason,
                effective_outcome, station_id, principal_id, session_token_hash, request_id, occurred_at)
-            SELECT ?, ?, ?, ?, ?, ?, ?, ?, outcome, ?, ?, ?, ?, ?
+            SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, outcome, ?, ?, ?, ?, ?
             FROM ampere_package_state_v2
             WHERE workday = ? AND tracking_code = ? AND identity_source = ? AND identity_shipment = ?`,
       args: [
-        workday, trackingCode, nullable(shipmentId), nullable(orderId), legacySourceAccount, sourceAccountKey, outcome, reason,
+        workday, trackingCode, nullable(shipmentId), nullable(orderId), legacySourceAccount, sourceAccountKey, nullable(sourceAccountIncarnation), outcome, reason,
         stationId, principalId, sessionTokenHash, requestId, timestamp,
         workday, trackingCode, identitySource, identityShipment,
       ],
@@ -411,6 +412,207 @@ export class ScannerRepository {
       changed: Number(results[1].rowsAffected || 0) > 0,
       record: stateRecord(results[3].rows[0]),
       records: results[4].rows.map(stateRecord),
+    };
+  }
+
+  async recordReconciliationFailure({ runId, workday, startedAt, completedAt, failureCode = 'source_unavailable' }) {
+    await this.#execute({
+      sql: `INSERT INTO ampere_reconciliation_runs
+              (run_id, workday, source_kind, status, account_count, package_count, failure_code, started_at, completed_at)
+            VALUES (?, ?, 'bol_shipment_observed', 'failed', 0, 0, ?, ?, ?)`,
+      args: [runId, workday, failureCode, iso(startedAt), iso(completedAt)],
+    });
+  }
+
+  async recordReconciliationSnapshot({ runId, workday, closeWorkday, accounts, packages, startedAt, completedAt }) {
+    const completedTimestamp = iso(completedAt);
+    const statements = [{
+      sql: `INSERT INTO ampere_reconciliation_runs
+              (run_id, workday, source_kind, status, account_count, package_count, failure_code, started_at, completed_at)
+            VALUES (?, ?, 'bol_shipment_observed', 'complete', ?, ?, NULL, ?, ?)`,
+      args: [runId, workday, accounts.length, packages.length, iso(startedAt), completedTimestamp],
+    }];
+
+    for (const account of accounts) {
+      const packageCount = packages.filter((entry) => entry.accountIncarnation === account.incarnation).length;
+      statements.push({
+        sql: `INSERT INTO ampere_reconciliation_run_accounts
+                (run_id, account_incarnation, account_key, account_label, package_count)
+              VALUES (?, ?, ?, ?, ?)`,
+        args: [runId, account.incarnation, account.key, account.label, packageCount],
+      });
+    }
+
+    for (const parcel of packages) {
+      statements.push({
+        sql: `INSERT INTO ampere_reconciliation_parcels
+                (account_incarnation, tracking_code, account_key, account_label, source_kind,
+                 source_workday, source_created_at, first_observed_at, last_observed_at,
+                 cancelled_at, cancelled_observed_at, last_run_id)
+              VALUES (?, ?, ?, ?, 'bol_shipment_observed', ?, ?, ?, ?, ?, ?, ?)
+              ON CONFLICT(account_incarnation, tracking_code) DO UPDATE SET
+                account_key = excluded.account_key,
+                account_label = excluded.account_label,
+                source_workday = CASE
+                  WHEN excluded.source_created_at < ampere_reconciliation_parcels.source_created_at THEN excluded.source_workday
+                  ELSE ampere_reconciliation_parcels.source_workday
+                END,
+                source_created_at = MIN(ampere_reconciliation_parcels.source_created_at, excluded.source_created_at),
+                last_observed_at = excluded.last_observed_at,
+                cancelled_at = COALESCE(ampere_reconciliation_parcels.cancelled_at, excluded.cancelled_at),
+                cancelled_observed_at = COALESCE(ampere_reconciliation_parcels.cancelled_observed_at, excluded.cancelled_observed_at),
+                last_run_id = excluded.last_run_id`,
+        args: [
+          parcel.accountIncarnation, parcel.trackingCode, parcel.accountKey, parcel.accountLabel,
+          parcel.sourceWorkday, parcel.sourceCreatedAt, completedTimestamp, completedTimestamp,
+          parcel.cancelled ? completedTimestamp : null, parcel.cancelled ? completedTimestamp : null, runId,
+        ],
+      });
+
+      for (const shipment of parcel.shipments) {
+        statements.push({
+          sql: `DELETE FROM ampere_reconciliation_items
+                WHERE account_incarnation = ? AND shipment_id = ?`,
+          args: [parcel.accountIncarnation, shipment.shipmentId],
+        });
+        statements.push({
+          sql: `INSERT INTO ampere_reconciliation_shipments
+                  (account_incarnation, shipment_id, tracking_code, order_id, shipment_datetime, item_fingerprint, last_run_id)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(account_incarnation, shipment_id) DO UPDATE SET
+                  tracking_code = excluded.tracking_code,
+                  order_id = excluded.order_id,
+                  shipment_datetime = excluded.shipment_datetime,
+                  item_fingerprint = excluded.item_fingerprint,
+                  last_run_id = excluded.last_run_id`,
+          args: [
+            parcel.accountIncarnation, shipment.shipmentId, parcel.trackingCode, shipment.orderId,
+            shipment.shipmentDateTime, shipment.itemFingerprint, runId,
+          ],
+        });
+        for (const item of shipment.items) {
+          statements.push({
+            sql: `INSERT INTO ampere_reconciliation_items
+                    (account_incarnation, shipment_id, order_item_id, tracking_code, cancelled, last_run_id)
+                  VALUES (?, ?, ?, ?, ?, ?)`,
+            args: [parcel.accountIncarnation, shipment.shipmentId, item.orderItemId, parcel.trackingCode, item.cancelled ? 1 : 0, runId],
+          });
+        }
+      }
+    }
+
+    for (const account of accounts) {
+      statements.push({
+        sql: `INSERT INTO ampere_daily_closures
+                (workday, account_incarnation, account_key, closed_at, run_id)
+              VALUES (?, ?, ?, ?, ?)
+              ON CONFLICT(workday, account_incarnation) DO NOTHING`,
+        args: [closeWorkday, account.incarnation, account.key, completedTimestamp, runId],
+      });
+    }
+
+    await this.#batch(statements);
+  }
+
+  async getReconciliationReport({ workday, accountKey, accountLabel, accountIncarnation }) {
+    const [parcelResult, scanResult, closureResult, runResult] = await Promise.all([
+      this.#execute({
+        sql: `SELECT p.account_incarnation, p.tracking_code, p.account_key, p.account_label,
+                     p.source_kind, p.source_workday, p.source_created_at, p.first_observed_at,
+                     p.last_observed_at, p.cancelled_at, p.cancelled_observed_at,
+                     GROUP_CONCAT(DISTINCT s.shipment_id) AS shipment_ids,
+                     GROUP_CONCAT(DISTINCT s.order_id) AS order_ids
+              FROM ampere_reconciliation_parcels p
+              LEFT JOIN ampere_reconciliation_shipments s
+                ON s.account_incarnation = p.account_incarnation AND s.tracking_code = p.tracking_code
+              WHERE p.source_workday = ? AND p.account_incarnation = ?
+              GROUP BY p.account_incarnation, p.tracking_code
+              ORDER BY p.source_created_at ASC, p.tracking_code ASC`,
+        args: [workday, accountIncarnation],
+      }),
+      this.#execute({
+        sql: `SELECT tracking_code, shipment_id,
+                     COALESCE(source_account_key, source_account) AS account_key,
+                     source_account_incarnation, occurred_at
+              FROM ampere_scan_events
+              WHERE effective_outcome = 'accepted'
+                AND (source_account_incarnation = ?
+                     OR (source_account_incarnation IS NULL AND COALESCE(source_account_key, source_account) = ?))
+              ORDER BY occurred_at ASC`,
+        args: [accountIncarnation, accountKey],
+      }),
+      this.#execute({
+        sql: `SELECT closed_at FROM ampere_daily_closures
+              WHERE workday = ? AND account_incarnation = ? LIMIT 1`,
+        args: [workday, accountIncarnation],
+      }),
+      this.#execute({
+        sql: `SELECT r.completed_at
+              FROM ampere_reconciliation_runs r
+              JOIN ampere_reconciliation_run_accounts a ON a.run_id = r.run_id
+              WHERE r.workday = ? AND r.status = 'complete' AND a.account_incarnation = ?
+              ORDER BY r.completed_at DESC LIMIT 1`,
+        args: [workday, accountIncarnation],
+      }),
+    ]);
+
+    const scans = scanResult.rows.map((row) => ({
+      trackingCode: String(row.tracking_code),
+      shipmentId: nullable(row.shipment_id),
+      accountKey: nullable(row.account_key),
+      accountIncarnation: nullable(row.source_account_incarnation),
+      occurredAt: String(row.occurred_at),
+    }));
+    const closedAt = closureResult.rows[0]?.closed_at ? String(closureResult.rows[0].closed_at) : null;
+    const rows = parcelResult.rows.map((row) => {
+      const shipmentIds = row.shipment_ids ? String(row.shipment_ids).split(',').sort() : [];
+      const orderIds = row.order_ids ? String(row.order_ids).split(',').sort() : [];
+      const exactScan = scans.find((scan) => scan.accountIncarnation === accountIncarnation && scan.trackingCode === String(row.tracking_code));
+      const legacyScan = exactScan ? null : scans.find((scan) => scan.accountIncarnation == null
+        && scan.accountKey === accountKey
+        && scan.trackingCode === String(row.tracking_code)
+        && scan.shipmentId != null
+        && shipmentIds.includes(scan.shipmentId));
+      const acceptedAt = exactScan?.occurredAt || legacyScan?.occurredAt || null;
+      const cancelledAt = nullable(row.cancelled_at);
+      const status = cancelledAt && acceptedAt ? 'cancelled_after_scan' : cancelledAt ? 'cancelled' : acceptedAt ? 'scanned' : 'missing';
+      const adjustment = Boolean(closedAt && [row.first_observed_at, row.cancelled_observed_at, acceptedAt]
+        .some((value) => value && String(value) > closedAt));
+      return {
+        trackingCode: String(row.tracking_code),
+        shipmentIds,
+        orderIds,
+        sourceCreatedAt: String(row.source_created_at),
+        firstObservedAt: String(row.first_observed_at),
+        acceptedAt,
+        cancelledAt,
+        status,
+        adjustment,
+        identityQuality: exactScan || !acceptedAt ? 'exact' : 'legacy_shipment_match',
+      };
+    });
+    const cancelled = rows.filter((row) => row.cancelledAt).length;
+    const expectedRows = rows.filter((row) => !row.cancelledAt);
+    const scanned = expectedRows.filter((row) => row.acceptedAt).length;
+    const missing = expectedRows.filter((row) => !row.acceptedAt).length;
+    const lastRefreshedAt = runResult.rows[0]?.completed_at ? String(runResult.rows[0].completed_at) : closedAt;
+    return {
+      workday,
+      account: { key: accountKey, label: accountLabel },
+      sourceMode: 'bol_shipment_observed',
+      exactLabelCreated: false,
+      recorded: Boolean(lastRefreshedAt || rows.length),
+      closedAt,
+      lastRefreshedAt: lastRefreshedAt || null,
+      metrics: {
+        observed: rows.length,
+        cancelled,
+        expected: expectedRows.length,
+        scanned,
+        missing,
+        adjustments: rows.filter((row) => row.adjustment).length,
+      },
+      rows,
     };
   }
 

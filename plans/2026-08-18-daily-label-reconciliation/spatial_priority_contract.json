@@ -1,0 +1,152 @@
+{
+  "schema_version": "creative-framework.spatial-priority.v1",
+  "task_id": "2026-08-18-daily-label-reconciliation",
+  "surface": "operational dashboard dialog inside the authenticated warehouse scanner",
+  "primary_decision": {
+    "statement": "Which expected packages are still unresolved for this account and workday?",
+    "primary_action": "Inspect the missing package list and resolve the physical discrepancy.",
+    "item_id": "missing_decision_zone"
+  },
+  "items": [
+    {
+      "id": "missing_decision_zone",
+      "label": "Missing packages and unresolved list",
+      "purpose": "Present the consequence, decisive package evidence, and action in one bounded zone.",
+      "priority": "p0",
+      "consequence_of_omission": "The operator cannot determine whether the daily handoff is complete.",
+      "visibility": "immediate",
+      "placement": {
+        "mode": "explicit",
+        "region": "primary_decision_zone",
+        "anchor": "report heading and selected account/workday",
+        "justification": "The missing count and its rows are the reason the report exists."
+      },
+      "attention_order": 1,
+      "attention_dependencies": [],
+      "interactive": true,
+      "focus_order": 1,
+      "adaptive_behavior": {
+        "desktop": { "region": "primary_decision_zone", "visibility": "immediate", "order": 1 },
+        "mobile": { "region": "primary_decision_zone", "visibility": "immediate", "order": 1 },
+        "invariant": "Missing count, consequence, and unresolved rows precede secondary history at both viewports."
+      },
+      "demotion_reason": null
+    },
+    {
+      "id": "report_controls",
+      "label": "Workday, refresh, and export controls",
+      "purpose": "Select the ledger, request a complete refresh, or download the displayed rows.",
+      "priority": "p1",
+      "consequence_of_omission": "The operator cannot switch days, recover stale data, or replace the spreadsheet export.",
+      "visibility": "adjacent",
+      "placement": {
+        "mode": "explicit",
+        "region": "report_toolbar",
+        "anchor": "daily report title",
+        "justification": "Controls must establish scope before the user reads totals."
+      },
+      "attention_order": 2,
+      "attention_dependencies": ["missing_decision_zone"],
+      "interactive": true,
+      "focus_order": 2,
+      "adaptive_behavior": {
+        "desktop": { "region": "report_toolbar", "visibility": "adjacent", "order": 2 },
+        "mobile": { "region": "report_toolbar", "visibility": "adjacent", "order": 2 },
+        "invariant": "Date, refresh, and export remain together and never precede the report title."
+      },
+      "demotion_reason": "Controls support the decision but are not the decision itself."
+    },
+    {
+      "id": "supporting_metrics",
+      "label": "Observed, cancelled, expected, scanned, and adjustment context",
+      "purpose": "Explain how the missing count was derived and whether the day is closed or adjusted.",
+      "priority": "p1",
+      "consequence_of_omission": "The operator cannot audit the arithmetic behind the exception count.",
+      "visibility": "adjacent",
+      "placement": {
+        "mode": "explicit",
+        "region": "metric_context",
+        "anchor": "missing decision zone",
+        "justification": "The arithmetic must remain next to the consequence without competing with it."
+      },
+      "attention_order": 3,
+      "attention_dependencies": ["missing_decision_zone"],
+      "interactive": false,
+      "focus_order": null,
+      "adaptive_behavior": {
+        "desktop": { "region": "metric_context", "visibility": "adjacent", "order": 3 },
+        "mobile": { "region": "metric_context", "visibility": "adjacent", "order": 3 },
+        "invariant": "Metrics remain readable and do not push the unresolved list behind unrelated history."
+      },
+      "demotion_reason": "These values explain the missing count but do not themselves identify the packages to act on."
+    },
+    {
+      "id": "source_and_close_context",
+      "label": "Source truth and close status",
+      "purpose": "State that the current ledger is based on bol shipment observation and identify late adjustments.",
+      "priority": "p2",
+      "consequence_of_omission": "Users may mistake observed shipment registration for an exact print event or miss a late change.",
+      "visibility": "downstream",
+      "placement": {
+        "mode": "implicit",
+        "region": "report_context",
+        "anchor": "supporting metrics",
+        "justification": "Truth context must remain visible but should not displace operational exceptions."
+      },
+      "attention_order": 4,
+      "attention_dependencies": ["supporting_metrics"],
+      "interactive": false,
+      "focus_order": null,
+      "adaptive_behavior": {
+        "desktop": { "region": "report_context", "visibility": "downstream", "order": 4 },
+        "mobile": { "region": "report_context", "visibility": "downstream", "order": 4 },
+        "invariant": "Source limitations and late adjustments remain present without becoming diagnostic chrome."
+      },
+      "demotion_reason": "It qualifies the figures but is not a package-resolution action."
+    },
+    {
+      "id": "close_action",
+      "label": "Close report",
+      "purpose": "Return focus to the scanner without disturbing the scan queue.",
+      "priority": "p2",
+      "consequence_of_omission": "Keyboard and mobile users cannot reliably return to scanning.",
+      "visibility": "adjacent",
+      "placement": {
+        "mode": "explicit",
+        "region": "dialog_header",
+        "anchor": "daily report title",
+        "justification": "Dialog dismissal must remain predictable and visible."
+      },
+      "attention_order": 5,
+      "attention_dependencies": ["report_controls"],
+      "interactive": true,
+      "focus_order": 3,
+      "adaptive_behavior": {
+        "desktop": { "region": "dialog_header", "visibility": "adjacent", "order": 5 },
+        "mobile": { "region": "dialog_header", "visibility": "adjacent", "order": 5 },
+        "invariant": "Closing restores focus to the Daily report opener and then the existing scan loop."
+      },
+      "demotion_reason": "It exits the report but does not resolve a package discrepancy."
+    }
+  ],
+  "attention_sequence": [
+    "missing_decision_zone",
+    "report_controls",
+    "supporting_metrics",
+    "source_and_close_context",
+    "close_action"
+  ],
+  "focus_sequence": ["missing_decision_zone", "report_controls", "close_action"],
+  "responsive_invariants": {
+    "primary_decision_precedes_secondary": true,
+    "dom_order_matches_visual_order": true,
+    "focus_order_matches_task_order": true
+  },
+  "verification": {
+    "desktop_viewport": "1440x980",
+    "mobile_viewport": "390x900",
+    "geometry_required": true,
+    "keyboard_required": true,
+    "overflow_required": true
+  }
+}

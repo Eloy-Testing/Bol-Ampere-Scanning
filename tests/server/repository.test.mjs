@@ -20,6 +20,10 @@ test('migration is idempotent and creates only ampere application objects', asyn
   const rolloverColumns = await client.execute('PRAGMA table_info(ampere_package_state_v2)');
   assert.ok(rolloverColumns.rows.some((row) => row.name === 'identity_source'));
   assert.ok(rolloverColumns.rows.some((row) => row.name === 'identity_shipment'));
+  const eventColumns = await client.execute('PRAGMA table_info(ampere_scan_events)');
+  assert.ok(eventColumns.rows.some((row) => row.name === 'source_account_incarnation'));
+  const reconciliationTables = await client.execute("SELECT name FROM sqlite_master WHERE type = 'table' AND name LIKE 'ampere_reconciliation_%'");
+  assert.ok(reconciliationTables.rows.length >= 5);
 });
 
 test('numbered migration upgrades a pre-002 ampere schema exactly once', async (t) => {
@@ -38,6 +42,7 @@ test('numbered migration upgrades a pre-002 ampere schema exactly once', async (
     '002_ampere_source_account.sql',
     '003_ampere_dynamic_bol_accounts.sql',
     '004_ampere_rollover_state.sql',
+    '005_ampere_daily_reconciliation.sql',
   ]);
 });
 
@@ -422,4 +427,72 @@ test('dynamic account provenance and encrypted account metadata persist in amper
   assert.deepEqual(event.rows[0], { source_account: null, source_account_key: accountKey });
   const audit = await client.execute('SELECT action, account_key, label FROM ampere_bol_account_audit');
   assert.deepEqual(audit.rows[0], { action: 'created', account_key: accountKey, label: 'Client South' });
+});
+
+test('daily reconciliation joins immutable scan identity and exposes late adjustments without rewriting close', async (t) => {
+  const { repository } = await databaseFixture(t);
+  const account = { key: 'primary', label: 'Bankhoes', incarnation: 'bol_incarnation_primary' };
+  const parcel = ({ trackingCode, shipmentId, orderId, sourceCreatedAt, cancelled = false }) => ({
+    accountKey: account.key,
+    accountLabel: account.label,
+    accountIncarnation: account.incarnation,
+    trackingCode,
+    sourceWorkday: '2026-08-05',
+    sourceCreatedAt,
+    cancelled,
+    shipments: [{
+      shipmentId,
+      orderId,
+      shipmentDateTime: sourceCreatedAt,
+      itemFingerprint: `fingerprint-${shipmentId}`,
+      items: [{ orderItemId: `ITEM-${shipmentId}`, cancelled }],
+    }],
+  });
+  const firstPackages = [
+    parcel({ trackingCode: 'TRACK-SCANNED', shipmentId: 'SHIPMENT-1', orderId: 'ORDER-1', sourceCreatedAt: '2026-08-05T09:00:00.000Z' }),
+    parcel({ trackingCode: 'TRACK-CANCELLED', shipmentId: 'SHIPMENT-2', orderId: 'ORDER-2', sourceCreatedAt: '2026-08-05T09:05:00.000Z', cancelled: true }),
+  ];
+  await repository.recordReconciliationSnapshot({
+    runId: 'run-current', workday: '2026-08-05', closeWorkday: '2026-08-04', accounts: [account], packages: firstPackages,
+    startedAt: new Date('2026-08-05T10:00:00.000Z'), completedAt: new Date('2026-08-05T10:01:00.000Z'),
+  });
+  await repository.recordScanDecision({
+    workday: '2026-08-05',
+    trackingCode: 'TRACK-SCANNED',
+    shipmentId: 'SHIPMENT-1',
+    orderId: 'ORDER-1',
+    sourceAccount: account.key,
+    sourceAccountIncarnation: account.incarnation,
+    outcome: 'accepted',
+    reason: 'verified_live',
+    stationId: 'PACK-01',
+    principalId: 'operator-1',
+    sessionTokenHash: 'token-hash',
+    requestId: 'scan-current',
+    now: new Date('2026-08-05T10:05:00.000Z'),
+  });
+  await repository.recordReconciliationSnapshot({
+    runId: 'run-close', workday: '2026-08-06', closeWorkday: '2026-08-05', accounts: [account], packages: firstPackages,
+    startedAt: new Date('2026-08-05T14:01:00.000Z'), completedAt: new Date('2026-08-05T14:01:30.000Z'),
+  });
+  const closed = await repository.getReconciliationReport({
+    workday: '2026-08-05', accountKey: account.key, accountLabel: account.label, accountIncarnation: account.incarnation,
+  });
+  assert.deepEqual(closed.metrics, { observed: 2, cancelled: 1, expected: 1, scanned: 1, missing: 0, adjustments: 0 });
+  assert.equal(closed.closedAt, '2026-08-05T14:01:30.000Z');
+  assert.equal(closed.rows.find((row) => row.trackingCode === 'TRACK-SCANNED').identityQuality, 'exact');
+
+  const late = parcel({
+    trackingCode: 'TRACK-LATE', shipmentId: 'SHIPMENT-3', orderId: 'ORDER-3', sourceCreatedAt: '2026-08-05T13:59:00.000Z',
+  });
+  await repository.recordReconciliationSnapshot({
+    runId: 'run-late', workday: '2026-08-06', closeWorkday: '2026-08-05', accounts: [account], packages: [...firstPackages, late],
+    startedAt: new Date('2026-08-05T14:10:00.000Z'), completedAt: new Date('2026-08-05T14:10:30.000Z'),
+  });
+  const adjusted = await repository.getReconciliationReport({
+    workday: '2026-08-05', accountKey: account.key, accountLabel: account.label, accountIncarnation: account.incarnation,
+  });
+  assert.equal(adjusted.closedAt, closed.closedAt);
+  assert.deepEqual(adjusted.metrics, { observed: 3, cancelled: 1, expected: 2, scanned: 1, missing: 1, adjustments: 1 });
+  assert.equal(adjusted.rows.find((row) => row.trackingCode === 'TRACK-LATE').adjustment, true);
 });

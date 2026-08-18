@@ -95,6 +95,43 @@ export class BolAccountService {
     return result;
   }
 
+  async listSources() {
+    const records = (await this.#records()).map((record) => this.#validateRecord(record));
+    const recordsByKey = new Map(records.map((record) => [record.accountKey, record]));
+    const sources = [];
+    for (const key of ['primary', 'secondary']) {
+      const staticAccount = this.staticAccounts.get(key);
+      const managed = recordsByKey.get(key);
+      if (!staticAccount && !managed) continue;
+      sources.push(Object.freeze({
+        key,
+        label: staticAccount?.label || managed.label,
+        kind: 'internal',
+        incarnation: `bol_${managed?.credentialFingerprint || this.vault.fingerprint(staticAccount.clientId)}`,
+      }));
+      recordsByKey.delete(key);
+    }
+    const dynamic = [...recordsByKey.values()]
+      .sort((left, right) => left.label.localeCompare(right.label, 'en', { sensitivity: 'base' }) || left.accountKey.localeCompare(right.accountKey));
+    for (const record of dynamic) {
+      sources.push(Object.freeze({
+        key: record.accountKey,
+        label: record.label,
+        kind: 'client',
+        incarnation: `bol_${record.credentialFingerprint}`,
+      }));
+    }
+    if (!sources.length || sources[0].key !== 'primary' || sources.length > this.maxAccounts) throw new CredentialStoreError();
+    return sources;
+  }
+
+  async getSource(accountKey) {
+    const key = validateBolAccountKey(accountKey);
+    const source = (await this.listSources()).find((entry) => entry.key === key);
+    if (!source) throw new ValidationError();
+    return Object.freeze({ ...source, client: await this.get(key) });
+  }
+
   async get(accountKey) {
     const key = validateBolAccountKey(accountKey);
     const record = await this.repository.getBolAccountRecord(key);

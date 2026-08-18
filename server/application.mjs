@@ -6,6 +6,7 @@ import { CredentialVault } from './credential-vault.mjs';
 import { createDatabaseClient } from './database.mjs';
 import { AppError, ValidationError, publicError } from './errors.mjs';
 import { ScannerRepository } from './repository.mjs';
+import { ReconciliationService } from './reconciliation-service.mjs';
 import { ScanService } from './scan-service.mjs';
 import {
   clearSessionCookie,
@@ -28,7 +29,7 @@ import {
   verifySignedPreference,
   verifySignedSessionToken,
 } from './security.mjs';
-import { scannerWorkday } from './workday.mjs';
+import { scannerWorkday, workdayBounds } from './workday.mjs';
 
 const API_HEADERS = Object.freeze({
   'Cache-Control': 'no-store, max-age=0',
@@ -93,7 +94,7 @@ function statePayload(workday, records) {
   return { workday, records, scanned, cancelled, stops };
 }
 
-export function createApplication({ config, repository, bolClient, bolAccountService, now = () => new Date(), requestId = () => randomUUID() }) {
+export function createApplication({ config, repository, bolClient, bolAccountService, reconciliationService, now = () => new Date(), requestId = () => randomUUID() }) {
   const legacyKeys = bolClient && typeof bolClient.accountKeys === 'function' ? bolClient.accountKeys() : ['primary'];
   const accounts = bolAccountService || Object.freeze({
     listAccounts: async () => legacyKeys.map((key) => ({
@@ -108,7 +109,26 @@ export function createApplication({ config, repository, bolClient, bolAccountSer
       return bolClient;
     },
   });
-  const scanService = new ScanService({ repository, bolClientForAccount: (accountKey) => accounts.get(accountKey), now });
+  const sourceProvider = typeof accounts.listSources === 'function' && typeof accounts.getSource === 'function'
+    ? accounts
+    : Object.freeze({
+      listSources: async () => (await accounts.listAccounts()).map((account) => ({
+        ...account,
+        incarnation: `legacy_${account.key}`,
+      })),
+      getSource: async (accountKey) => {
+        const account = (await accounts.listAccounts()).find((entry) => entry.key === accountKey);
+        if (!account) throw new ValidationError();
+        return { ...account, incarnation: `legacy_${account.key}`, client: await accounts.get(accountKey) };
+      },
+    });
+  const reconciliation = reconciliationService || new ReconciliationService({ repository, sourceProvider, now });
+  const scanService = new ScanService({
+    repository,
+    bolClientForAccount: (accountKey) => accounts.get(accountKey),
+    bolSourceForAccount: (accountKey) => sourceProvider.getSource(accountKey),
+    now,
+  });
 
   function requestCookies(req) {
     return parseCookies(requestHeader(req, 'cookie'));
@@ -283,6 +303,53 @@ export function createApplication({ config, repository, bolClient, bolAccountSer
     return sendJson(res, 200, payload);
   }
 
+  function validatedWorkday(value) {
+    if (typeof value !== 'string') throw new ValidationError();
+    try { workdayBounds(value); }
+    catch { throw new ValidationError(); }
+    return value;
+  }
+
+  async function reconciliationRoute(req, res) {
+    if (!['GET', 'POST'].includes(req.method)) {
+      return sendJson(res, 405, { error: { code: 'method_not_allowed', message: 'Method not allowed.' } }, { Allow: 'GET, POST' });
+    }
+    const id = requestId();
+    await requireSession(req, id);
+    let accountKey;
+    let workday;
+    let shouldRefresh = false;
+    if (req.method === 'GET') {
+      const url = new URL(req.url, 'http://localhost');
+      if ([...url.searchParams.keys()].some((key) => !['account', 'workday'].includes(key))) throw new ValidationError();
+      accountKey = url.searchParams.get('account');
+      workday = url.searchParams.get('workday') || scannerWorkday(now());
+      if (url.searchParams.getAll('account').length !== 1 || url.searchParams.getAll('workday').length > 1) throw new ValidationError();
+    } else {
+      enforceSameOrigin(req);
+      const body = await readJson(req);
+      exactKeys(body, ['account'], ['workday']);
+      accountKey = body.account;
+      workday = body.workday || scannerWorkday(now());
+      shouldRefresh = true;
+    }
+    const selectedWorkday = validatedWorkday(workday);
+    if (typeof accountKey !== 'string') throw new ValidationError();
+    let source = await sourceProvider.getSource(accountKey);
+    if (shouldRefresh) {
+      if (selectedWorkday !== scannerWorkday(now())) throw new ValidationError();
+      await reconciliation.refresh({ requestId: id });
+      source = await sourceProvider.getSource(accountKey);
+    }
+    const report = await repository.getReconciliationReport({
+      workday: selectedWorkday,
+      accountKey: source.key,
+      accountLabel: source.label,
+      accountIncarnation: source.incarnation,
+    });
+    return sendJson(res, 200, { report });
+  }
+
   async function integrationsRoute(req, res) {
     const id = requestId();
     if (req.method === 'GET') {
@@ -357,6 +424,7 @@ export function createApplication({ config, repository, bolClient, bolAccountSer
     state: safe(stateRoute),
     retailer: safe(retailerRoute),
     integrations: safe(integrationsRoute),
+    reconciliation: safe(reconciliationRoute),
     scan: safe(scanRoute),
   });
 }

@@ -392,6 +392,77 @@ test('route allowlists reject unknown query parameters and methods', async () =>
   assert.equal(method.headers.allow, 'GET');
 });
 
+test('authenticated reconciliation reads stored reports and refreshes only through same-origin POST', async () => {
+  const config = await configFixture();
+  const token = 'r'.repeat(43);
+  const reports = [];
+  const repository = {
+    getSession: async () => ({ tokenHash: tokenHash(token), stationId: 'PACK-01', operatorLabel: 'Alex', expiresAt: '2026-08-05T18:00:00.000Z' }),
+    getReconciliationReport: async (query) => {
+      reports.push(query);
+      return {
+        workday: query.workday,
+        account: { key: query.accountKey, label: query.accountLabel },
+        sourceMode: 'bol_shipment_observed',
+        exactLabelCreated: false,
+        recorded: true,
+        closedAt: null,
+        lastRefreshedAt: '2026-08-05T10:00:00.000Z',
+        metrics: { observed: 1, cancelled: 0, expected: 1, scanned: 0, missing: 1, adjustments: 0 },
+        rows: [],
+      };
+    },
+  };
+  const source = {
+    key: 'primary', label: 'Bankhoes', kind: 'internal', incarnation: 'bol_incarnation_primary', client: bolFixture(),
+  };
+  const bolAccountService = {
+    listAccounts: async () => [{ key: 'primary', label: 'Bankhoes', kind: 'internal', lastVerifiedAt: null }],
+    listSources: async () => [{ ...source, client: undefined }],
+    get: async () => source.client,
+    getSource: async () => source,
+  };
+  const refreshes = [];
+  const app = createApplication({
+    config,
+    repository,
+    bolAccountService,
+    reconciliationService: { refresh: async (payload) => refreshes.push(payload) },
+    now: () => new Date('2026-08-05T10:00:00.000Z'),
+    requestId: () => 'reconciliation-request',
+  });
+  const cookie = `ampere_session=${signSessionToken(token, config.sessionSecret)}`;
+  const read = await invoke(app.reconciliation, {
+    method: 'GET', url: '/api/reconciliation?account=primary&workday=2026-08-05', headers: { cookie },
+  });
+  assert.equal(read.statusCode, 200);
+  assert.equal(read.body.report.metrics.missing, 1);
+  assert.deepEqual(reports[0], {
+    workday: '2026-08-05', accountKey: 'primary', accountLabel: 'Bankhoes', accountIncarnation: 'bol_incarnation_primary',
+  });
+  const crossOrigin = await invoke(app.reconciliation, {
+    method: 'POST',
+    body: { account: 'primary', workday: '2026-08-05' },
+    headers: { ...mutationHeaders(cookie), origin: 'https://attacker.test', 'sec-fetch-site': 'cross-site' },
+  });
+  assert.equal(crossOrigin.statusCode, 403);
+  assert.equal(refreshes.length, 0);
+  const historicalRefresh = await invoke(app.reconciliation, {
+    method: 'POST', body: { account: 'primary', workday: '2026-08-04' }, headers: mutationHeaders(cookie),
+  });
+  assert.equal(historicalRefresh.statusCode, 400);
+  assert.equal(refreshes.length, 0);
+  const refreshed = await invoke(app.reconciliation, {
+    method: 'POST', body: { account: 'primary', workday: '2026-08-05' }, headers: mutationHeaders(cookie),
+  });
+  assert.equal(refreshed.statusCode, 200);
+  assert.deepEqual(refreshes, [{ requestId: 'reconciliation-request' }]);
+  const malformed = await invoke(app.reconciliation, {
+    method: 'GET', url: '/api/reconciliation?account=primary&workday=2026-02-30', headers: { cookie },
+  });
+  assert.equal(malformed.statusCode, 400);
+});
+
 test('retailer and scan routes keep the configured source key through secondary verification', async (t) => {
   const { repository } = await databaseFixture(t);
   const calls = [];

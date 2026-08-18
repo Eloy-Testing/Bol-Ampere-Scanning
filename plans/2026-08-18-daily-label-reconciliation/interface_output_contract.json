@@ -1,0 +1,96 @@
+{
+  "schema_version": "creative-framework.interface-output-contract.v1",
+  "task": "Daily label reconciliation inside the authenticated Ampere scanner",
+  "surface_has_interface_output": true,
+  "interface_output_producers": "applicable",
+  "not_applicable_reason": "",
+  "planned_output_channels": ["visible", "assistive", "telemetry"],
+  "producers": [
+    {
+      "id": "stored_report",
+      "event_origin": "product_workflow",
+      "presentation_owner": "product_owner",
+      "channel": "visible",
+      "source_condition": "A stored complete reconciliation ledger exists for the selected account and workday.",
+      "user_impact": "The operator can see expected, scanned, missing, cancelled, and adjustment totals with the unresolved package rows.",
+      "recovery": "Inspect unresolved packages, select another workday, refresh the report, or download the rows.",
+      "copy_purpose": "Present the operational daily comparison that replaces the handwritten spreadsheet.",
+      "final_copy": "Observed labels / Cancelled / Expected / Scanned / Missing / Adjustments",
+      "external_proof": "Browser assertions for metric arithmetic, package rows, account/date scope, and CSV equality"
+    },
+    {
+      "id": "empty_report",
+      "event_origin": "product_workflow",
+      "presentation_owner": "product_owner",
+      "channel": "visible",
+      "source_condition": "No complete reconciliation snapshot has been recorded for the selected account and workday.",
+      "user_impact": "The operator cannot yet rely on a daily comparison.",
+      "recovery": "Use Refresh report to request one complete server-owned source read.",
+      "copy_purpose": "Explain absence without fabricating zero as a completed result.",
+      "final_copy": "No complete report has been recorded for this workday. Refresh the report to load it.",
+      "external_proof": "Empty-state browser test with zero committed runs"
+    },
+    {
+      "id": "refresh_failure",
+      "event_origin": "autonomous_condition",
+      "presentation_owner": "product_owner",
+      "channel": "visible",
+      "source_condition": "A user-requested reconciliation refresh cannot validate every configured source and page.",
+      "user_impact": "The displayed report may be older, but its totals were not partially replaced.",
+      "recovery": "Retry Refresh report while retaining the last complete totals.",
+      "copy_purpose": "State stale-but-preserved behavior and the recovery action.",
+      "final_copy": "Refresh failed. The last complete totals were kept. Try again.",
+      "external_proof": "Server atomicity test and browser failure-preservation test"
+    },
+    {
+      "id": "source_truth",
+      "event_origin": "product_workflow",
+      "presentation_owner": "product_owner",
+      "channel": "visible",
+      "source_condition": "The report uses bol shipment observation because no authoritative StockItUp label event is connected.",
+      "user_impact": "The operator understands the metric is registered shipment labels, not a guaranteed print timestamp.",
+      "recovery": "No action is required for ordinary use; exact print-time parity becomes available when the label source is connected.",
+      "copy_purpose": "Prevent an unsupported label-created claim.",
+      "final_copy": "Based on complete bol shipment registrations and scanner handoff records.",
+      "external_proof": "Visible-copy assertion and source-mode API contract test"
+    },
+    {
+      "id": "report_assistive_status",
+      "event_origin": "product_workflow",
+      "presentation_owner": "product_owner",
+      "channel": "assistive",
+      "source_condition": "The report opens, refreshes, succeeds, fails, changes workday, or exports rows.",
+      "user_impact": "Assistive-technology users receive the same concise operational state and recovery information.",
+      "recovery": "Use report controls or close the dialog and return to scanning.",
+      "copy_purpose": "Announce actionable report state without implementation narration.",
+      "final_copy": "Loading daily report; report updated; refresh failed and prior totals kept; report downloaded.",
+      "external_proof": "Role, aria-live, focus restoration, keyboard, and accessible-name browser assertions"
+    },
+    {
+      "id": "reconciliation_diagnostics",
+      "event_origin": "autonomous_helper",
+      "presentation_owner": "none",
+      "channel": "telemetry",
+      "source_condition": "Stable enumeration, idempotency, account-incarnation, SQL, or migration diagnostics execute.",
+      "user_impact": "No direct visible impact; product-owned states present only actionable outcomes.",
+      "recovery": "Not applicable in product chrome.",
+      "copy_purpose": "Keep implementation and verification evidence outside visible and assistive channels.",
+      "final_copy": "",
+      "external_proof": "Unit tests, migration tests, and sanitized console evidence"
+    }
+  ],
+  "technical_status_exception": {
+    "applicable": false,
+    "direct_object_of_work": false,
+    "producer_ids": [],
+    "reason": ""
+  },
+  "what_must_not_appear": [
+    "StockItUp, bol, Turso, session, or encryption credentials",
+    "A claim that shipment observation proves the exact label print time",
+    "Raw HTTP, SQL, pagination, fingerprint, retry, migration, test, or verification details",
+    "Partially committed totals after a source failure",
+    "Fake package rows, counts, integrations, or outage messages",
+    "Framework, receipt, deployment, or QA narration"
+  ]
+}

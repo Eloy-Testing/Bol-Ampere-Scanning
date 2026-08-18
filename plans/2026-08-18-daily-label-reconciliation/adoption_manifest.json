@@ -1,0 +1,45 @@
+{
+  "schema_version": "creative-framework.adoption.v2",
+  "task_id": "2026-08-18-daily-label-reconciliation",
+  "active_project_root": "/Users/zanderbrilleman/.codex/worktrees/bhp-daily-label-reconciliation",
+  "surface_kind": "browser_visible",
+  "plan_review_mode": "advisory",
+  "framework_control_root": "/Users/zanderbrilleman/Documents/Codex/2026-07-06/co",
+  "contracts": {
+    "retrieval": "/Users/zanderbrilleman/.codex/worktrees/bhp-daily-label-reconciliation/plans/2026-08-18-daily-label-reconciliation/retrieval_contract.json",
+    "design": "/Users/zanderbrilleman/.codex/worktrees/bhp-daily-label-reconciliation/plans/2026-08-18-daily-label-reconciliation/design_contract.md",
+    "implementation_plan": "/Users/zanderbrilleman/.codex/worktrees/bhp-daily-label-reconciliation/plans/2026-08-18-daily-label-reconciliation/implementation_plan.md",
+    "review_packet": null,
+    "plan_review": null,
+    "interface_output": "/Users/zanderbrilleman/.codex/worktrees/bhp-daily-label-reconciliation/plans/2026-08-18-daily-label-reconciliation/interface_output_contract.json"
+  },
+  "contract_sha256": {
+    "retrieval": "d59c301cf712471610d8a2230c5fa9873a2a7ae812a6b67bc6953f34a8294309",
+    "design": "77dd0ad2419da62337707bb81a1aef8133a07cec03c6a43f21e0446375ecb30b",
+    "implementation_plan": "cf328b9e152c522e747cb2172fbcee4daab8da27e13597161d326c964c783cf8",
+    "interface_output": "2f7e9a60d92af19d2b27f05700214e77f24b544429ea5ad09a0ee3359368fb8e"
+  },
+  "artifact": {
+    "path": "/Users/zanderbrilleman/.codex/worktrees/bhp-daily-label-reconciliation/index.html",
+    "sha256": "5f19312219a4306f290e0a33181722f467c8c598e8b931b13e5b162a072fbb4a"
+  },
+  "verification": {
+    "visual_evidence": [
+      {
+        "path": "/Users/zanderbrilleman/.codex/worktrees/bhp-daily-label-reconciliation/verification/screenshot-evidence/2026-08-18-daily-label-reconciliation-desktop.png",
+        "sha256": "15f95256bf3d5eabbec87c5188fe00d34365946a0d5848e7ebe6441bedc70445",
+        "viewport": "desktop"
+      },
+      {
+        "path": "/Users/zanderbrilleman/.codex/worktrees/bhp-daily-label-reconciliation/verification/screenshot-evidence/2026-08-18-daily-label-reconciliation-mobile-full-scroll.png",
+        "sha256": "048e59e73d10120eb67d27bd1bb48dd194c3a73faad3c95f848695bb52898d9f",
+        "viewport": "mobile"
+      }
+    ],
+    "visual_outcome_review": {
+      "path": "/Users/zanderbrilleman/.codex/worktrees/bhp-daily-label-reconciliation/verification/2026-08-18-daily-label-reconciliation-visual-outcome-review.json",
+      "sha256": "9e3d66a6773aced6961d50eec1ec3176064433a40b28080aa115c7dc4711fda5",
+      "status": "PASS"
+    }
+  }
+}

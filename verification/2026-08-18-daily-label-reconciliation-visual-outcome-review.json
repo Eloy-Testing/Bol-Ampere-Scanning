@@ -1,0 +1,137 @@
+{
+  "schema_version": "visual-outcome-review.v1",
+  "task_id": "2026-08-18-daily-label-reconciliation",
+  "project_root": "/Users/zanderbrilleman/.codex/worktrees/bhp-daily-label-reconciliation",
+  "surface_profile": "browser_ui",
+  "review_mode": "main_agent_only",
+  "main_agent_id": "codex-main",
+  "frozen_contract": {
+    "path": "/Users/zanderbrilleman/.codex/worktrees/bhp-daily-label-reconciliation/plans/2026-08-18-daily-label-reconciliation/design_contract.md",
+    "sha256": "77dd0ad2419da62337707bb81a1aef8133a07cec03c6a43f21e0446375ecb30b",
+    "quality_bar": "The authenticated daily report makes missing packages the first decision surface, states its Bol-observed source truth, preserves stored totals through failure, and remains complete and usable at desktop and mobile widths without disrupting the scanner.",
+    "required_invariants": [
+      "missing_package_hierarchy",
+      "package_grain_metrics",
+      "account_and_workday_scope",
+      "source_truth",
+      "stored_failure_preservation",
+      "responsive_layout",
+      "scanner_focus_isolation"
+    ],
+    "browser_routes": [
+      "/index.html"
+    ],
+    "browser_viewports": [
+      "desktop",
+      "mobile"
+    ],
+    "browser_required_states": [
+      "stored_success",
+      "unrecorded_empty",
+      "refresh_loading",
+      "refresh_failure_preserves_prior",
+      "closed_late_adjustment",
+      "historical_read_only",
+      "csv_export"
+    ],
+    "shot_or_beat_ids": [],
+    "motion_duration_seconds": null,
+    "audio_required": false
+  },
+  "references": [],
+  "artifact": {
+    "kind": "local_file",
+    "path": "/Users/zanderbrilleman/.codex/worktrees/bhp-daily-label-reconciliation/index.html",
+    "url": null,
+    "deployment_identity": null,
+    "sha256": "5f19312219a4306f290e0a33181722f467c8c598e8b931b13e5b162a072fbb4a",
+    "created_at": "2026-08-18T11:10:34Z"
+  },
+  "evidence": [
+    {
+      "id": "EV-001",
+      "kind": "browser_screenshot",
+      "path": "/Users/zanderbrilleman/.codex/worktrees/bhp-daily-label-reconciliation/verification/screenshot-evidence/2026-08-18-daily-label-reconciliation-desktop.png",
+      "sha256": "15f95256bf3d5eabbec87c5188fe00d34365946a0d5848e7ebe6441bedc70445",
+      "artifact_binding": "5f19312219a4306f290e0a33181722f467c8c598e8b931b13e5b162a072fbb4a",
+      "captured_at": "2026-08-18T11:19:03Z",
+      "coverage": {
+        "viewport": "desktop",
+        "route": "/index.html",
+        "full_surface": true,
+        "notes": "Current 1440 by 1000 report dialog with the complete missing-package, scope, metrics, source, status, and close surfaces visible."
+      }
+    },
+    {
+      "id": "EV-002",
+      "kind": "browser_screenshot",
+      "path": "/Users/zanderbrilleman/.codex/worktrees/bhp-daily-label-reconciliation/verification/screenshot-evidence/2026-08-18-daily-label-reconciliation-mobile-full-scroll.png",
+      "sha256": "048e59e73d10120eb67d27bd1bb48dd194c3a73faad3c95f848695bb52898d9f",
+      "artifact_binding": "5f19312219a4306f290e0a33181722f467c8c598e8b931b13e5b162a072fbb4a",
+      "captured_at": "2026-08-18T11:19:03Z",
+      "coverage": {
+        "viewport": "mobile",
+        "route": "/index.html",
+        "full_surface": true,
+        "notes": "Vertical append of the exact current 390 by 900 top and bottom browser captures after scrolling the report panel through its complete surface."
+      }
+    },
+    {
+      "id": "EV-003",
+      "kind": "browser_state",
+      "path": "/Users/zanderbrilleman/.codex/worktrees/bhp-daily-label-reconciliation/verification/2026-08-18-daily-label-reconciliation-browser-state.md",
+      "sha256": "3b38d91e70d4c2566402077aecb47f6708832aa435e395b715765cb55896d51f",
+      "artifact_binding": "5f19312219a4306f290e0a33181722f467c8c598e8b931b13e5b162a072fbb4a",
+      "captured_at": "2026-08-18T11:19:03Z",
+      "coverage": {
+        "routes": [
+          "/index.html"
+        ],
+        "interactions_checked": true,
+        "states_checked": [
+          "stored_success",
+          "unrecorded_empty",
+          "refresh_loading",
+          "refresh_failure_preserves_prior",
+          "closed_late_adjustment",
+          "historical_read_only",
+          "csv_export"
+        ],
+        "scroll_complete": true,
+        "overflow_checked": true,
+        "console_checked": true,
+        "notes": "Direct state and interaction observations from the current local artifact and deterministic Playwright surface."
+      }
+    }
+  ],
+  "review_cycles": [
+    {
+      "cycle": 1,
+      "artifact_binding": "5f19312219a4306f290e0a33181722f467c8c598e8b931b13e5b162a072fbb4a",
+      "inspected_at": "2026-08-18T11:19:03Z",
+      "main_agent": {
+        "inspector_id": "codex-main",
+        "inspection_complete": true,
+        "verdict": "PASS",
+        "evidence_ids": [
+          "EV-001",
+          "EV-002",
+          "EV-003"
+        ],
+        "summary": "The final desktop and full-scroll mobile report present the missing package as the first decision, keep all controls and metrics contained, state the inferred Bol source honestly, preserve the scanner hierarchy behind the modal, and show no visible layout, copy, focus, overflow, or console defect."
+      },
+      "critic": null,
+      "findings": [],
+      "resolved_finding_ids": [],
+      "advisories": [
+        "Exact StockItUp label-created parity remains outside this branch and is explicitly disclosed in the interface."
+      ],
+      "verdict": "PASS"
+    }
+  ],
+  "final_verdict": "PASS",
+  "limits": [
+    "The review uses deterministic local business fixtures and proves the current local interface, not production Bol or Turso behavior.",
+    "The receipt validates binding, coverage, chronology, and recorded defect resolution; it does not prove taste, semantic honesty, or cryptographic reviewer identity."
+  ]
+}

@@ -65,7 +65,7 @@
 
     .integration-dialog { width: min(700px, calc(100% - 24px)); max-height: min(860px, calc(100dvh - 32px)); border: 0; border-radius: 18px; padding: 0; color: var(--ink); background: var(--paper); box-shadow: 0 30px 90px rgba(6, 31, 37, .28); }
     .integration-dialog::backdrop { background: rgba(7, 28, 34, .62); backdrop-filter: blur(3px); }
-    .integration-panel { max-height: min(860px, calc(100dvh - 32px)); overflow-y: auto; padding: 22px; }
+    .integration-panel, .reconciliation-panel { max-height: min(860px, calc(100dvh - 32px)); overflow-y: auto; padding: 22px; }
     .integration-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; margin-bottom: 18px; }
     .integration-head h2 { margin: 0; font-size: 21px; letter-spacing: -.025em; }
     .integration-copy { margin: 5px 0 0; color: var(--muted); font-size: 12px; }
@@ -89,6 +89,33 @@
     .integration-security { margin: -5px 0 1px; color: var(--muted); font-size: 11px; }
     .integration-actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-top: 2px; }
     .integration-actions .primary-button { min-height: 42px; }
+
+    .reconciliation-dialog { width: min(1060px, calc(100% - 24px)); }
+    .reconciliation-panel { display: grid; min-width: 0; gap: 16px; overflow-x: hidden; }
+    .reconciliation-panel > * { min-width: 0; }
+    .reconciliation-head { margin-bottom: 0; }
+    .reconciliation-scope { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 12px; }
+    .reconciliation-account { color: var(--muted); font-size: 12px; font-weight: 800; }
+    .reconciliation-controls { display: flex; flex-wrap: wrap; align-items: end; gap: 8px; }
+    .reconciliation-controls .field { min-width: 160px; }
+    .reconciliation-controls .field input { min-height: 40px; }
+    .reconciliation-decision { border: 1px solid #e9b9b4; border-left: 5px solid var(--stop); border-radius: 12px; padding: 16px; background: #fff8f7; }
+    .reconciliation-decision:focus-visible { outline: 3px solid rgba(105,212,223,.58); outline-offset: 3px; }
+    .reconciliation-decision[data-state="clear"] { border-color: #a8d9c5; border-left-color: var(--go); background: #f3fbf7; }
+    .reconciliation-decision[data-state="empty"] { border-color: var(--line); border-left-color: #89969b; background: #f8faf9; }
+    .reconciliation-decision-head { display: flex; align-items: start; justify-content: space-between; gap: 14px; margin-bottom: 10px; }
+    .reconciliation-decision h3 { margin: 0; font-size: 17px; }
+    .reconciliation-decision-copy { margin: 3px 0 0; color: var(--muted); font-size: 12px; }
+    .reconciliation-missing-count { color: var(--stop); font-size: 36px; font-weight: 900; letter-spacing: -.04em; line-height: 1; }
+    .reconciliation-decision[data-state="clear"] .reconciliation-missing-count { color: var(--go); }
+    .reconciliation-summary { grid-template-columns: repeat(6, minmax(0, 1fr)); margin: 0; }
+    .reconciliation-context { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 18px; margin: -3px 0 0; color: var(--muted); font-size: 11px; }
+    .reconciliation-context strong { color: var(--ink); }
+    .reconciliation-status { min-height: 20px; margin: 0; color: var(--muted); font-size: 12px; font-weight: 750; }
+    .reconciliation-status[data-tone="error"] { color: var(--stop); }
+    .reconciliation-status[data-tone="success"] { color: var(--go); }
+    .reconciliation-footer { display: flex; justify-content: flex-end; border-top: 1px solid var(--line); padding-top: 14px; }
+    .reconciliation-footer .ghost-button { min-height: 42px; }
 
     .access-gate { width: min(520px, 100%); margin: 42px auto 0; border: 1px solid var(--line); border-radius: 18px; padding: clamp(22px, 4vw, 34px); background: rgba(255,255,255,.94); box-shadow: var(--shadow); }
     .access-mark { display: grid; width: 44px; height: 44px; place-items: center; margin-bottom: 20px; border-radius: 12px; color: #063d31; background: var(--cyan); font-size: 18px; font-weight: 950; }
@@ -167,6 +194,7 @@
 
     @media (max-width: 900px) {
       .summary { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .reconciliation-summary { grid-template-columns: repeat(3, minmax(0, 1fr)); }
       .content-grid { grid-template-columns: 1fr; }
     }
     @media (max-width: 560px) {
@@ -176,11 +204,24 @@
       .session-label { display: none; }
       .session-utility { padding-left: 3px; }
       .integration-dialog { width: calc(100% - 16px); max-height: calc(100dvh - 16px); border-radius: 14px; }
-      .integration-panel { max-height: calc(100dvh - 16px); padding: 18px 15px; }
+      .integration-panel, .reconciliation-panel { max-height: calc(100dvh - 16px); padding: 18px 15px; }
       .integration-account { align-items: flex-start; }
       .integration-account .ghost-button { flex: 0 0 auto; }
       .integration-actions { align-items: stretch; flex-direction: column-reverse; }
       .integration-actions button { width: 100%; min-height: 44px; }
+      .reconciliation-scope, .reconciliation-controls { align-items: stretch; flex-direction: column; }
+      .reconciliation-controls .field { min-width: 0; }
+      .reconciliation-controls button { width: 100%; min-height: 44px; }
+      .reconciliation-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .reconciliation-summary .metric:last-child { grid-column: auto; }
+      .reconciliation-decision { padding: 14px 11px; }
+      .reconciliation-decision table { min-width: 0; table-layout: fixed; }
+      .reconciliation-decision th:nth-child(3), .reconciliation-decision td:nth-child(3),
+      .reconciliation-decision th:nth-child(5), .reconciliation-decision td:nth-child(5) { display: none; }
+      .reconciliation-decision th:nth-child(1) { width: 40%; }
+      .reconciliation-decision th:nth-child(2) { width: 25%; }
+      .reconciliation-decision th:nth-child(4) { width: 35%; }
+      .reconciliation-decision td { overflow-wrap: anywhere; }
       .access-gate { margin-top: 22px; padding: 22px 18px; }
       .subtitle { font-size: 12px; }
       .healthbar { align-items: flex-start; }
@@ -206,6 +247,7 @@
       <div class="utility-zone">
         <div class="session-utility" id="sessionUtility" hidden>
           <span class="session-label" id="sessionLabel"></span>
+          <button class="ghost-button" id="reconciliationButton" data-testid="daily-report-button" type="button">Daily report</button>
           <button class="ghost-button" id="connectionsButton" data-testid="connections-button" type="button">Bol connections</button>
           <button class="ghost-button" id="logoutButton" type="button">Sign out</button>
         </div>
@@ -361,6 +403,59 @@
         </form>
       </div>
     </dialog>
+
+    <dialog class="integration-dialog reconciliation-dialog" id="reconciliationDialog" data-testid="daily-report-dialog" aria-labelledby="reconciliationTitle">
+      <div class="reconciliation-panel">
+        <div class="integration-head reconciliation-head">
+          <div>
+            <p class="eyebrow" id="reconciliationEyebrow">Daily control</p>
+            <h2 id="reconciliationTitle">Label reconciliation</h2>
+            <p class="integration-copy" id="reconciliationCopy">Replace the manual Excel count with one stored, account-specific workday ledger.</p>
+          </div>
+        </div>
+
+        <div class="reconciliation-decision" id="reconciliationDecision" data-testid="reconciliation-decision" data-state="empty" tabindex="0">
+          <div class="reconciliation-decision-head">
+            <div>
+              <h3 id="reconciliationMissingTitle">Packages requiring action</h3>
+              <p class="reconciliation-decision-copy" id="reconciliationMissingCopy">Unscanned packages and cancellations after a scan appear here.</p>
+            </div>
+            <strong class="reconciliation-missing-count" id="reconciliationMissingCount" data-testid="reconciliation-missing-count">—</strong>
+          </div>
+          <div id="reconciliationRows" data-testid="reconciliation-rows"></div>
+        </div>
+
+        <div class="reconciliation-scope">
+          <div class="reconciliation-account" id="reconciliationAccount">Account: —</div>
+          <div class="reconciliation-controls">
+            <div class="field">
+              <label for="reconciliationWorkday" id="reconciliationWorkdayLabel">Workday</label>
+              <input id="reconciliationWorkday" data-testid="reconciliation-workday" type="date" required>
+            </div>
+            <button class="primary-button" id="reconciliationRefreshButton" data-testid="reconciliation-refresh" type="button">Refresh from Bol</button>
+            <button class="ghost-button" id="reconciliationDownloadButton" data-testid="reconciliation-download" type="button">Download CSV</button>
+          </div>
+        </div>
+
+        <div class="summary reconciliation-summary" aria-label="Reconciliation totals">
+          <div class="metric"><div class="metric-value" id="reconciliationObserved" data-testid="reconciliation-observed">—</div><div class="metric-label" id="reconciliationObservedLabel">Observed labels</div></div>
+          <div class="metric"><div class="metric-value" id="reconciliationCancelled" data-testid="reconciliation-cancelled">—</div><div class="metric-label" id="reconciliationCancelledLabel">Cancelled</div></div>
+          <div class="metric"><div class="metric-value" id="reconciliationExpected" data-testid="reconciliation-expected">—</div><div class="metric-label" id="reconciliationExpectedLabel">Expected scans</div></div>
+          <div class="metric" data-tone="go"><div class="metric-value" id="reconciliationScanned" data-testid="reconciliation-scanned">—</div><div class="metric-label" id="reconciliationScannedLabel">Scanned</div></div>
+          <div class="metric" data-tone="stop"><div class="metric-value" id="reconciliationMissing" data-testid="reconciliation-missing">—</div><div class="metric-label" id="reconciliationMissingLabel">Missing</div></div>
+          <div class="metric" data-tone="warn"><div class="metric-value" id="reconciliationAdjustments" data-testid="reconciliation-adjustments">—</div><div class="metric-label" id="reconciliationAdjustmentsLabel">Adjustments</div></div>
+        </div>
+
+        <div class="reconciliation-context">
+          <span id="reconciliationSource">Source: Bol shipment registrations (label-created event not available).</span>
+          <span id="reconciliationClosed">Workday not closed yet.</span>
+        </div>
+        <p class="reconciliation-status" id="reconciliationStatus" data-testid="reconciliation-status" data-tone="neutral" role="status" aria-live="polite"></p>
+        <div class="reconciliation-footer">
+          <button class="ghost-button" id="reconciliationCloseButton" type="button">Close report</button>
+        </div>
+      </div>
+    </dialog>
     </div>
   </main>
 
@@ -433,6 +528,33 @@
       }
     };
 
+    const RECONCILIATION_TEXT = {
+      nl: {
+        button: 'Dagrapport', eyebrow: 'Dagcontrole', title: 'Labelafstemming', copy: 'Vervangt de handmatige Excel-telling door één opgeslagen dagboek per Bol-account.',
+        actionTitle: 'Pakketten die actie vereisen', actionCopy: 'Niet-gescande pakketten en annuleringen na een scan staan hier.', account: n => `Account: ${n}`, workday: 'Werkdag', refresh: 'Verversen vanuit Bol', refreshing: 'Bol-verzendingen opnieuw controleren…', download: 'CSV downloaden', close: 'Rapport sluiten',
+        observed: 'Waargenomen labels', cancelled: 'Geannuleerd', expected: 'Verwachte scans', scanned: 'Gescand', missing: 'Ontbrekend', adjustments: 'Correcties',
+        source: 'Bron: waargenomen Bol-verzendingen. Een exact label-aangemaakt-event is nog niet beschikbaar.', openDay: 'Werkdag nog niet afgesloten.', closed: t => `Afgesloten ${t}. Latere feiten blijven zichtbaar als correctie.`, lastRefresh: t => `Volledig rapport opgeslagen · bijgewerkt ${t}.`, loaded: t => `Opgeslagen rapport geladen · bijgewerkt ${t}.`, noReport: 'Nog geen opgeslagen rapport voor deze werkdag. Ververs vanuit Bol om er één te maken.', historical: 'Historische werkdagen zijn alleen-lezen; dit is het opgeslagen eindbeeld.', historicalEmpty: 'Voor deze historische werkdag is geen opgeslagen rapport beschikbaar.', failed: 'Verversen mislukt. Het laatst opgeslagen rapport blijft zichtbaar en ongewijzigd.', loadFailed: 'Het opgeslagen rapport kon niet worden geladen. Probeer opnieuw.',
+        emptyAction: 'Geen pakket vereist actie.', emptyUnrecorded: 'Ververs het rapport om ontbrekende pakketten te bepalen.', thTrack: 'Track & trace', thOrders: 'Orders', thShipments: 'Verzendingen', thStatus: 'Actie', thObserved: 'Waargenomen', missingBadge: 'Niet gescand', cancelledAfterScanBadge: 'Geannuleerd na scan',
+        statusMissing: 'ontbrekend', statusCancelledAfterScan: 'geannuleerd-na-scan'
+      },
+      en: {
+        button: 'Daily report', eyebrow: 'Daily control', title: 'Label reconciliation', copy: 'Replaces the manual Excel count with one stored workday ledger per Bol account.',
+        actionTitle: 'Packages requiring action', actionCopy: 'Unscanned packages and cancellations after a scan appear here.', account: n => `Account: ${n}`, workday: 'Workday', refresh: 'Refresh from Bol', refreshing: 'Checking Bol shipments again…', download: 'Download CSV', close: 'Close report',
+        observed: 'Observed labels', cancelled: 'Cancelled', expected: 'Expected scans', scanned: 'Scanned', missing: 'Missing', adjustments: 'Adjustments',
+        source: 'Source: observed Bol shipments. An exact label-created event is not available yet.', openDay: 'Workday not closed yet.', closed: t => `Closed ${t}. Later facts remain visible as adjustments.`, lastRefresh: t => `Complete report stored · updated ${t}.`, loaded: t => `Stored report loaded · updated ${t}.`, noReport: 'No stored report exists for this workday yet. Refresh from Bol to create one.', historical: 'Historical workdays are read-only; this is the stored final view.', historicalEmpty: 'No stored report is available for this historical workday.', failed: 'Refresh failed. The last stored report remains visible and unchanged.', loadFailed: 'The stored report could not be loaded. Try again.',
+        emptyAction: 'No package requires action.', emptyUnrecorded: 'Refresh the report to determine missing packages.', thTrack: 'Tracking', thOrders: 'Orders', thShipments: 'Shipments', thStatus: 'Action', thObserved: 'Observed', missingBadge: 'Not scanned', cancelledAfterScanBadge: 'Cancelled after scan',
+        statusMissing: 'missing', statusCancelledAfterScan: 'cancelled-after-scan'
+      },
+      es: {
+        button: 'Informe diario', eyebrow: 'Control diario', title: 'Conciliación de etiquetas', copy: 'Sustituye el recuento manual de Excel por un registro diario guardado para cada cuenta Bol.',
+        actionTitle: 'Paquetes que requieren acción', actionCopy: 'Aquí aparecen los paquetes no escaneados y las cancelaciones posteriores al escaneo.', account: n => `Cuenta: ${n}`, workday: 'Jornada', refresh: 'Actualizar desde Bol', refreshing: 'Comprobando de nuevo los envíos de Bol…', download: 'Descargar CSV', close: 'Cerrar informe',
+        observed: 'Etiquetas observadas', cancelled: 'Cancelados', expected: 'Escaneos previstos', scanned: 'Escaneados', missing: 'Faltantes', adjustments: 'Ajustes',
+        source: 'Fuente: envíos observados en Bol. Aún no está disponible el evento exacto de creación de etiqueta.', openDay: 'La jornada aún no está cerrada.', closed: t => `Cerrada ${t}. Los hechos posteriores siguen visibles como ajustes.`, lastRefresh: t => `Informe completo guardado · actualizado ${t}.`, loaded: t => `Informe guardado cargado · actualizado ${t}.`, noReport: 'Aún no hay un informe guardado para esta jornada. Actualiza desde Bol para crearlo.', historical: 'Las jornadas históricas son de solo lectura; esta es la vista final guardada.', historicalEmpty: 'No hay un informe guardado para esta jornada histórica.', failed: 'Falló la actualización. El último informe guardado permanece visible y sin cambios.', loadFailed: 'No se pudo cargar el informe guardado. Inténtalo de nuevo.',
+        emptyAction: 'Ningún paquete requiere acción.', emptyUnrecorded: 'Actualiza el informe para determinar los paquetes faltantes.', thTrack: 'Seguimiento', thOrders: 'Pedidos', thShipments: 'Envíos', thStatus: 'Acción', thObserved: 'Observado', missingBadge: 'No escaneado', cancelledAfterScanBadge: 'Cancelado tras escaneo',
+        statusMissing: 'faltante', statusCancelledAfterScan: 'cancelado-tras-escaneo'
+      }
+    };
+
     const el = id => document.getElementById(id);
     const now = () => new Date();
     const storedLanguage = safeLanguageGet();
@@ -440,13 +562,15 @@
     const tx = () => TEXT[language];
     const accessTx = () => ACCESS_TEXT[language];
     const integrationTx = () => INTEGRATION_TEXT[language];
+    const reconciliationTx = () => RECONCILIATION_TEXT[language];
 
     const app = {
       accessPhase: 'checking', accessReason: '', session: null, sessionGeneration: 0,
       phase: 'loading', progress: '', snapshot: null, lastLoadError: null, refreshPromise: null, stateHealthy: false, activeAccount: 'primary',
       queue: [], pausedQueue: [], refreshInterruptedJob: null, pendingCodes: new Set(), draining: false, currentCheck: null, decision: null,
       state: null, activeVerifiers: 0, maxActiveVerifiers: 0,
-      integrationOpen: false, integrationPhase: 'idle', integrationMode: 'list', integrationAccounts: [], integrationEditingKey: null, integrationMessage: ''
+      integrationOpen: false, integrationPhase: 'idle', integrationMode: 'list', integrationAccounts: [], integrationEditingKey: null, integrationMessage: '',
+      reconciliationOpen: false, reconciliationPhase: 'idle', reconciliationWorkday: '', reconciliationReport: null, reconciliationMessage: ''
     };
 
     function safeLanguageGet() { try { return localStorage.getItem(LANGUAGE_KEY); } catch (_) { return null; } }
@@ -769,11 +893,11 @@
       return next;
     }
     function sharedStops() { return (app.state && app.state.stops || []).filter(item => !item.sourceAccount); }
-    function canSwitchAccount() { return Boolean(app.session && app.snapshot && app.snapshot.accounts.length > 1 && !app.integrationOpen && !app.draining && !app.currentCheck && app.queue.length === 0); }
+    function canSwitchAccount() { return Boolean(app.session && app.snapshot && app.snapshot.accounts.length > 1 && !app.integrationOpen && !app.reconciliationOpen && !app.draining && !app.currentCheck && app.queue.length === 0); }
     function snapshotFresh() { return app.snapshot && now().getTime() - new Date(app.snapshot.loadedAt).getTime() <= MAX_SNAPSHOT_AGE_MS; }
     function sessionExpired() { return Boolean(app.session && (!validIso(app.session.expiresAt) || new Date(app.session.expiresAt).getTime() <= now().getTime())); }
     function dataPaused() { return Boolean(app.phase === 'error' || (app.snapshot && !snapshotFresh())); }
-    function canScan() { return Boolean(app.session && !app.integrationOpen && !sessionExpired() && app.stateHealthy && activeSnapshot() && snapshotFresh() && app.phase !== 'error'); }
+    function canScan() { return Boolean(app.session && !app.integrationOpen && !app.reconciliationOpen && !sessionExpired() && app.stateHealthy && activeSnapshot() && snapshotFresh() && app.phase !== 'error'); }
 
     async function fetchSharedState() {
       const next = normalizeSharedState(await requestJson('/api/state'));
@@ -845,6 +969,7 @@
             app.refreshInterruptedJob = null;
             renderHealth();
             renderIntegration();
+            renderReconciliation();
             if (!options.silentFocus) focusScanner();
           }
         }
@@ -1198,12 +1323,18 @@
 
     function clearOperationalMemory() {
       if (el('integrationDialog').open) el('integrationDialog').close();
+      if (el('reconciliationDialog').open) el('reconciliationDialog').close();
       app.integrationOpen = false;
       app.integrationPhase = 'idle';
       app.integrationMode = 'list';
       app.integrationAccounts = [];
       app.integrationEditingKey = null;
       app.integrationMessage = '';
+      app.reconciliationOpen = false;
+      app.reconciliationPhase = 'idle';
+      app.reconciliationWorkday = '';
+      app.reconciliationReport = null;
+      app.reconciliationMessage = '';
       for (const id of ['accountName', 'bolClientId', 'bolClientSecret', 'integrationPassword']) el(id).value = '';
       app.snapshot = null;
       app.state = blankWorkState();
@@ -1351,7 +1482,7 @@
     }
 
     function canOpenIntegrationManager() {
-      return Boolean(app.session && !sessionExpired() && !app.integrationOpen && !app.refreshPromise
+      return Boolean(app.session && !sessionExpired() && !app.integrationOpen && !app.reconciliationOpen && !app.refreshPromise
         && !app.draining && !app.currentCheck && app.queue.length === 0);
     }
 
@@ -1563,6 +1694,220 @@
       }
     }
 
+    function validWorkday(value) {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+      const [year, month, day] = value.split('-').map(Number);
+      const parsed = new Date(Date.UTC(year, month - 1, day));
+      return parsed.getUTCFullYear() === year && parsed.getUTCMonth() === month - 1 && parsed.getUTCDate() === day;
+    }
+
+    function normalizeReconciliationReport(payload, expectedWorkday, expectedAccount) {
+      const unwrapped = unwrapPayload(payload);
+      const report = unwrapped && unwrapped.report && typeof unwrapped.report === 'object' ? unwrapped.report : unwrapped;
+      if (!report || typeof report !== 'object' || Array.isArray(report)
+        || report.workday !== expectedWorkday || !validWorkday(report.workday)
+        || report.sourceMode !== 'bol_shipment_observed' || report.exactLabelCreated !== false
+        || !report.account || report.account.key !== expectedAccount
+        || typeof report.account.label !== 'string' || !report.account.label.trim() || report.account.label.length > 64
+        || typeof report.recorded !== 'boolean'
+        || (report.closedAt != null && !validIso(report.closedAt))
+        || (report.lastRefreshedAt != null && !validIso(report.lastRefreshedAt))
+        || !report.metrics || typeof report.metrics !== 'object' || !Array.isArray(report.rows) || report.rows.length > 10000) {
+        throw new Error('Reconciliation report was incomplete');
+      }
+      const metricNames = ['observed', 'cancelled', 'expected', 'scanned', 'missing', 'adjustments'];
+      const metrics = {};
+      for (const name of metricNames) {
+        const value = report.metrics[name];
+        if (!Number.isSafeInteger(value) || value < 0) throw new Error('Reconciliation totals were incomplete');
+        metrics[name] = value;
+      }
+      const rows = report.rows.map(row => {
+        if (!row || typeof row !== 'object' || Array.isArray(row)) throw new Error('Reconciliation row was incomplete');
+        const trackingCode = canonicalCode(row.trackingCode);
+        const shipmentIds = Array.isArray(row.shipmentIds) ? row.shipmentIds.map(value => plainText(value).slice(0, 128)) : null;
+        const orderIds = Array.isArray(row.orderIds) ? row.orderIds.map(value => plainText(value).slice(0, 128)) : null;
+        if (!trackingCode || !shipmentIds || !orderIds || shipmentIds.some(value => !value) || orderIds.some(value => !value)
+          || !validIso(row.sourceCreatedAt) || !validIso(row.firstObservedAt)
+          || (row.acceptedAt != null && !validIso(row.acceptedAt)) || (row.cancelledAt != null && !validIso(row.cancelledAt))
+          || !['missing', 'scanned', 'cancelled', 'cancelled_after_scan'].includes(row.status)
+          || typeof row.adjustment !== 'boolean' || !['exact', 'legacy_shipment_match'].includes(row.identityQuality)) {
+          throw new Error('Reconciliation row was incomplete');
+        }
+        return Object.freeze({ trackingCode, shipmentIds, orderIds, sourceCreatedAt: row.sourceCreatedAt,
+          firstObservedAt: row.firstObservedAt, acceptedAt: row.acceptedAt || null, cancelledAt: row.cancelledAt || null,
+          status: row.status, adjustment: row.adjustment, identityQuality: row.identityQuality });
+      });
+      const derivedCancelled = rows.filter(row => row.cancelledAt).length;
+      const expectedRows = rows.filter(row => !row.cancelledAt);
+      if (metrics.observed !== rows.length || metrics.cancelled !== derivedCancelled || metrics.expected !== expectedRows.length
+        || metrics.scanned !== expectedRows.filter(row => row.acceptedAt).length
+        || metrics.missing !== expectedRows.filter(row => !row.acceptedAt).length
+        || metrics.adjustments !== rows.filter(row => row.adjustment).length) {
+        throw new Error('Reconciliation totals did not match the package rows');
+      }
+      if (!report.recorded && (rows.length || metricNames.some(name => metrics[name] !== 0) || report.lastRefreshedAt || report.closedAt)) {
+        throw new Error('Unrecorded reconciliation report contained totals');
+      }
+      return Object.freeze({ workday: report.workday, account: Object.freeze({ key: report.account.key, label: report.account.label.trim() }),
+        sourceMode: report.sourceMode, exactLabelCreated: false, recorded: report.recorded, closedAt: report.closedAt || null,
+        lastRefreshedAt: report.lastRefreshedAt || null, metrics: Object.freeze(metrics), rows: Object.freeze(rows) });
+    }
+
+    function reportAccountLabel() {
+      const directory = app.snapshot && Array.isArray(app.snapshot.accountDirectory) ? app.snapshot.accountDirectory : [];
+      return directory.find(account => account.key === activeAccount())?.label || activeAccount();
+    }
+
+    function canOpenReconciliation() {
+      return Boolean(app.session && !sessionExpired() && !app.integrationOpen && !app.reconciliationOpen && !app.refreshPromise
+        && !app.draining && !app.currentCheck && app.queue.length === 0);
+    }
+
+    function renderReconciliation() {
+      const d = reconciliationTx();
+      const report = app.reconciliationReport;
+      const busy = ['loading', 'refreshing'].includes(app.reconciliationPhase);
+      const historical = Boolean(app.reconciliationWorkday && app.reconciliationWorkday !== scannerWorkdayKey());
+      el('reconciliationButton').textContent = d.button;
+      el('reconciliationButton').disabled = Boolean(app.session) && !app.reconciliationOpen && !canOpenReconciliation();
+      el('reconciliationEyebrow').textContent = d.eyebrow;
+      el('reconciliationTitle').textContent = d.title;
+      el('reconciliationCopy').textContent = d.copy;
+      el('reconciliationMissingTitle').textContent = d.actionTitle;
+      el('reconciliationMissingCopy').textContent = d.actionCopy;
+      el('reconciliationWorkdayLabel').textContent = d.workday;
+      el('reconciliationRefreshButton').textContent = busy ? d.refreshing : d.refresh;
+      el('reconciliationDownloadButton').textContent = d.download;
+      el('reconciliationCloseButton').textContent = d.close;
+      for (const [id, value] of [['Observed', d.observed], ['Cancelled', d.cancelled], ['Expected', d.expected], ['Scanned', d.scanned], ['Missing', d.missing], ['Adjustments', d.adjustments]]) {
+        el(`reconciliation${id}Label`).textContent = value;
+      }
+      el('reconciliationAccount').textContent = d.account(report?.account.label || reportAccountLabel());
+      el('reconciliationWorkday').value = app.reconciliationWorkday || scannerWorkdayKey();
+      el('reconciliationWorkday').disabled = busy;
+      el('reconciliationRefreshButton').disabled = busy || historical || !validWorkday(app.reconciliationWorkday);
+      el('reconciliationDownloadButton').disabled = busy || !report?.recorded;
+      el('reconciliationCloseButton').disabled = false;
+      el('reconciliationSource').textContent = d.source;
+      el('reconciliationClosed').textContent = report?.closedAt ? d.closed(formatTime(report.closedAt)) : d.openDay;
+
+      const hasRecordedReport = Boolean(report?.recorded);
+      for (const name of ['observed', 'cancelled', 'expected', 'scanned', 'missing', 'adjustments']) {
+        const id = `reconciliation${name[0].toUpperCase()}${name.slice(1)}`;
+        el(id).textContent = hasRecordedReport ? String(report.metrics[name]) : '—';
+      }
+      const actionRows = hasRecordedReport ? report.rows.filter(row => ['missing', 'cancelled_after_scan'].includes(row.status)) : [];
+      el('reconciliationMissingCount').textContent = hasRecordedReport ? String(actionRows.length) : '—';
+      el('reconciliationDecision').dataset.state = !hasRecordedReport ? 'empty' : actionRows.length ? 'action' : 'clear';
+      const rows = actionRows.map(row => ({
+        className: 'is-stop', trackCode: row.trackingCode, cells: [
+          { content: displayValue(row.trackingCode, 'mono') },
+          { content: row.orderIds.join(', ') || '—' },
+          { content: row.shipmentIds.join(', ') || '—' },
+          { content: badge(row.status === 'missing' ? d.missingBadge : d.cancelledAfterScanBadge, 'stop') },
+          { content: formatTime(row.firstObservedAt), className: 'muted' }
+        ]
+      }));
+      if (!table(el('reconciliationRows'), [d.thTrack, d.thOrders, d.thShipments, d.thStatus, d.thObserved], rows)) {
+        empty(el('reconciliationRows'), hasRecordedReport ? d.emptyAction : d.emptyUnrecorded);
+      }
+      const status = el('reconciliationStatus');
+      if (app.reconciliationPhase === 'loading') {
+        status.textContent = d.loaded('…'); status.dataset.tone = 'neutral';
+      } else if (app.reconciliationPhase === 'refreshing') {
+        status.textContent = d.refreshing; status.dataset.tone = 'neutral';
+      } else if (app.reconciliationPhase === 'error') {
+        status.textContent = app.reconciliationMessage === 'refresh' ? d.failed : d.loadFailed; status.dataset.tone = 'error';
+      } else if (historical) {
+        status.textContent = hasRecordedReport ? d.historical : d.historicalEmpty; status.dataset.tone = 'neutral';
+      } else if (!hasRecordedReport) {
+        status.textContent = d.noReport; status.dataset.tone = 'neutral';
+      } else {
+        status.textContent = app.reconciliationMessage === 'refreshed' ? d.lastRefresh(formatTime(report.lastRefreshedAt)) : d.loaded(formatTime(report.lastRefreshedAt));
+        status.dataset.tone = app.reconciliationMessage === 'refreshed' ? 'success' : 'neutral';
+      }
+    }
+
+    async function loadReconciliation({ refresh = false } = {}) {
+      if (!app.reconciliationOpen || ['loading', 'refreshing'].includes(app.reconciliationPhase)) return;
+      const workday = app.reconciliationWorkday;
+      const account = activeAccount();
+      if (!validWorkday(workday)) return;
+      const previous = app.reconciliationReport;
+      app.reconciliationPhase = refresh ? 'refreshing' : 'loading';
+      app.reconciliationMessage = '';
+      renderReconciliation();
+      try {
+        const path = refresh ? '/api/reconciliation' : `/api/reconciliation?workday=${encodeURIComponent(workday)}&account=${encodeURIComponent(account)}`;
+        const payload = await requestJson(path, refresh ? { method: 'POST', body: { workday, account } } : {});
+        if (!app.reconciliationOpen || workday !== app.reconciliationWorkday || account !== activeAccount()) return;
+        app.reconciliationReport = normalizeReconciliationReport(payload, workday, account);
+        app.reconciliationPhase = 'ready';
+        app.reconciliationMessage = refresh ? 'refreshed' : 'loaded';
+        renderReconciliation();
+        window.setTimeout(() => el('reconciliationDecision').focus(), 0);
+      } catch (error) {
+        if (!app.reconciliationOpen) return;
+        if (error instanceof RequestError && error.status === 401) {
+          if (el('reconciliationDialog').open) el('reconciliationDialog').close();
+          app.reconciliationOpen = false;
+          expireSession('expired');
+          return;
+        }
+        app.reconciliationReport = refresh ? previous : null;
+        app.reconciliationPhase = 'error';
+        app.reconciliationMessage = refresh ? 'refresh' : 'load';
+        renderReconciliation();
+      }
+    }
+
+    function openReconciliation() {
+      if (!canOpenReconciliation()) return;
+      app.reconciliationOpen = true;
+      app.reconciliationPhase = 'idle';
+      app.reconciliationWorkday = scannerWorkdayKey();
+      app.reconciliationReport = null;
+      app.reconciliationMessage = '';
+      el('reconciliationDialog').showModal();
+      render();
+      void loadReconciliation();
+    }
+
+    function closeReconciliation() {
+      if (!app.reconciliationOpen) return;
+      if (el('reconciliationDialog').open) el('reconciliationDialog').close();
+      app.reconciliationOpen = false;
+      app.reconciliationPhase = 'idle';
+      app.reconciliationReport = null;
+      app.reconciliationMessage = '';
+      render();
+      window.setTimeout(() => el('reconciliationButton').focus(), 0);
+    }
+
+    function csvCell(value) {
+      const text = plainText(value);
+      return /[",\r\n]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
+    }
+
+    function downloadReconciliationCsv() {
+      const report = app.reconciliationReport;
+      if (!report?.recorded) return;
+      const header = ['workday', 'account', 'tracking', 'shipments', 'orders', 'status', 'source_created_at', 'scanned_at', 'cancelled_at', 'adjustment'];
+      const lines = [header, ...report.rows.map(row => [report.workday, report.account.label, row.trackingCode,
+        row.shipmentIds.join('|'), row.orderIds.join('|'), row.status, row.sourceCreatedAt, row.acceptedAt || '', row.cancelledAt || '', row.adjustment ? 'yes' : 'no'])]
+        .map(values => values.map(csvCell).join(','));
+      const blob = new Blob([`\uFEFF${lines.join('\r\n')}\r\n`], { type: 'text/csv;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `ampere-reconciliation-${report.account.key}-${report.workday}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 0);
+    }
+
     function renderAccess() {
       const d = accessTx();
       const authenticated = Boolean(app.session);
@@ -1601,6 +1946,7 @@
       document.querySelectorAll('#langSwitch button').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.lang === language)));
       renderAccess();
       renderIntegration();
+      renderReconciliation();
     }
 
     function renderAccountTabs() {
@@ -1648,7 +1994,7 @@
     }
 
     function focusScanner() {
-      if (!el('scanInput').disabled && document.visibilityState !== 'hidden') {
+      if (!app.integrationOpen && !app.reconciliationOpen && !el('scanInput').disabled && document.visibilityState !== 'hidden') {
         try { el('scanInput').focus({ preventScroll: true }); } catch (_) { el('scanInput').focus(); }
       }
     }
@@ -1676,6 +2022,24 @@
       render();
       if (app.session) focusScanner();
       else focusAccess();
+    });
+    el('reconciliationButton').addEventListener('click', openReconciliation);
+    el('reconciliationDialog').addEventListener('cancel', event => {
+      event.preventDefault();
+      closeReconciliation();
+    });
+    el('reconciliationCloseButton').addEventListener('click', closeReconciliation);
+    el('reconciliationRefreshButton').addEventListener('click', () => void loadReconciliation({ refresh: true }));
+    el('reconciliationDownloadButton').addEventListener('click', downloadReconciliationCsv);
+    el('reconciliationWorkday').addEventListener('change', event => {
+      const workday = event.currentTarget.value;
+      if (!validWorkday(workday) || ['loading', 'refreshing'].includes(app.reconciliationPhase)) return;
+      app.reconciliationWorkday = workday;
+      app.reconciliationReport = null;
+      app.reconciliationPhase = 'idle';
+      app.reconciliationMessage = '';
+      renderReconciliation();
+      void loadReconciliation();
     });
     el('connectionsButton').addEventListener('click', () => void openIntegrationManager());
     el('integrationDialog').addEventListener('cancel', event => {
@@ -1745,7 +2109,7 @@
     render();
     void checkSession();
     window.setInterval(() => {
-      if (!app.session || app.integrationOpen || document.visibilityState !== 'visible') return;
+      if (!app.session || app.integrationOpen || app.reconciliationOpen || document.visibilityState !== 'visible') return;
       if (sessionExpired()) expireSession('expired');
       else void refreshSnapshot({ silentFocus: true });
     }, REFRESH_INTERVAL_MS);

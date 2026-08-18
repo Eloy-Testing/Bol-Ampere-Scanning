@@ -51,6 +51,9 @@ test('new Bol account is verified, encrypted, audited, and exposed only as metad
     { key: 'primary', label: 'Bankhoes' },
     { key: 'secondary', label: 'Muisstil' },
   ]);
+  const initialSources = await service.listSources();
+  assert.match(initialSources[0].incarnation, /^bol_[A-Za-z0-9_-]{43}$/);
+  assert.equal(Object.hasOwn(initialSources[0], 'clientId'), false);
 
   const saved = await service.connect({
     label: 'Client North',
@@ -85,6 +88,7 @@ test('internal credential updates preserve the stable key and environment fallba
     clientFactory: (credentials) => client(credentials),
   });
   assert.equal((await service.get('primary')).credentials.clientId, 'primary-client');
+  const priorIncarnation = (await service.getSource('primary')).incarnation;
   const updated = await service.connect({
     accountKey: 'primary',
     clientId: 'primary-client-updated',
@@ -95,6 +99,9 @@ test('internal credential updates preserve the stable key and environment fallba
     key: 'primary', label: 'Bankhoes', kind: 'internal',
   });
   assert.equal((await service.get('primary')).credentials.clientId, 'primary-client-updated');
+  const nextSource = await service.getSource('primary');
+  assert.notEqual(nextSource.incarnation, priorIncarnation);
+  assert.equal(nextSource.client.credentials.clientId, 'primary-client-updated');
 });
 
 test('duplicate or rejected credentials leave no managed account behind', async (t) => {

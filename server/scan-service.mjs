@@ -18,17 +18,21 @@ function publicOutcome(attemptedOutcome, changed, record) {
 }
 
 export class ScanService {
-  constructor({ repository, bolClient, bolClientForAccount, now = () => new Date() }) {
+  constructor({ repository, bolClient, bolClientForAccount, bolSourceForAccount, now = () => new Date() }) {
     this.repository = repository;
     this.bolClient = bolClient;
     this.bolClientForAccount = bolClientForAccount || ((accountKey) => {
       if (accountKey && accountKey !== 'primary') throw new ValidationError();
       return bolClient;
     });
+    this.bolSourceForAccount = bolSourceForAccount || (async (accountKey) => ({
+      client: await this.bolClientForAccount(accountKey),
+      incarnation: null,
+    }));
     this.now = now;
   }
 
-  async #persist({ trackingCode, shipmentId = null, orderId = null, sourceAccount = null, outcome, reason, session, requestId }) {
+  async #persist({ trackingCode, shipmentId = null, orderId = null, sourceAccount = null, sourceAccountIncarnation = null, outcome, reason, session, requestId }) {
     const currentTime = this.now();
     const result = await this.repository.recordScanDecision({
       workday: scannerWorkday(currentTime),
@@ -36,6 +40,7 @@ export class ScanService {
       shipmentId,
       orderId,
       sourceAccount,
+      sourceAccountIncarnation,
       outcome,
       reason,
       stationId: session.stationId,
@@ -71,7 +76,8 @@ export class ScanService {
     let shipment;
     let orderId = null;
     try {
-      const bolClient = await this.bolClientForAccount(sourceAccount || 'primary');
+      const source = await this.bolSourceForAccount(sourceAccount || 'primary');
+      const bolClient = source.client;
       shipment = await bolClient.getShipment(shipmentId);
       if (shipment.shipmentId !== shipmentId) throw new UpstreamError();
       const verifiedCode = normalizeTrackingCode(shipment.transport?.trackAndTrace || '');
@@ -89,9 +95,9 @@ export class ScanService {
       if (relevantItems.length !== shipmentItemIds.size) throw new UpstreamError();
 
       if (relevantItems.some(isCancelled)) {
-        return this.#persist({ trackingCode, shipmentId, orderId, sourceAccount, outcome: 'cancelled', reason: 'order_item_cancelled', session, requestId });
+        return this.#persist({ trackingCode, shipmentId, orderId, sourceAccount, sourceAccountIncarnation: source.incarnation, outcome: 'cancelled', reason: 'order_item_cancelled', session, requestId });
       }
-      return this.#persist({ trackingCode, shipmentId, orderId, sourceAccount, outcome: 'accepted', reason: 'verified_live', session, requestId });
+      return this.#persist({ trackingCode, shipmentId, orderId, sourceAccount, sourceAccountIncarnation: source.incarnation, outcome: 'accepted', reason: 'verified_live', session, requestId });
     } catch (error) {
       if (!(error instanceof UpstreamError) && !(error instanceof ValidationError)) throw error;
       return this.#persist({

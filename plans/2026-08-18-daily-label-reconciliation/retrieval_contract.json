@@ -1,0 +1,101 @@
+{
+  "task_id": "2026-08-18-daily-label-reconciliation",
+  "created_at": "2026-08-18",
+  "target_surface": "Authenticated Ampere warehouse scanner daily reconciliation dialog and same-origin server API",
+  "project_owner": "BHP Warehouse Packing Tracker",
+  "request_summary": "Replace the operator's changing Excel label-count comparison with an automatic daily package reconciliation ledger and export.",
+  "included_pages": [
+    "AGENTS.md",
+    "README.md",
+    "index.html",
+    "server/application.mjs",
+    "server/bol-account-service.mjs",
+    "server/bol-client.mjs",
+    "server/repository.mjs",
+    "server/scan-service.mjs",
+    "server/workday.mjs",
+    "migrations/*.sql",
+    "tests/server/**",
+    "tests/fixtures/**",
+    "tests/*.spec.mjs",
+    "Existing StockItUp process-automation audit conclusions about label, handoff, and source ownership"
+  ],
+  "excluded_pages": [
+    "Creating a StockItUp API key or mutating StockItUp settings",
+    "Bol shipment, order, label, or account writes",
+    "Carrier acceptance, in-transit, delivery, returns, inventory, or finance automation",
+    "Non-ampere Turso tables",
+    "Production deployment or live migration",
+    "Claims that bol shipment observation proves the exact label-print timestamp"
+  ],
+  "active_rules": [
+    "Bol remains authoritative for shipment identity, tracking, order-item cancellation, and source timestamps.",
+    "The scanner remains authoritative for physical handoff scans.",
+    "Turso stores only additive ampere_* reconciliation state and audit history.",
+    "Browser code calls same-origin APIs and never submits operational source facts for persistence.",
+    "A source refresh commits reconciliation facts only after every configured account and stable page enumeration validates.",
+    "Account incarnation follows the credential fingerprint so credential replacement cannot merge seller histories.",
+    "A physical package is deduplicated by account incarnation and tracking identity while retaining all shipment and order-item membership.",
+    "Amsterdam workdays use half-open 16:00 boundaries; late observations are explicit adjustments.",
+    "Existing FIFO, Enter-only scan, automatic refocus, auth, and fail-closed behavior remain unchanged."
+  ],
+  "required_project_contracts": [
+    "plans/2026-08-18-daily-label-reconciliation/design_contract.md",
+    "plans/2026-08-18-daily-label-reconciliation/spatial_priority_contract.json",
+    "plans/2026-08-18-daily-label-reconciliation/interface_output_contract.json",
+    "plans/2026-08-18-daily-label-reconciliation/implementation_plan.md"
+  ],
+  "active_skills": [
+    "creative-design-orchestrator",
+    "surface-classifier",
+    "flow-priority-mapper",
+    "spatial-priority-planner",
+    "state-contract-warden",
+    "plan-critic",
+    "visual-outcome-review"
+  ],
+  "tool_surfaces": [
+    "local filesystem and shell",
+    "local libSQL migration harness",
+    "synthetic Node and Playwright tests",
+    "local browser visual inspection",
+    "approved GitHub repository and ZanderBMC release identity"
+  ],
+  "write_targets": [
+    "api/reconciliation.mjs",
+    "index.html",
+    "server/*.mjs",
+    "migrations/005_ampere_daily_reconciliation.sql",
+    "tests/**",
+    "plans/2026-08-18-daily-label-reconciliation/**",
+    "verification/2026-08-18-daily-label-reconciliation*",
+    "verification/screenshot-evidence/2026-08-18-daily-label-reconciliation*"
+  ],
+  "page_fault_policy": "record-and-resolve-before-design",
+  "external_account_policy": "No new external account access in this branch build; StockItUp ingestion remains an unconnected server-side source boundary.",
+  "content_truth_policy": "Use bol shipment observed language until an authoritative StockItUp label-created event is connected; never present inferred timestamps as exact label-print events.",
+  "assumptions": {
+    "verified": [
+      "The existing scanner currently computes package totals from a moving browser shipment snapshot.",
+      "Bol shipmentDateTime and shipment/item detail are available through the current read-only server adapter.",
+      "Accepted and cancelled scanner decisions are persisted in ampere_* state and audit tables.",
+      "StockItUp currently owns label generation but has no configured API key in the audited tenant.",
+      "Bol permits multiple shipment records to share one physical tracking identity."
+    ],
+    "inferred": [
+      "A bol-observed reconciliation ledger removes the changing-snapshot problem immediately while exact label-created parity waits for the StockItUp source event."
+    ],
+    "unknown": [
+      "The exact StockItUp label event and permission scope available to a future least-privilege API key.",
+      "The amount of historical label detail StockItUp can backfill."
+    ]
+  },
+  "verification_required": {
+    "browser_visual": true,
+    "state_coverage": true,
+    "interface_output_contract": true,
+    "spatial_priority_contract": true,
+    "specialized_profile_contract": false,
+    "pagespace_status": false
+  }
+}
