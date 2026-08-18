@@ -78,7 +78,7 @@ test('transient retailer status and transport failures recover within a bounded 
   assert.deepEqual(delays, [150, 400]);
 });
 
-test('retryable failures exhaust after three attempts and honor only a bounded Retry-After delay', async () => {
+test('retryable failures exhaust after three attempts and honor a bounded Retry-After delay', async () => {
   const delays = [];
   let retailerCalls = 0;
   const client = new BolClient({
@@ -96,7 +96,29 @@ test('retryable failures exhaust after three attempts and honor only a bounded R
   });
   await assert.rejects(() => client.getShipmentsPage(1), { code: 'verification_unavailable' });
   assert.equal(retailerCalls, 3);
-  assert.deepEqual(delays, [2_000, 2_000]);
+  assert.deepEqual(delays, [30_000, 30_000]);
+});
+
+test('rate-limited retailer requests wait for Retry-After before succeeding', async () => {
+  const delays = [];
+  let retailerCalls = 0;
+  const client = new BolClient({
+    clientId: 'client-id',
+    clientSecret: 'client-secret',
+    nodeEnv: 'test',
+    tokenUrl: 'https://bol.test/token',
+    apiBaseUrl: 'https://bol.test/retailer',
+    sleepImpl: async (delayMs) => delays.push(delayMs),
+    fetchImpl: async (url) => {
+      if (url.endsWith('/token')) return json({ access_token: 'token-value', expires_in: 299 });
+      retailerCalls += 1;
+      if (retailerCalls === 1) return json({}, { status: 429, headers: { 'retry-after': '4' } });
+      return json({ shipments: [] });
+    },
+  });
+  assert.deepEqual(await client.getShipmentsPage(1), { shipments: [], page: 1 });
+  assert.equal(retailerCalls, 2);
+  assert.deepEqual(delays, [4_000]);
 });
 
 test('malformed successful JSON is rejected immediately without transient retry', async () => {

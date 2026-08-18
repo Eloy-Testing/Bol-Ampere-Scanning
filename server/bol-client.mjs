@@ -8,7 +8,7 @@ const USER_AGENT = 'Ampere-Warehouse-Scanner/1.0';
 const PAGE_LIMIT = 100;
 const REQUEST_ATTEMPTS = 3;
 const RETRY_DELAYS_MS = [150, 400];
-const MAX_RETRY_AFTER_MS = 2_000;
+const MAX_RETRY_AFTER_MS = 30_000;
 const ISO_INSTANT = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d{1,9})?(?:Z|[+-](\d{2}):(\d{2}))$/;
 
 function text(value, maxLength = 256) {
