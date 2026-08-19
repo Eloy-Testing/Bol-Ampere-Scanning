@@ -18,6 +18,25 @@ test('actual handlers persist an authoritative scan across reload and stations',
   await expect(scanInput).toBeEnabled();
   await expect(scanInput).toBeFocused();
 
+  await page.locator('[data-testid="daily-report-button"]').click();
+  await expect(page.locator('[data-testid="daily-report-dialog"]')).toBeVisible();
+  await expect(page.locator('[data-testid="reconciliation-observed"]')).toHaveText('—');
+  await page.locator('[data-testid="reconciliation-refresh"]').click();
+  await expect(page.locator('[data-testid="reconciliation-observed"]')).toHaveText('1');
+  await expect(page.locator('[data-testid="reconciliation-expected"]')).toHaveText('1');
+  await expect(page.locator('[data-testid="reconciliation-scanned"]')).toHaveText('0');
+  await expect(page.locator('[data-testid="reconciliation-missing"]')).toHaveText('1');
+  await expect(page.locator('[data-testid="reconciliation-rows"]')).toContainText('TRACK-REAL-1');
+  await page.locator('#reconciliationCloseButton').click();
+
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await expect(scanInput).toBeEnabled();
+  await page.locator('[data-testid="daily-report-button"]').click();
+  await expect(page.locator('[data-testid="reconciliation-observed"]')).toHaveText('1');
+  await expect(page.locator('[data-testid="reconciliation-missing"]')).toHaveText('1');
+  await page.locator('#reconciliationCloseButton').click();
+  await expect(page.locator('[data-testid="daily-report-button"]')).toBeFocused();
+
   await page.locator('[data-testid="connections-button"]').click();
   await expect(page.locator('[data-testid="integration-list"]')).toContainText('Bankhoes');
   await page.locator('[data-testid="add-account-button"]').click();
@@ -37,6 +56,12 @@ test('actual handlers persist an authoritative scan across reload and stations',
   await scanInput.press('Enter');
   await expect(page.locator('[data-testid="scan-feedback"]')).toHaveAttribute('data-kind', 'success');
   await expect(page.locator('[data-testid="scanned-count"]')).toContainText('1');
+
+  await page.locator('[data-testid="daily-report-button"]').click();
+  await expect(page.locator('[data-testid="reconciliation-scanned"]')).toHaveText('1');
+  await expect(page.locator('[data-testid="reconciliation-missing"]')).toHaveText('0');
+  await expect(page.locator('[data-testid="reconciliation-decision"]')).toHaveAttribute('data-state', 'clear');
+  await page.locator('#reconciliationCloseButton').click();
 
   const firstState = await page.evaluate(async () => (await fetch('/api/state')).json());
   expect(firstState.scanned['TRACK-REAL-1']).toBeTruthy();

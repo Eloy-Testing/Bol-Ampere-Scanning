@@ -1,0 +1,40 @@
+{
+  "schema_version": "ampere.browser-state.v1",
+  "project_root": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker",
+  "artifact": {
+    "type": "local_browser_ui",
+    "url": "http://127.0.0.1:4188/index.html",
+    "entrypoint": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/index.html",
+    "entrypoint_sha256": "0fdf6d431996f4186ef7a1c16b49e0b1c47de56ac05f418b3f48ea120243a54c"
+  },
+  "viewports": [
+    { "width": 1440, "height": 980 },
+    { "width": 390, "height": 900 }
+  ],
+  "states": {
+    "stored_mismatch": { "observed": 1, "expected": 1, "scanned": 0, "missing": 1 },
+    "stored_mismatch_after_reload": { "observed": 1, "expected": 1, "scanned": 0, "missing": 1 },
+    "reconciled_after_scan": { "observed": 1, "expected": 1, "scanned": 1, "missing": 0 },
+    "reconciled_after_reload": { "scanned": 1, "missing": 0 },
+    "daily_report_enabled_after_scan": true,
+    "browser_warning_or_error_count": 0
+  },
+  "evidence": [
+    {
+      "path": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/verification/2026-08-19-daily-label-reconciliation/desktop-mismatch.png",
+      "sha256": "99ec799acf9c8f3b5ee17c465368d9f28b98c9207f729870ee893a842c7b655a"
+    },
+    {
+      "path": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/verification/2026-08-19-daily-label-reconciliation/mobile-mismatch-top.png",
+      "sha256": "b615f022e66ebeff57c0edd2bfe710f24c4e5f2198c0fb30988ce6fbba3c3fac"
+    },
+    {
+      "path": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/verification/2026-08-19-daily-label-reconciliation/mobile-mismatch-bottom.png",
+      "sha256": "513490fc43c76e824c943ccf812c357dd8e61cf72b2b08b680284d9504540893"
+    },
+    {
+      "path": "/Users/zanderbrilleman/Documents/BHP Warehouse Packing Tracker/verification/2026-08-19-daily-label-reconciliation/desktop-reconciled.png",
+      "sha256": "e7dcbf0114231002a078733383efd3aec0af3178a8d06c729d67db218bde4b90"
+    }
+  ]
+}

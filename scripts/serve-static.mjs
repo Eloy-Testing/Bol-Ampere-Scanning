@@ -12,6 +12,7 @@ import { CredentialVault } from '../server/credential-vault.mjs';
 import { createDatabaseClient } from '../server/database.mjs';
 import { ScannerRepository } from '../server/repository.mjs';
 import { hashPassword } from '../server/security.mjs';
+import { scannerWorkday, workdayBounds } from '../server/workday.mjs';
 import { applyMigrations, loadMigrations } from './migrate.mjs';
 
 const root = resolve(fileURLToPath(new URL('..', import.meta.url)));
@@ -38,8 +39,10 @@ const staticHeaders = {
   'X-Frame-Options': 'DENY',
 };
 const syntheticNow = new Date();
-const syntheticOrderDateTime = new Date(syntheticNow.getTime() - 60 * 60 * 1000).toISOString();
-const syntheticShipmentDateTime = new Date(syntheticNow.getTime() - 30 * 60 * 1000).toISOString();
+const syntheticBounds = workdayBounds(scannerWorkday(syntheticNow));
+const syntheticShipmentTime = new Date(Math.max(syntheticBounds.start.getTime(), syntheticNow.getTime() - 30 * 60 * 1000));
+const syntheticOrderDateTime = new Date(syntheticShipmentTime.getTime() - 30 * 60 * 1000).toISOString();
+const syntheticShipmentDateTime = syntheticShipmentTime.toISOString();
 const syntheticDeliveryDate = new Date(syntheticNow.getTime() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
 
 const syntheticOrder = {
@@ -175,7 +178,7 @@ const server = createServer(async (request, response) => {
     return;
   }
 
-  const apiName = url.pathname.match(/^\/api\/(session|state|retailer|integrations|scan)$/)?.[1];
+  const apiName = url.pathname.match(/^\/api\/(session|state|retailer|integrations|reconciliation|scan)$/)?.[1];
   if (apiName) {
     await application[apiName](request, response);
     return;
