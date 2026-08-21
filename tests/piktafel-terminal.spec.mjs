@@ -125,7 +125,10 @@ test.describe("BHP piktafel terminal", () => {
   test("uses the official BHP logo asset", async ({ page }) => {
     const logo = page.locator(".brand-logo");
     await expect(logo).toBeVisible();
-    await expect(logo).toHaveAttribute("src", "../assets/brand/bhp-logo-horizontal.png");
+    await expect(logo).toHaveAttribute(
+      "src",
+      "/operations-dashboard/assets/brand/bhp-logo-horizontal.png",
+    );
     expect(await logo.evaluate((image) => image.complete && image.naturalWidth > 0)).toBe(true);
   });
 
