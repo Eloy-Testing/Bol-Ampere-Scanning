@@ -1,7 +1,9 @@
-import { createClient } from '@libsql/client';
+import { createClient as createNodeClient } from '@libsql/client';
+import { createClient as createWebClient } from '@libsql/client/web';
 import { DatabaseError } from './errors.mjs';
 
 export function createDatabaseClient({ url, authToken }) {
+  const createClient = url.startsWith('file:') ? createNodeClient : createWebClient;
   return createClient({ url, ...(authToken ? { authToken } : {}) });
 }
 
