@@ -10,7 +10,7 @@ The operational loop is `start → scan → next → repeat`. Enter-terminated s
 - `api/` — Vercel Functions for session, shared state, retailer reads, and authoritative scan decisions.
 - `server/` — authentication, bol Retailer API, Turso, HTTP, and scan-domain modules.
 - `migrations/` — ordered, idempotent additive schema migrations. Every app-owned object is prefixed `ampere_`.
-- Turso database — the approved Bankhoes database at `bankhoes-bi-data-zanderbmc.aws-eu-west-1.turso.io`; existing non-`ampere_` tables are outside this app's contract.
+- Turso database — the approved Bankhoes database at `bankhoes-bi-data-luukhootsen.aws-eu-west-1.turso.io`; existing non-`ampere_` tables are outside this app's contract.
 
 bol.com remains the source of truth. The datastore contains normalized operational identifiers and audit metadata, not complete order/shipment/customer payloads or secrets.
 
@@ -71,7 +71,7 @@ First inspect the numbered migrations (currently `001_ampere_scanner.sql`, `002_
 node --env-file='../Bankhoes BI Dashboard/.env.local' scripts/migrate.mjs
 ```
 
-The migration is additive and idempotent. Stop if the resolved database host is not `bankhoes-bi-data-zanderbmc.aws-eu-west-1.turso.io`. Do not query, change, or depend on existing non-`ampere_` Bankhoes tables.
+The migration is additive and idempotent. Stop if the resolved database host is not `bankhoes-bi-data-luukhootsen.aws-eu-west-1.turso.io`. Do not query, change, or depend on existing non-`ampere_` Bankhoes tables.
 
 ## Vercel setup
 

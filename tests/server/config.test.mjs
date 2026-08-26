@@ -33,11 +33,17 @@ test('configuration permits tokenless local libSQL but requires all server-only 
   assert.throws(() => databaseConfig({ TURSO_DATABASE_URL: 'libsql://other-database.turso.io', TURSO_AUTH_TOKEN: 'token' }), {
     name: 'ConfigurationError',
   });
-  assert.deepEqual(databaseConfig({
+  assert.throws(() => databaseConfig({
     TURSO_DATABASE_URL: 'libsql://bankhoes-bi-data-zanderbmc.aws-eu-west-1.turso.io',
     TURSO_AUTH_TOKEN: 'token',
   }), {
-    url: 'libsql://bankhoes-bi-data-zanderbmc.aws-eu-west-1.turso.io',
+    name: 'ConfigurationError',
+  });
+  assert.deepEqual(databaseConfig({
+    TURSO_DATABASE_URL: 'libsql://bankhoes-bi-data-luukhootsen.aws-eu-west-1.turso.io',
+    TURSO_AUTH_TOKEN: 'token',
+  }), {
+    url: 'libsql://bankhoes-bi-data-luukhootsen.aws-eu-west-1.turso.io',
     authToken: 'token',
   });
   assert.throws(() => loadConfig({ ...complete, WAREHOUSE_PASSWORD_HASH: 'malformed' }), {

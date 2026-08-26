@@ -3,7 +3,7 @@ import { parseCredentialEncryptionKey, validateBolCredentials } from './credenti
 import { isPasswordHash } from './security.mjs';
 
 const nonEmpty = (value) => typeof value === 'string' && value.trim().length > 0;
-export const APPROVED_TURSO_HOST = 'bankhoes-bi-data-zanderbmc.aws-eu-west-1.turso.io';
+export const APPROVED_TURSO_HOST = 'bankhoes-bi-data-luukhootsen.aws-eu-west-1.turso.io';
 
 export function isApprovedDatabaseUrl(value) {
   if (!nonEmpty(value)) return false;
