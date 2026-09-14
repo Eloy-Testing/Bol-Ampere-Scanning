@@ -385,27 +385,70 @@ export function createApplication({ config, repository, bolClient, bolAccountSer
     if (req.method !== 'POST') return sendJson(res, 405, { error: { code: 'method_not_allowed', message: 'Method not allowed.' } }, { Allow: 'POST' });
     enforceSameOrigin(req);
     const id = requestId();
-    const session = await requireSession(req, id);
-    const body = await readJson(req);
-    exactKeys(body, ['trackingCode'], ['shipmentId', 'verificationIncomplete', 'account']);
-    normalizeTrackingCode(body.trackingCode);
-    const hasShipmentId = body.shipmentId != null && body.shipmentId !== '';
-    if (hasShipmentId) {
-      validateIdentifier(body.shipmentId);
-      if (typeof body.account !== 'string') throw new ValidationError();
-      await accounts.get(body.account);
-    } else if (body.account !== undefined) {
-      throw new ValidationError();
+    const startedAt = performance.now();
+    const phases = new Map();
+    const bol = { tokenMs: 0, tokenCalls: 0, httpMs: 0, retries: 0, rateLimited: 0 };
+    const recordTiming = (phase, duration, detail) => {
+      if (!Number.isFinite(duration)) return;
+      phases.set(phase, Math.round(((phases.get(phase) || 0) + duration) * 10) / 10);
+      if (detail) {
+        bol.tokenMs += Number(detail.tokenMs) || 0;
+        bol.tokenCalls += Number(detail.tokenCalls) || 0;
+        bol.httpMs += Number(detail.httpMs) || 0;
+        bol.retries += Number(detail.retries) || 0;
+        bol.rateLimited += Number(detail.rateLimited) || 0;
+      }
+    };
+    const measure = async (phase, task) => {
+      const phaseStartedAt = performance.now();
+      try { return await task(); }
+      finally { recordTiming(phase, performance.now() - phaseStartedAt); }
+    };
+    let authenticated = false;
+    let responseBody;
+    let outcome = 'error';
+    try {
+      const session = await measure('session', () => requireSession(req, id));
+      authenticated = true;
+      const body = await readJson(req);
+      exactKeys(body, ['trackingCode'], ['shipmentId', 'verificationIncomplete', 'account']);
+      normalizeTrackingCode(body.trackingCode);
+      const hasShipmentId = body.shipmentId != null && body.shipmentId !== '';
+      let resolvedSource = null;
+      if (hasShipmentId) {
+        validateIdentifier(body.shipmentId);
+        if (typeof body.account !== 'string') throw new ValidationError();
+        resolvedSource = await measure('account', () => sourceProvider.getSource(body.account));
+        if (resolvedSource.key !== body.account) throw new ValidationError();
+      } else if (body.account !== undefined) {
+        throw new ValidationError();
+      }
+      if (body.verificationIncomplete !== undefined && body.verificationIncomplete !== true) throw new ValidationError();
+      const decision = await scanService.decide({ ...body, resolvedSource, session, requestId: id, onTiming: recordTiming });
+      const { canonicalRecords, workday, record, ...publicDecision } = decision;
+      outcome = publicDecision.outcome;
+      responseBody = {
+        ...publicDecision,
+        orderId: record.orderId || '',
+        record,
+        state: statePayload(workday, canonicalRecords),
+      };
+    } finally {
+      if (authenticated) {
+        const totalMs = Math.round((performance.now() - startedAt) * 10) / 10;
+        const metrics = Object.fromEntries(phases);
+        metrics.total = totalMs;
+        const serverTiming = Object.entries(metrics).map(([phase, duration]) => `${phase};dur=${duration}`).join(', ');
+        try {
+          res.setHeader('Server-Timing', serverTiming);
+          console.info(JSON.stringify({ event: 'ampere_scan_timing', requestId: id, outcome, ...metrics,
+            bolTokenMs: Math.round(bol.tokenMs * 10) / 10, bolHttpMs: Math.round(bol.httpMs * 10) / 10,
+            bolTokenCalls: bol.tokenCalls,
+            bolRetries: bol.retries, bolRateLimited: bol.rateLimited }));
+        } catch { /* Diagnostics cannot change a scan decision. */ }
+      }
     }
-    if (body.verificationIncomplete !== undefined && body.verificationIncomplete !== true) throw new ValidationError();
-    const decision = await scanService.decide({ ...body, session, requestId: id });
-    const { canonicalRecords, workday, record, ...publicDecision } = decision;
-    return sendJson(res, 200, {
-      ...publicDecision,
-      orderId: record.orderId || '',
-      record,
-      state: statePayload(workday, canonicalRecords),
-    });
+    return sendJson(res, 200, responseBody);
   }
 
   function safe(route) {

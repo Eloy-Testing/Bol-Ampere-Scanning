@@ -20,6 +20,13 @@ test.describe('rapid scanner queue', () => {
     expect(await scanCalls(page)).toEqual(['TRACK-1', 'TRACK-2', 'TRACK-3']);
     expect(await page.evaluate(() => window.__apiMock.maxConcurrentScans)).toBe(1);
     await expect(page.locator(selectors.scanInput)).toBeFocused();
+    const timing = await page.evaluate(() => window.__scannerTiming.read());
+    expect(timing.count).toBe(3);
+    expect(timing.p50Ms).toBeGreaterThanOrEqual(0);
+    expect(timing.p95Ms).toBeGreaterThanOrEqual(timing.p50Ms);
+    expect(timing.samples[0].queueDepth).toBe(0);
+    expect(timing.samples.some(({ queueDepth }) => queueDepth > 0)).toBe(true);
+    expect(JSON.stringify(timing)).not.toMatch(/TRACK-|ORDER-/);
   });
 
   test('suppresses a duplicate while its first scan is still in flight', async ({ page }) => {

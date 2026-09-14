@@ -121,6 +121,37 @@ test('rate-limited retailer requests wait for Retry-After before succeeding', as
   assert.deepEqual(delays, [4_000]);
 });
 
+test('live detail timing counts token acquisition and rate-limit retries without payload data', async () => {
+  let detailCalls = 0;
+  const timing = {};
+  const client = new BolClient({
+    clientId: 'client-id',
+    clientSecret: 'client-secret',
+    nodeEnv: 'test',
+    tokenUrl: 'https://bol.test/token',
+    apiBaseUrl: 'https://bol.test/retailer',
+    sleepImpl: async () => {},
+    fetchImpl: async (url) => {
+      if (url.endsWith('/token')) return json({ access_token: 'token-value', expires_in: 299 });
+      detailCalls += 1;
+      if (detailCalls === 1) return json({}, { status: 429, headers: { 'retry-after': '0' } });
+      return json({
+        shipmentId: 'SHIPMENT-1', shipmentDateTime: '2026-08-05T09:00:00Z',
+        order: { orderId: 'ORDER-1' }, transport: { trackAndTrace: 'TRACK-1' },
+        shipmentItems: [{ orderItemId: 'ITEM-1' }],
+      });
+    },
+  });
+  assert.equal((await client.getShipment('SHIPMENT-1', { timing })).shipmentId, 'SHIPMENT-1');
+  assert.equal(detailCalls, 2);
+  assert.equal(timing.tokenCalls, 1);
+  assert.equal(timing.retries, 1);
+  assert.equal(timing.rateLimited, 1);
+  assert.ok(timing.tokenMs >= 0);
+  assert.ok(timing.httpMs >= 0);
+  assert.doesNotMatch(JSON.stringify(timing), /TRACK-|ORDER-|SHIPMENT-/);
+});
+
 test('malformed successful JSON is rejected immediately without transient retry', async () => {
   let retailerCalls = 0;
   const client = new BolClient({

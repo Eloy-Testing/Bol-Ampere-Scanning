@@ -572,6 +572,26 @@
       integrationOpen: false, integrationPhase: 'idle', integrationMode: 'list', integrationAccounts: [], integrationEditingKey: null, integrationMessage: '',
       reconciliationOpen: false, reconciliationPhase: 'idle', reconciliationWorkday: '', reconciliationReport: null, reconciliationMessage: ''
     };
+    const scanTimings = [];
+    const roundMs = value => Math.max(0, Math.round(value * 10) / 10);
+    function scanTimingSummary() {
+      const samples = scanTimings.map(sample => ({ ...sample }));
+      const percentile = (key, fraction) => {
+        const values = samples.filter(sample => !sample.resumed).map(sample => sample[key]).sort((a, b) => a - b);
+        return values.length ? values[Math.ceil(values.length * fraction) - 1] : null;
+      };
+      return { count: samples.length, p50Ms: percentile('totalMs', 0.5), p95Ms: percentile('totalMs', 0.95),
+        queueP95Ms: percentile('queueMs', 0.95), samples };
+    }
+    window.__scannerTiming = Object.freeze({ read: scanTimingSummary });
+    function recordScanTiming(job, outcome) {
+      if (!Number.isFinite(job.queuedAt) || !Number.isFinite(job.startedAt)) return;
+      const endedAt = performance.now();
+      scanTimings.push(Object.freeze({ totalMs: roundMs(endedAt - job.queuedAt),
+        queueMs: roundMs(job.startedAt - job.queuedAt), decisionMs: roundMs(endedAt - job.startedAt),
+        queueDepth: job.queueDepth, outcome, resumed: Boolean(job.resumed) }));
+      if (scanTimings.length > 200) scanTimings.shift();
+    }
 
     function safeLanguageGet() { try { return localStorage.getItem(LANGUAGE_KEY); } catch (_) { return null; } }
     function safeLanguageSet(value) { try { localStorage.setItem(LANGUAGE_KEY, value); } catch (_) {} }
@@ -918,7 +938,7 @@
       const paused = app.pausedQueue.splice(0);
       for (const job of paused) {
         if (!job.queuedDuplicate) app.pendingCodes.add(job.code);
-        app.queue.push(job);
+        app.queue.push({ ...job, queuedAt: performance.now(), resumed: true });
       }
       renderRuntime();
     }
@@ -994,7 +1014,7 @@
       if (job.queuedDuplicate) {
         const shipment = app.snapshot && app.snapshot.byAccount && app.snapshot.byAccount[job.account] && app.snapshot.byAccount[job.account].trackIndex.get(code);
         decide('duplicate', 'pending', code, shipment && shipment.orderId, job.account);
-        return;
+        return 'duplicate';
       }
 
       let shipment = app.snapshot && app.snapshot.byAccount && app.snapshot.byAccount[job.account] && app.snapshot.byAccount[job.account].trackIndex.get(code);
@@ -1003,7 +1023,7 @@
         app.currentCheck = { kind: 'refreshingUnknown', code };
         renderRuntime();
         const refreshed = await refreshSnapshot({ silentFocus: true, interruptedJob: job });
-        if (!app.session) return;
+        if (!app.session) return 'paused';
         if (refreshed) shipment = app.snapshot && app.snapshot.byAccount && app.snapshot.byAccount[job.account] && app.snapshot.byAccount[job.account].trackIndex.get(code);
         else verificationIncomplete = true;
       }
@@ -1029,17 +1049,19 @@
         if (outcome === 'success') decide('success', 'verified', code, orderId, job.account);
         else if (outcome === 'duplicate') decide('duplicate', 'scanned', code, orderId, job.account);
         else decide('stop', outcome, code, orderId, job.account);
+        return outcome;
       } catch (error) {
         if (error instanceof RequestError && error.status === 401) {
           pauseForReauthentication(job);
           el('scanInput').value = '';
           expireSession('expired', { preservePausedQueue: app.pausedQueue.length > 0 });
-          return;
+          return 'paused';
         }
         app.stateHealthy = false;
         app.phase = 'error';
         app.lastLoadError = 'shared';
         decide('stop', 'unverified', code, shipment && shipment.orderId, job.account);
+        return 'unverified';
       } finally {
         app.activeVerifiers -= 1;
       }
@@ -1052,9 +1074,12 @@
         while (app.queue.length) {
           if (!canScan()) break;
           const job = app.queue.shift();
+          job.startedAt = performance.now();
           renderRuntime();
-          try { await processScan(job); }
+          let outcome = 'error';
+          try { outcome = await processScan(job); }
           finally {
+            recordScanTiming(job, outcome);
             if (!job.queuedDuplicate) app.pendingCodes.delete(job.code);
             app.currentCheck = null;
             renderRuntime();
@@ -1078,7 +1103,7 @@
       primeAudio();
       const queuedDuplicate = app.pendingCodes.has(code);
       if (!queuedDuplicate) app.pendingCodes.add(code);
-      app.queue.push({ code, queuedDuplicate, account: activeAccount() });
+      app.queue.push({ code, queuedDuplicate, account: activeAccount(), queuedAt: performance.now(), queueDepth: app.queue.length });
       renderRuntime();
       void drainQueue();
     }

@@ -176,7 +176,7 @@ export class BolClient {
     this.token = null;
   }
 
-  async #boundedJson(url, options) {
+  async #boundedJson(url, options, timing = null) {
     for (let attempt = 1; attempt <= REQUEST_ATTEMPTS; attempt += 1) {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
@@ -185,6 +185,7 @@ export class BolClient {
         response = await this.fetch(url, { ...options, signal: controller.signal });
       } catch {
         if (attempt === REQUEST_ATTEMPTS) throw new UpstreamError();
+        if (timing) timing.retries = (timing.retries || 0) + 1;
         try { await this.sleep(retryDelay(null, attempt, this.now)); } catch { throw new UpstreamError(); }
         continue;
       } finally {
@@ -195,25 +196,37 @@ export class BolClient {
         try { payload = await response.json(); } catch { throw new UpstreamError(); }
         return { response, payload };
       }
+      if (response.status === 429 && timing) timing.rateLimited = (timing.rateLimited || 0) + 1;
       if (!retryableStatus(response.status) || attempt === REQUEST_ATTEMPTS) return { response, payload: null };
+      if (timing) timing.retries = (timing.retries || 0) + 1;
       try { await this.sleep(retryDelay(response, attempt, this.now)); } catch { throw new UpstreamError(); }
     }
     throw new UpstreamError();
   }
 
-  async #accessToken(force = false) {
+  async #accessToken(force = false, timing = null) {
     if (!force && this.token && this.token.expiresAt - 30_000 > this.now()) return this.token.value;
+    const startedAt = performance.now();
     const basic = Buffer.from(`${this.clientId}:${this.clientSecret}`, 'utf8').toString('base64');
-    const { response, payload } = await this.#boundedJson(this.tokenUrl, {
-      method: 'POST',
-      headers: {
-        Accept: 'application/json',
-        Authorization: `Basic ${basic}`,
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'User-Agent': USER_AGENT,
-      },
-      body: 'grant_type=client_credentials',
-    });
+    let tokenResponse;
+    try {
+      tokenResponse = await this.#boundedJson(this.tokenUrl, {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          Authorization: `Basic ${basic}`,
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'User-Agent': USER_AGENT,
+        },
+        body: 'grant_type=client_credentials',
+      }, timing);
+    } finally {
+      if (timing) {
+        timing.tokenMs = (timing.tokenMs || 0) + performance.now() - startedAt;
+        timing.tokenCalls = (timing.tokenCalls || 0) + 1;
+      }
+    }
+    const { response, payload } = tokenResponse;
     if ([401, 403].includes(response.status)) throw new BolCredentialsRejectedError();
     if (!response.ok) throw new UpstreamError();
     if (typeof payload?.access_token !== 'string' || payload.access_token.length < 8) throw new UpstreamError();
@@ -222,20 +235,27 @@ export class BolClient {
     return this.token.value;
   }
 
-  async #request(path, retry = true) {
-    const token = await this.#accessToken();
-    const { response, payload } = await this.#boundedJson(`${this.apiBaseUrl}${path}`, {
-      method: 'GET',
-      headers: {
-        Accept: ACCEPT,
-        Authorization: `Bearer ${token}`,
-        'User-Agent': USER_AGENT,
-      },
-    });
+  async #request(path, retry = true, timing = null) {
+    const token = await this.#accessToken(false, timing);
+    const startedAt = performance.now();
+    let requestResponse;
+    try {
+      requestResponse = await this.#boundedJson(`${this.apiBaseUrl}${path}`, {
+        method: 'GET',
+        headers: {
+          Accept: ACCEPT,
+          Authorization: `Bearer ${token}`,
+          'User-Agent': USER_AGENT,
+        },
+      }, timing);
+    } finally {
+      if (timing) timing.httpMs = (timing.httpMs || 0) + performance.now() - startedAt;
+    }
+    const { response, payload } = requestResponse;
     if (response.status === 401 && retry) {
       this.token = null;
-      await this.#accessToken(true);
-      return this.#request(path, false);
+      await this.#accessToken(true, timing);
+      return this.#request(path, false, timing);
     }
     if ([401, 403].includes(response.status)) throw new BolCredentialsRejectedError();
     if (!response.ok) throw new UpstreamError();
@@ -272,16 +292,16 @@ export class BolClient {
     });
   }
 
-  async getOrder(id) {
+  async getOrder(id, { timing = null } = {}) {
     const identifier = validateIdentifier(id);
-    const order = sanitizeOrder(await this.#request(`/orders/${encodeURIComponent(identifier)}`), { detail: true });
+    const order = sanitizeOrder(await this.#request(`/orders/${encodeURIComponent(identifier)}`, true, timing), { detail: true });
     if (order.orderId !== identifier) throw new UpstreamError();
     return order;
   }
 
-  async getShipment(id) {
+  async getShipment(id, { timing = null } = {}) {
     const identifier = validateIdentifier(id);
-    const shipment = sanitizeShipment(await this.#request(`/shipments/${encodeURIComponent(identifier)}`), { detail: true });
+    const shipment = sanitizeShipment(await this.#request(`/shipments/${encodeURIComponent(identifier)}`, true, timing), { detail: true });
     if (shipment.shipmentId !== identifier) throw new UpstreamError();
     return shipment;
   }

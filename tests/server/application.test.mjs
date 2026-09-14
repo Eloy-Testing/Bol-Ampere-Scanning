@@ -146,6 +146,10 @@ test('actual handlers sign in, hydrate, read bol, verify a scan, persist it, and
   assert.equal(accepted.body.outcome, 'success');
   assert.equal(accepted.body.counted, true);
   assert.equal(accepted.body.record.sourceAccount, 'primary');
+  for (const phase of ['session', 'account', 'shipment', 'order', 'turso', 'total']) {
+    assert.match(accepted.headers['server-timing'], new RegExp(`${phase};dur=\\d`));
+  }
+  assert.doesNotMatch(accepted.headers['server-timing'], /TRACK-|ORDER-|SHIPMENT-/);
 
   const duplicate = await invoke(app.scan, {
     method: 'POST',
@@ -466,6 +470,7 @@ test('authenticated reconciliation reads stored reports and refreshes only throu
 test('retailer and scan routes keep the configured source key through secondary verification', async (t) => {
   const { repository } = await databaseFixture(t);
   const calls = [];
+  let accountResolutions = 0;
   const primary = bolFixture();
   const secondary = {
     ...bolFixture(),
@@ -488,6 +493,7 @@ test('retailer and scan routes keep the configured source key through secondary 
   const bolClient = {
     accountKeys: () => ['primary', 'secondary'],
     get: (account) => {
+      accountResolutions += 1;
       if (account === 'primary') return primary;
       if (account === 'secondary') return secondary;
       throw new Error('unknown source');
@@ -520,6 +526,13 @@ test('retailer and scan routes keep the configured source key through secondary 
   assert.equal(accepted.body.outcome, 'success');
   assert.equal(accepted.body.record.sourceAccount, 'secondary');
   assert.deepEqual(calls, [['shipment', 'SECONDARY-SHIPMENT'], ['order', 'SECONDARY-ORDER']]);
+  assert.equal(accountResolutions, 1);
+  const invalid = await invoke(app.scan, {
+    method: 'POST', body: { trackingCode: 'SECONDARY-TRACK', shipmentId: 'SECONDARY-SHIPMENT', account: 'other' },
+    headers: mutationHeaders(cookie),
+  });
+  assert.equal(invalid.statusCode, 400);
+  assert.equal(accountResolutions, 1);
 });
 
 test('integration management requires session re-auth and never returns submitted secrets', async (t) => {

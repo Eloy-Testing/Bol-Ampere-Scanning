@@ -127,33 +127,41 @@ export class BolAccountService {
 
   async getSource(accountKey) {
     const key = validateBolAccountKey(accountKey);
-    const source = (await this.listSources()).find((entry) => entry.key === key);
-    if (!source) throw new ValidationError();
-    return Object.freeze({ ...source, client: await this.get(key) });
-  }
-
-  async get(accountKey) {
-    const key = validateBolAccountKey(accountKey);
     const record = await this.repository.getBolAccountRecord(key);
+    const staticAccount = this.staticAccounts.get(key);
     let credentials;
     let cacheRevision;
+    let fingerprint;
+    let label;
+    let kind;
     if (record) {
       const validRecord = this.#validateRecord(record);
       credentials = this.vault.open(key, validRecord);
       cacheRevision = `managed:${validRecord.revision}:${validRecord.updatedAt}`;
+      fingerprint = validRecord.credentialFingerprint;
+      label = staticAccount?.label || validRecord.label;
+      kind = validRecord.accountKind;
     } else {
-      const staticAccount = this.staticAccounts.get(key);
       if (!staticAccount) throw new ValidationError();
       credentials = { clientId: staticAccount.clientId, clientSecret: staticAccount.clientSecret };
-      cacheRevision = `environment:${this.vault.fingerprint(staticAccount.clientId)}`;
+      fingerprint = this.vault.fingerprint(staticAccount.clientId);
+      cacheRevision = `environment:${fingerprint}`;
+      label = staticAccount.label;
+      kind = 'internal';
     }
     const cached = this.cache.get(key);
-    if (cached?.revision === cacheRevision) return cached.client;
-    const client = this.clientFactory(credentials);
-    if (!client || typeof client.getOrdersPage !== 'function' || typeof client.getShipmentsPage !== 'function'
-      || typeof client.getOrder !== 'function' || typeof client.getShipment !== 'function') throw new CredentialStoreError();
-    this.cache.set(key, { revision: cacheRevision, client });
-    return client;
+    let client = cached?.revision === cacheRevision ? cached.client : null;
+    if (!client) {
+      client = this.clientFactory(credentials);
+      if (!client || typeof client.getOrdersPage !== 'function' || typeof client.getShipmentsPage !== 'function'
+        || typeof client.getOrder !== 'function' || typeof client.getShipment !== 'function') throw new CredentialStoreError();
+      this.cache.set(key, { revision: cacheRevision, client });
+    }
+    return Object.freeze({ key, label, kind, incarnation: `bol_${fingerprint}`, client });
+  }
+
+  async get(accountKey) {
+    return (await this.getSource(accountKey)).client;
   }
 
   async connect({ accountKey = null, label = null, clientId, clientSecret, session, requestId, now }) {

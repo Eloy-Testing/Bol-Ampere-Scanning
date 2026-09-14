@@ -104,6 +104,27 @@ test('internal credential updates preserve the stable key and environment fallba
   assert.equal(nextSource.client.credentials.clientId, 'primary-client-updated');
 });
 
+test('scan source resolution reads only the selected account and preserves its incarnation', async (t) => {
+  const { repository } = await databaseFixture(t);
+  let selectedReads = 0;
+  const readSelected = repository.getBolAccountRecord.bind(repository);
+  repository.getBolAccountRecord = async (key) => { selectedReads += 1; return readSelected(key); };
+  repository.listBolAccountRecords = async () => { throw new Error('scan must not read the account directory'); };
+  const service = new BolAccountService({
+    repository,
+    staticAccounts,
+    vault: new CredentialVault(encryptionKey),
+    nodeEnv: 'test',
+    clientFactory: (credentials) => client(credentials),
+  });
+  const source = await service.getSource('secondary');
+  assert.equal(source.key, 'secondary');
+  assert.equal(source.client.credentials.clientId, 'secondary-client');
+  assert.match(source.incarnation, /^bol_[A-Za-z0-9_-]{43}$/);
+  assert.equal(selectedReads, 1);
+  await assert.rejects(() => service.getSource('missing'), { code: 'invalid_request' });
+});
+
 test('duplicate or rejected credentials leave no managed account behind', async (t) => {
   const { repository } = await databaseFixture(t);
   const service = new BolAccountService({
