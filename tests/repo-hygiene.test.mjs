@@ -15,6 +15,11 @@ test('repository contains one canonical HTML entry point and no operational debr
   expect(files.filter((name) => /^\d{10,}\.html$/.test(name))).toEqual([]);
 });
 
+test('local Agent-Native artifacts are excluded from Vercel uploads', async () => {
+  const ignored = await readFile(resolve(root, '.vercelignore'), 'utf8');
+  expect(ignored.split(/\r?\n/).map((line) => line.trim())).toContain('.agent-native');
+});
+
 test('production entry point does not import remote scripts or styles', async () => {
   const html = await readFile(resolve(root, 'index.html'), 'utf8');
   expect(html).not.toMatch(/<(?:script|link)\b[^>]+(?:src|href)=["']https?:\/\//i);
