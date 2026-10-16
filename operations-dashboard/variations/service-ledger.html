@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f2eee6">
+  <title>BHP Operations Control — Service Ledger</title>
+  <link rel="stylesheet" href="service-ledger.css">
+</head>
+<body>
+  <header class="ledger-header">
+    <a class="ledger-mark" href="index.html" aria-label="Terug naar richtingen"><span>[</span>BHP<span>]</span></a>
+    <div class="ledger-title"><strong>Operations Control</strong><small>Client service ledger · Amsterdam</small></div>
+    <div class="ledger-date"><span>Vandaag</span><b data-clock>11:42</b></div>
+    <div class="ledger-user"><span>Alle merken</span><i>MS</i></div>
+  </header>
+
+  <nav class="folio-nav" aria-label="Portfolio secties">
+    <a class="active" href="#portfolio">Portfolio</a>
+    <a href="#attention">Interventies <span>2</span></a>
+    <a href="#promises">Service promises</a>
+    <a href="#drivers">Fulfilment drivers</a>
+    <a href="#recovery">Recovery</a>
+    <span class="folio-sync">Bijgewerkt <b data-sync>11:42:18</b></span>
+  </nav>
+
+  <main id="portfolio">
+    <section class="ledger-masthead">
+      <div>
+        <p class="folio">Portfolio operations · <span data-shift>06:00—14:00</span></p>
+        <h1>Service Ledger</h1>
+      </div>
+      <p>Een operationele rekening van elke klantbelofte: volume, blootstelling, oorzaak, eigenaar en herstel vóór de eerstvolgende carrier cut-off.</p>
+    </section>
+
+    <section class="opening-spread" id="attention">
+      <aside class="portfolio-index" aria-label="Portfoliostatus">
+        <header><span>01</span><b>Portfolio index</b></header>
+        <div class="index-total"><b>4</b><span>actieve merken</span><small>434 orders vandaag</small></div>
+        <ol>
+          <li class="risk"><a href="#atelier"><span>Atelier Noma</span><b>14 exposed</b></a></li>
+          <li><a href="#velour"><span>Velour Home</span><b>Op schema</b></a></li>
+          <li><a href="#moss"><span>Moss &amp; Mineral</span><b>Op schema</b></a></li>
+          <li class="watch"><a href="#north"><span>North &amp; Needle</span><b>6 exposed</b></a></li>
+        </ol>
+        <dl>
+          <div><dt>Orders</dt><dd data-live-value data-base="267" data-every="118">434</dd></div>
+          <div><dt>On-time forecast</dt><dd>98,1%</dd></div>
+          <div><dt>Inventory accuracy</dt><dd>99,60%</dd></div>
+          <div><dt>Recovered value</dt><dd>€ 2.953</dd></div>
+        </dl>
+      </aside>
+
+      <article class="lead-case" id="atelier">
+        <div class="case-rule"><span>Dossier 01 · Actie vereist</span><b>P1</b></div>
+        <div class="case-heading">
+          <div>
+            <p>Atelier Noma · Same-day service</p>
+            <h2>Bescherm 14 units voor de DHL-cut-off van <span data-cutoff-time>12:00</span>.</h2>
+          </div>
+          <div class="case-clock"><span>Beslisvenster</span><b data-countdown data-shift-cutoff>00:17:32</b></div>
+        </div>
+        <div class="case-evidence">
+          <div><span>Order exposure</span><b>4 orders · 14 units</b><small>SO-83970 · SO-41822 +2</small></div>
+          <div><span>Operational cause</span><b>Pick zone B at 92%</b><small>Wave 8 · oldest tote 1u 41m</small></div>
+          <div><span>Downstream state</span><b>Manifest 96%</b><small>DHL Parcel · Dock 02</small></div>
+          <div><span>Service impact</span><b>€ 1.145 order value</b><small>Same-day promise</small></div>
+        </div>
+        <div class="cause-chain" aria-label="Operational cause chain">
+          <span><i>01</i><b>Stock</b><small>24 available</small></span>
+          <span class="active"><i>02</i><b>Picking</b><small>37 WIP · 92%</small></span>
+          <span><i>03</i><b>Packing</b><small>21 WIP · 35%</small></span>
+          <span><i>04</i><b>Manifest</b><small>39 / 44</small></span>
+          <span><i>05</i><b>Handover</b><small>Dock 02</small></span>
+        </div>
+        <div class="case-action">
+          <div class="case-owner"><span>TV</span><div><small>Dossiereigenaar</small><b>T. Vos · Floor lead</b></div></div>
+          <div class="prescription"><small>Aanbevolen interventie</small><b>Verplaats 2 operators van Packing naar Pick zone B tot WIP &lt; 28.</b></div>
+          <button type="button">Open dossier <span>→</span></button>
+        </div>
+      </article>
+
+      <aside class="commitment-book" aria-label="Vertrekverplichtingen">
+        <header><span>02</span><b>Verplichtingen vandaag</b></header>
+        <div class="commitment urgent">
+          <div class="commit-time"><b data-cutoff-time>12:00</b><small>Dock 02</small></div>
+          <div><b>DHL Parcel</b><small>39 / 44 manifest · 14 exposed</small></div>
+          <span>Risico</span>
+        </div>
+        <div class="commitment">
+          <div class="commit-time"><b>12:15</b><small>Dock 01</small></div>
+          <div><b>PostNL</b><small>32 / 32 manifest · 0 exposed</small></div>
+          <span>Gereed</span>
+        </div>
+        <div class="commitment building">
+          <div class="commit-time"><b>12:30</b><small>Dock 03</small></div>
+          <div><b>DPD Classic</b><small>21 / 27 manifest · 0 exposed</small></div>
+          <span>Opbouw</span>
+        </div>
+        <div class="book-note">
+          <span>Next handover check</span>
+          <b data-eta="7">11:49</b>
+          <small>Manifest MF-0150 · Dock 02</small>
+        </div>
+      </aside>
+    </section>
+
+    <section class="promise-ledger" id="promises">
+      <header class="section-title"><div><span>03</span><div><p class="folio">Client control</p><h2>Promise ledger</h2></div></div><p>Volgorde: serviceblootstelling → cut-off → operationele herstelruimte.</p></header>
+      <div class="ledger-columns"><span>Client / promise</span><span>Orders</span><span>Units</span><span>On-time</span><span>Inventory</span><span>Exceptions</span><span>Next cut-off</span><span>Exposure</span></div>
+      <article class="promise-row risk" id="atelier-row">
+        <div><b>Atelier Noma</b><small>Same-day · DHL Parcel</small></div><div><b>134</b><small>+12% d/d</small></div><div>246</div><div><b>98,3%</b><small>−0,7 p.p.</small></div><div>99,61%</div><div><b>2 active</b><small>Pick stock · QA</small></div><div><b data-cutoff-time>12:00</b><small>Dock 02</small></div><div><b>14 units</b><small>€ 1.145</small></div>
+      </article>
+      <article class="promise-row" id="velour">
+        <div><b>Velour Home</b><small>24-hour · PostNL</small></div><div><b>117</b><small>+8% d/d</small></div><div>189</div><div><b>98,5%</b><small>+0,2 p.p.</small></div><div>99,52%</div><div><b>0 active</b><small>No blockers</small></div><div><b>12:15</b><small>Dock 01</small></div><div><b>0 units</b><small>On track</small></div>
+      </article>
+      <article class="promise-row" id="moss">
+        <div><b>Moss &amp; Mineral</b><small>24-hour · DPD Classic</small></div><div><b>99</b><small>+5% d/d</small></div><div>172</div><div><b>98,6%</b><small>+0,4 p.p.</small></div><div>99,67%</div><div><b>0 active</b><small>QA complete</small></div><div><b>12:30</b><small>Dock 03</small></div><div><b>0 units</b><small>On track</small></div>
+      </article>
+      <article class="promise-row watch" id="north">
+        <div><b>North &amp; Needle</b><small>Same-day · DHL Parcel</small></div><div><b>82</b><small>+3% d/d</small></div><div>141</div><div><b>98,0%</b><small>−0,3 p.p.</small></div><div>99,58%</div><div><b>1 active</b><small>Weight scan</small></div><div><b data-cutoff-time>12:00</b><small>Dock 02</small></div><div><b>6 units</b><small>€ 472</small></div>
+      </article>
+    </section>
+
+    <section class="evidence-spread" id="drivers">
+      <article class="driver-book">
+        <header class="section-title"><div><span>04</span><div><p class="folio">Operational cause</p><h2>Fulfilment drivers</h2></div></div><p>Warehouse WIP supporting client promise forecasts.</p></header>
+        <div class="driver-line">
+          <div><span>01</span><b>Order intake</b><strong>21</strong><small>oldest 17m · capacity 29%</small></div>
+          <div><span>02</span><b>Allocated</b><strong>33</strong><small>oldest 20m · capacity 45%</small></div>
+          <div class="risk"><span>03</span><b>Picking</b><strong>37</strong><small>oldest 1u 41m · capacity 92%</small></div>
+          <div><span>04</span><b>Packing</b><strong>21</strong><small>oldest 04m · capacity 35%</small></div>
+          <div><span>05</span><b>Manifested</b><strong>27</strong><small>oldest 14m · capacity 48%</small></div>
+          <div><span>06</span><b>Handover</b><strong>12</strong><small>oldest 06m · capacity 31%</small></div>
+          <div class="done"><span>07</span><b>Delivered</b><strong>316</strong><small>forecast 98,1% · goal 420</small></div>
+        </div>
+      </article>
+
+      <aside class="case-notes">
+        <header><span>05</span><b>Case notes</b></header>
+        <div><time data-event-time>11:42</time><p><b>Wave 8 owner assigned</b><small>Atelier Noma · T. Vos · route R-08</small></p></div>
+        <div><time data-event-time>11:41</time><p><b>Handover scan recorded</b><small>Velour Home · JVGL14800987 · PostNL</small></p></div>
+        <div><time data-event-time>11:40</time><p><b>QA batch released</b><small>Moss &amp; Mineral · LOT-3019 · 15 units</small></p></div>
+        <div><time data-event-time>11:39</time><p><b>Weight check escalated</b><small>North &amp; Needle · SO-83970 · owner MS</small></p></div>
+      </aside>
+    </section>
+
+    <section class="recovery-ledger" id="recovery">
+      <header class="section-title"><div><span>06</span><div><p class="folio">Returns and recovery</p><h2>Value recovery ledger</h2></div></div><p>€ 2.953 returned to sellable inventory today.</p></header>
+      <div class="recovery-row"><span><b>RMA-61049</b><small>Atelier Noma</small></span><span>Verpakking geopend</span><span>Grade A</span><span>Direct restock</span><span>1u 23m</span><b>€ 186</b></div>
+      <div class="recovery-row"><span><b>RMA-56616</b><small>Velour Home</small></span><span>Doos beschadigd</span><span>Grade B</span><span>Herverpakken</span><span>2u 14m</span><b>€ 121</b></div>
+      <div class="recovery-row"><span><b>RMA-82302</b><small>Moss &amp; Mineral</small></span><span>Seal controle</span><span>Grade C</span><span>Lichte recovery</span><span>3u 08m</span><b>€ 74</b></div>
+    </section>
+  </main>
+
+  <footer><span>[BHP] Operations Control</span><span>Amsterdam · WH-01</span><span>Shift <b data-shift>06:00—14:00</b></span></footer>
+  <script src="redesign-runtime.js"></script>
+</body>
+</html>

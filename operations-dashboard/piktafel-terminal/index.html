@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="nl" data-operation-day="" data-operation-sequence="">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#060a0d" />
+    <title>BHP Piktafel Terminal</title>
+    <link rel="stylesheet" href="./piktafel-terminal.css" />
+    <script defer src="./piktafel-terminal.js"></script>
+  </head>
+  <body data-view="calm" data-operator-ready="false">
+    <section class="operator-entry" id="operatorEntry" aria-labelledby="operatorEntryTitle">
+      <div class="operator-entry__panel">
+        <div class="operator-entry__identity">
+          <span class="operator-entry__logo-frame">
+            <img
+              class="operator-entry__logo"
+              src="../assets/brand/bhp-logo-horizontal.png"
+              alt="Brand House Partners"
+              width="250"
+              height="74"
+            />
+          </span>
+          <span class="operator-entry__station"><i aria-hidden="true"></i>Tafel 02 · Locatie E</span>
+        </div>
+
+        <div class="operator-entry__copy">
+          <p class="operator-entry__eyebrow">Piktafel terminal</p>
+          <h1 id="operatorEntryTitle">Klaar voor je dienst</h1>
+          <p>Vul je naam in om de terminal te openen.</p>
+        </div>
+
+        <form class="operator-entry__form" id="operatorGateForm">
+          <label for="operatorName">Operatornaam</label>
+          <input
+            id="operatorName"
+            name="operatorName"
+            type="text"
+            minlength="2"
+            maxlength="64"
+            autocomplete="name"
+            enterkeyhint="go"
+            placeholder="Voor- en achternaam"
+            required
+          />
+          <button type="submit">Terminal openen <span aria-hidden="true">→</span></button>
+        </form>
+      </div>
+    </section>
+
+    <div class="terminal-shell" hidden>
+      <header class="terminal-header" aria-label="Piktafel context">
+        <div class="station-identity">
+          <div class="brand-cluster">
+            <span class="brand-logo-frame">
+              <img
+                class="brand-logo"
+                src="../assets/brand/bhp-logo-horizontal.png"
+                alt="Brand House Partners"
+                width="125"
+                height="37"
+              />
+            </span>
+            <span class="station-type">Piktafel<br />terminal</span>
+          </div>
+          <span class="station-location">Tafel 02 · Location E</span>
+          <strong class="picker-name">Petrus van Rijn</strong>
+        </div>
+
+        <div class="terminal-controls">
+          <div class="view-switcher" role="group" aria-label="Terminalweergave">
+            <button class="view-button is-active" type="button" data-view-mode="calm" aria-pressed="true">
+              Optie 1 · Rustig
+            </button>
+            <button class="view-button" type="button" data-view-mode="numbers" aria-pressed="false">
+              Optie 2 · Cijfers
+            </button>
+            <button class="view-button" type="button" data-view-mode="dual" aria-pressed="false">
+              Optie 3 · Twee meters
+            </button>
+          </div>
+          <time class="terminal-clock" id="terminalClock" datetime="">14:00:00</time>
+        </div>
+      </header>
+
+      <main class="terminal-main">
+        <section
+          class="pace-panel"
+          id="pacePanel"
+          role="img"
+          tabindex="0"
+          aria-label="Piktijd 35 seconden per order, binnen streef"
+        >
+          <div class="gauge-stage">
+            <canvas id="paceGauge" width="720" height="560" aria-hidden="true"></canvas>
+            <div class="gauge-readout" aria-hidden="true">
+              <div class="pace-value"><strong id="paceValue">35</strong><span>sec</span></div>
+              <div class="pace-label">Piktijd per order</div>
+              <div class="pace-status" id="paceStatus">Binnen streef</div>
+              <div class="pace-threshold">goed onder 30 · max 40</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="shift-summary" aria-label="Pikprestatie vandaag">
+          <article class="summary-metric summary-metric--remaining">
+            <p class="metric-label">Nog te picken</p>
+            <p class="metric-value"><strong id="remainingOrders">30</strong><span>orders</span></p>
+            <p class="metric-context" id="remainingContext">van 619 binnen · 5% open</p>
+          </article>
+
+          <article class="summary-metric summary-metric--picked">
+            <p class="metric-label">Door jou gepickt</p>
+            <p class="metric-value"><strong id="personalPicked">122</strong><span>orders</span></p>
+            <p class="metric-context" id="personalContext">verwacht nu 133 · −11</p>
+          </article>
+
+          <article class="summary-metric summary-metric--forecast">
+            <p class="metric-label">Verwachting 22:00</p>
+            <p class="metric-value"><strong id="forecastOrders">261</strong><span>orders</span></p>
+            <p class="metric-context" id="forecastContext">dagstreef 285 · −24</p>
+          </article>
+        </section>
+      </main>
+
+      <footer class="terminal-footer" aria-label="Shiftstatus">
+        <div class="floor-status">
+          <span>Vloer <strong id="floorRate">90</strong> orders/uur</span>
+          <span><strong id="floorPicked">589</strong> van <strong id="floorReceived">619</strong> gepickt</span>
+          <span>Jouw tempo <strong id="personalRate">19</strong>/uur</span>
+        </div>
+        <div class="cutoff-status">Cut-off over <strong id="cutoffCountdown">08:00</strong></div>
+      </footer>
+    </div>
+
+    <p class="sr-only" id="viewAnnouncement" aria-live="polite"></p>
+    <script>
+      (() => {
+        const storageKey = "bhp.piktafel.operator.nl";
+        const form = document.getElementById("operatorGateForm");
+        const input = document.getElementById("operatorName");
+        const entry = document.getElementById("operatorEntry");
+        const terminal = document.querySelector(".terminal-shell");
+
+        const normalizeName = (value) => value.trim().replace(/\s+/g, " ").slice(0, 64);
+
+        const openTerminal = (name, persist = true) => {
+          const operatorName = normalizeName(name);
+          if (operatorName.length < 2) return;
+
+          document.querySelectorAll(".picker-name").forEach((node) => {
+            node.textContent = operatorName;
+          });
+          entry.hidden = true;
+          terminal.hidden = false;
+          document.body.dataset.operatorReady = "true";
+
+          if (persist) {
+            try {
+              sessionStorage.setItem(storageKey, operatorName);
+            } catch {}
+          }
+
+          requestAnimationFrame(() => window.dispatchEvent(new Event("resize")));
+        };
+
+        let storedName = "";
+        try {
+          storedName = sessionStorage.getItem(storageKey) || "";
+        } catch {}
+
+        if (normalizeName(storedName).length >= 2) {
+          openTerminal(storedName, false);
+        } else {
+          requestAnimationFrame(() => input.focus());
+        }
+
+        form.addEventListener("submit", (event) => {
+          event.preventDefault();
+          openTerminal(input.value);
+        });
+      })();
+    </script>
+  </body>
+</html>

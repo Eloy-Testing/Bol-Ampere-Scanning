@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0e2830">
+  <title>BHP Operations Control — Warehouse Atlas</title>
+  <link rel="stylesheet" href="warehouse-atlas.css">
+</head>
+<body>
+  <div class="atlas-shell">
+    <aside class="tool-dock" aria-label="Atlas navigatie">
+      <a class="atlas-mark" href="index.html" aria-label="Terug naar richtingen"><span>[</span>BHP<span>]</span></a>
+      <nav>
+        <a class="active" href="#atlas" aria-label="Warehouse atlas"><span>⌗</span><small>Atlas</small></a>
+        <a href="#moves" aria-label="Movement trace"><span>⇢</span><small>Moves</small></a>
+        <a href="#docks" aria-label="Docks"><span>▥</span><small>Docks</small></a>
+        <a href="#zones" aria-label="Zones"><span>⌁</span><small>Zones</small></a>
+      </nav>
+      <div class="dock-foot"><span>MS</span><small>11:42</small></div>
+    </aside>
+
+    <div class="atlas-app">
+      <header class="atlas-header">
+        <div>
+          <p class="micro">Amsterdam · WH-01 · Floor control</p>
+          <h1>Warehouse Atlas</h1>
+        </div>
+        <div class="atlas-tools">
+          <div class="sync"><i></i><span>Verwerkt</span><b data-sync>11:42:18</b></div>
+          <button type="button">Shift <b data-shift>06:00—14:00</b>⌄</button>
+          <button type="button" aria-label="Zoeken">Zoek order / SKU&nbsp;&nbsp;⌕</button>
+        </div>
+      </header>
+
+      <main id="atlas">
+        <section class="atlas-status">
+          <div class="zone-tabs" aria-label="Zone selectie">
+            <button class="active" type="button">Alle zones <span>151</span></button>
+            <button type="button">Inbound <span>21</span></button>
+            <button type="button">Pick A <span>33</span></button>
+            <button class="warning" type="button">Pick B <span>37</span></button>
+            <button type="button">Packing <span>21</span></button>
+            <button type="button">Sort &amp; docks <span>39</span></button>
+          </div>
+          <div class="floor-summary"><span><b>151</b> open units</span><span><b>92%</b> hoogste belasting</span><span><b>1u 41m</b> oudste tote</span></div>
+        </section>
+
+        <section class="atlas-decision" aria-label="Actieve vloerbeslissing">
+          <div class="decision-index"><span>Route</span><b>R-08</b></div>
+          <div class="decision-copy">
+            <p>Pick zone B · Wave 8</p>
+            <h2>Vrijgave nodig om 14 DHL-units vóór <span data-cutoff-time>12:00</span> naar Dock 02 te brengen.</h2>
+          </div>
+          <div class="decision-path">
+            <span>B-02-07-A</span><i>→</i><span>PACK-05</span><i>→</i><span>SORT-DHL</span><i>→</i><span>DOCK-02</span>
+          </div>
+          <div class="decision-owner"><span class="person">TV</span><div><small>Eigenaar</small><b>T. Vos</b></div></div>
+          <div class="decision-time"><small>Vertrek over</small><b data-countdown data-shift-cutoff>00:17:32</b></div>
+          <button class="release-action" type="button">Route vrijgeven <span>↗</span></button>
+        </section>
+
+        <section class="floor-layout">
+          <article class="blueprint" id="zones" aria-labelledby="blueprintTitle">
+            <header>
+              <div><p class="micro">Fysieke status · Zones en routes</p><h2 id="blueprintTitle">WH-01 floor map</h2></div>
+              <div class="map-legend"><span><i class="ok"></i> Normaal</span><span><i class="risk"></i> Knelpunt</span><span><i class="route"></i> Actieve route</span></div>
+            </header>
+            <div class="floor-map">
+              <svg class="routing" viewBox="0 0 1000 620" preserveAspectRatio="none" aria-hidden="true">
+                <defs>
+                  <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3 z"></path></marker>
+                </defs>
+                <path class="base-path" d="M135 445 L315 445 L315 330 L520 330 L520 468 L725 468 L725 312 L870 312"></path>
+                <path class="hot-path" d="M355 315 L520 315 L520 468 L725 468 L725 312 L870 312" marker-end="url(#arrow)"></path>
+              </svg>
+
+              <div class="floor-zone inbound">
+                <div class="zone-head"><span>INB</span><b>Inbound</b><small>3 operators</small></div>
+                <div class="zone-value"><b>21</b><span>open units</span></div>
+                <div class="zone-meter"><span style="--fill:41%"></span></div>
+                <small>INB-04 · oldest 17m</small>
+              </div>
+              <div class="floor-zone pick-a">
+                <div class="zone-head"><span>A</span><b>Pick zone A</b><small>6 operators</small></div>
+                <div class="zone-value"><b>33</b><span>open units</span></div>
+                <div class="zone-meter"><span style="--fill:63%"></span></div>
+                <small>A-01—A-06 · oldest 20m</small>
+              </div>
+              <div class="floor-zone pick-b hot">
+                <div class="zone-head"><span>B</span><b>Pick zone B</b><small>8 operators</small></div>
+                <div class="zone-value"><b>37</b><span>open units</span></div>
+                <div class="zone-meter"><span style="--fill:92%"></span></div>
+                <small>B-02 · oldest 1u 41m</small>
+                <span class="map-callout">Wave 8 · +2 operators</span>
+              </div>
+              <div class="floor-zone packing">
+                <div class="zone-head"><span>P</span><b>Packing</b><small>7 stations</small></div>
+                <div class="zone-value"><b>21</b><span>open units</span></div>
+                <div class="zone-meter"><span style="--fill:35%"></span></div>
+                <small>PACK-01—07 · oldest 04m</small>
+              </div>
+              <div class="floor-zone sort">
+                <div class="zone-head"><span>S</span><b>Sortation</b><small>3 lanes</small></div>
+                <div class="zone-value"><b>27</b><span>manifested</span></div>
+                <div class="zone-meter"><span style="--fill:48%"></span></div>
+                <small>DHL · PNL · DPD</small>
+              </div>
+              <div class="floor-zone returns">
+                <div class="zone-head"><span>R</span><b>Returns</b><small>2 benches</small></div>
+                <div class="zone-value"><b>4</b><span>open RMA</span></div>
+                <div class="zone-meter"><span style="--fill:28%"></span></div>
+                <small>RET-04 · oldest 3u 08m</small>
+              </div>
+              <div class="crossdock-label">Main cross-dock · movement spine</div>
+              <div class="route-node node-a"><span>01</span><b>T-8062</b><small>ANO-CLP-11 · qty 4</small></div>
+              <div class="route-node node-b"><span>02</span><b>PACK-05</b><small>ETA <span data-eta="9">11:51</span></small></div>
+              <div class="route-node node-c"><span>03</span><b>SORT-DHL</b><small>Manifest 96%</small></div>
+              <div class="dock-row" id="docks">
+                <div class="dock-gate risk"><span>02</span><div><b>DHL</b><small><span data-cutoff-time>12:00</span> · 14 exposed</small></div></div>
+                <div class="dock-gate"><span>01</span><div><b>PNL</b><small>12:15 · gereed</small></div></div>
+                <div class="dock-gate building"><span>03</span><div><b>DPD</b><small>12:30 · opbouw</small></div></div>
+              </div>
+            </div>
+          </article>
+
+          <aside class="floor-sidebar">
+            <section class="route-card">
+              <header><span>Active route</span><b>R-08</b></header>
+              <ol>
+                <li class="done"><span>1</span><div><b>Replenishment toegewezen</b><small>INB-04 → B-02 · TV</small></div><time data-event-time>11:42</time></li>
+                <li class="current"><span>2</span><div><b>Pick face aanvullen</b><small>24 units · ETA <span data-eta="9">11:51</span></small></div><time>Actief</time></li>
+                <li><span>3</span><div><b>Wave 8 vrijgeven</b><small>14 units · 4 orders</small></div><time>Wacht</time></li>
+                <li><span>4</span><div><b>Pack &amp; manifest</b><small>PACK-05 → SORT-DHL</small></div><time>Wacht</time></li>
+                <li><span>5</span><div><b>Handover Dock 02</b><small>Cut-off <span data-cutoff-time>12:00</span></small></div><time>Wacht</time></li>
+              </ol>
+            </section>
+
+            <section class="floor-kpis">
+              <div><span>Throughput</span><b data-live-value data-base="451" data-every="87">786</b><small>units deze shift</small></div>
+              <div><span>Pick accuracy</span><b>99,72%</b><small>3 checks open</small></div>
+              <div><span>Floor utilisation</span><b>68%</b><small>27 operators actief</small></div>
+              <div><span>Handover ready</span><b>83%</b><small>72 / 87 consignments</small></div>
+            </section>
+          </aside>
+        </section>
+
+        <section class="movement-ledger" id="moves">
+          <header>
+            <div><p class="micro">Movement trace · laatste registraties</p><h2>Physical movement ledger</h2></div>
+            <button type="button">Filters <span>2</span></button>
+          </header>
+          <div class="movement-head"><span>Tijd / move</span><span>Object</span><span>Route</span><span>Locatie</span><span>Operator</span><span>Dwell</span><span>Status</span></div>
+          <div class="move-row"><span><b data-event-time>11:42</b><small>MOV-721191</small></span><span><b>SO-83970</b><small>ANO-CLP-11 · qty 4</small></span><span><b>B-02-07-A → PACK-05</b><small>Pick complete</small></span><span>PACK-05</span><span class="initials">MS</span><span>06:18</span><span class="move-state complete">Verwerkt</span></div>
+          <div class="move-row"><span><b data-event-time>11:41</b><small>MOV-279021</small></span><span><b>SO-41822</b><small>VHO-CUS-18 · qty 9</small></span><span><b>A-03-02-C → SORT-DHL</b><small>Transfer</small></span><span>SORT-DHL</span><span class="initials">TV</span><span>03:44</span><span class="move-state transit">Onderweg</span></div>
+          <div class="move-row"><span><b data-event-time>11:40</b><small>MOV-439690</small></span><span><b>SO-66032</b><small>MMI-SRM-30 · qty 15</small></span><span><b>A-01-04-B → SORT-PNL</b><small>Manifest sort</small></span><span>SORT-PNL</span><span class="initials">SB</span><span>05:11</span><span class="move-state complete">Verwerkt</span></div>
+          <div class="move-row"><span><b data-event-time>11:39</b><small>MOV-887682</small></span><span><b>SO-37028</b><small>ANO-CLP-11 · qty 5</small></span><span><b>B-02-07-A → PACK-05</b><small>Pack QA</small></span><span>PACK-05</span><span class="initials">NR</span><span>18:02</span><span class="move-state held">Wacht QA</span></div>
+        </section>
+      </main>
+    </div>
+  </div>
+  <script src="redesign-runtime.js"></script>
+</body>
+</html>

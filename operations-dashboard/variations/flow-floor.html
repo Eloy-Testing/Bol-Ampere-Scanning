@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b0f14">
+  <title>BHP Operations Control — Flow Floor</title>
+  <link rel="stylesheet" href="variation.css">
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar" aria-label="Hoofdnavigatie">
+      <a class="brand" href="index.html"><span>[</span>BHP<span>]</span></a>
+      <nav class="nav">
+        <a href="../index.html" data-icon="⌂">Overzicht</a>
+        <a class="active" href="flow-floor.html" data-icon="▦">Warehouse</a>
+        <a href="#movements" data-icon="≡">Orders</a>
+        <a href="#dock" data-icon="⇥">Shipping</a>
+        <a href="#returns" data-icon="↶">Retouren</a>
+      </nav>
+      <div class="sidebar-foot">AMS · WH-01<br><span data-clock>11:42</span></div>
+    </aside>
+
+    <div class="app">
+      <header class="topbar">
+        <div class="top-title"><strong>BHP Operations Control</strong><span class="location">⌖ &nbsp;<b>Vandaag · Amsterdam</b></span></div>
+        <div class="toolbar">
+          <select class="control" aria-label="Portfolio"><option>Portfolio · alle merken</option></select>
+          <input class="control search" aria-label="Zoeken" placeholder="Zoek order, SKU, locatie…">
+          <span class="avatar" aria-label="Operator MS">MS</span>
+        </div>
+      </header>
+
+      <main class="workspace" data-pulse="0">
+        <div class="page-head">
+          <div><p class="eyebrow">Warehouse control · Shift <span data-active-shift>06:00–14:00</span></p><h1>Flow Floor</h1></div>
+          <p class="page-note">Vrijgave gestuurd op actuele WIP, dwell en beschikbare capaciteit. Laatste verwerking <span class="mono" data-synced>11:42:18</span>.</p>
+        </div>
+
+        <section class="operating-strip" aria-label="Shiftstatus">
+          <div class="strip-lead"><div><span class="strip-kicker">Volgende cut-off</span><strong data-next-cutoff>DHL Parcel · Dock 02 · 12:00</strong></div><span class="countdown" data-countdown data-adaptive-cutoff>00:17:32</span></div>
+          <div class="strip-metric"><b data-live-value data-base="267" data-every="118">434</b><span>Orders ontvangen</span></div>
+          <div class="strip-metric"><b data-live-value data-base="451" data-every="87">786</b><span>Units verwerkt</span></div>
+          <div class="strip-metric"><b>37</b><span>WIP picking</span></div>
+          <div class="strip-metric"><b>98,1%</b><span>On-time forecast</span></div>
+        </section>
+
+        <section class="decision-rail" aria-label="Actieve vloerbeslissing">
+          <span class="severity">!</span>
+          <div><strong>Picking bereikt 92% capaciteit · Wave 8 vertraagt</strong><small>37 open pickregels · oudste tote 1u 41m · zone B</small></div>
+          <div><strong>Vrijgave-instructie</strong><small>Verplaats 2 operators van Packing naar zone B</small></div>
+          <span class="owner"><i>TV</i> T. Vos</span>
+          <button class="action dark" type="button">Bevestig inzet</button>
+        </section>
+
+        <section class="panel flow-board" aria-labelledby="flowTitle">
+          <div class="panel-head"><h2 id="flowTitle">Warehouse flow</h2><span class="meta">7 stages · 151 open units · <span data-synced>11:42:18</span></span></div>
+          <div class="stages">
+            <article class="stage">
+              <div class="stage-top"><span>01</span><span class="stage-status">Op schema</span></div><div class="stage-wip">21</div><div class="stage-label">Order intake</div>
+              <div class="stage-grid"><span>Oudste<b>17 min</b></span><span>Mediaan<b>06 min</b></span><span>15 min<b>+8</b></span><span>Capaciteit<b>29%</b></span></div><div class="capacity" style="--fill:29%"><span></span></div>
+            </article>
+            <article class="stage">
+              <div class="stage-top"><span>02</span><span class="stage-status">Op schema</span></div><div class="stage-wip">33</div><div class="stage-label">Allocated</div>
+              <div class="stage-grid"><span>Oudste<b>20 min</b></span><span>Mediaan<b>09 min</b></span><span>15 min<b>+11</b></span><span>Capaciteit<b>45%</b></span></div><div class="capacity" style="--fill:45%"><span></span></div>
+            </article>
+            <article class="stage warning">
+              <div class="stage-top"><span>03</span><span class="stage-status">Knelpunt</span></div><div class="stage-wip">37</div><div class="stage-label">Picking</div>
+              <div class="stage-grid"><span>Oudste<b>1u 41m</b></span><span>Mediaan<b>28 min</b></span><span>15 min<b>+4</b></span><span>Capaciteit<b>92%</b></span></div><div class="capacity" style="--fill:92%"><span></span></div>
+            </article>
+            <article class="stage">
+              <div class="stage-top"><span>04</span><span class="stage-status">Op schema</span></div><div class="stage-wip">21</div><div class="stage-label">Packing</div>
+              <div class="stage-grid"><span>Oudste<b>04 min</b></span><span>Mediaan<b>02 min</b></span><span>15 min<b>+16</b></span><span>Capaciteit<b>35%</b></span></div><div class="capacity" style="--fill:35%"><span></span></div>
+            </article>
+            <article class="stage">
+              <div class="stage-top"><span>05</span><span class="stage-status">Op schema</span></div><div class="stage-wip">27</div><div class="stage-label">Manifested</div>
+              <div class="stage-grid"><span>Oudste<b>14 min</b></span><span>Mediaan<b>06 min</b></span><span>15 min<b>+13</b></span><span>Capaciteit<b>48%</b></span></div><div class="capacity" style="--fill:48%"><span></span></div>
+            </article>
+            <article class="stage">
+              <div class="stage-top"><span>06</span><span class="stage-status">Op schema</span></div><div class="stage-wip">12</div><div class="stage-label">Handover</div>
+              <div class="stage-grid"><span>Oudste<b>06 min</b></span><span>Mediaan<b>03 min</b></span><span>15 min<b>+9</b></span><span>Capaciteit<b>31%</b></span></div><div class="capacity" style="--fill:31%"><span></span></div>
+            </article>
+            <article class="stage">
+              <div class="stage-top"><span>07</span><span class="stage-status">Afgerond</span></div><div class="stage-wip">316</div><div class="stage-label">Delivered</div>
+              <div class="stage-grid"><span>Vandaag<b>316</b></span><span>Forecast<b>98,1%</b></span><span>15 min<b>+12</b></span><span>Doel<b>420</b></span></div><div class="capacity" style="--fill:75%"><span></span></div>
+            </article>
+          </div>
+          <div class="release-instruction"><span class="tag amber">Vrijgave</span><span><b>Wave 8 · zone B</b> — 2 operators naar B-02/B-03 tot WIP onder 28 komt. Replenishment ANO-CLP-11 verwacht <span data-eta-minutes="11">11:51</span>.</span></div>
+        </section>
+
+        <section class="work-grid">
+          <div class="panel" id="movements">
+            <div class="panel-head"><h2>Stage movements</h2><span class="meta">Laatste 8 · live verwerking</span></div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Tijd</th><th>Move ID</th><th>Order</th><th>SKU</th><th>Qty</th><th>Van → Naar</th><th>Locatie</th><th>Operator</th><th>Dwell</th><th>Status</th></tr></thead>
+                <tbody>
+                  <tr><td class="mono" data-event-time>11:42</td><td class="mono">MOV-721191</td><td>SO-83970</td><td>ANO-CLP-11</td><td>4</td><td class="route">B-02-07-A → PACK-05</td><td>PACK-05</td><td>MS</td><td>06:18</td><td><span class="tag green">Verwerkt</span></td></tr>
+                  <tr><td class="mono" data-event-time>11:41</td><td class="mono">MOV-279021</td><td>SO-41822</td><td>VHO-CUS-18</td><td>9</td><td class="route">A-03-02-C → SORT-DHL</td><td>SORT-DHL</td><td>TV</td><td>03:44</td><td><span class="tag blue">Onderweg</span></td></tr>
+                  <tr><td class="mono" data-event-time>11:40</td><td class="mono">MOV-439690</td><td>SO-66032</td><td>MMI-SRM-30</td><td>15</td><td class="route">A-01-04-B → SORT-PNL</td><td>SORT-PNL</td><td>SB</td><td>05:11</td><td><span class="tag green">Verwerkt</span></td></tr>
+                  <tr><td class="mono" data-event-time>11:40</td><td class="mono">MOV-887682</td><td>SO-83970</td><td>ANO-CLP-11</td><td>5</td><td class="route">B-02-07-A → PACK-05</td><td>PACK-05</td><td>NR</td><td>18:02</td><td><span class="tag amber">Wacht QA</span></td></tr>
+                  <tr><td class="mono" data-event-time>11:39</td><td class="mono">MOV-776776</td><td>SO-29041</td><td>ANO-CLP-11</td><td>16</td><td class="route">INB-04-02 → RET-04-03</td><td>RET-04-03</td><td>MS</td><td>08:29</td><td><span class="tag green">Verwerkt</span></td></tr>
+                  <tr><td class="mono" data-event-time>11:38</td><td class="mono">MOV-838714</td><td>SO-66032</td><td>SO-66032</td><td>14</td><td class="route">INB-04-02 → PACK-05</td><td>PACK-05</td><td>LK</td><td>04:37</td><td><span class="tag green">Verwerkt</span></td></tr>
+                  <tr><td class="mono" data-event-time>11:37</td><td class="mono">MOV-492885</td><td>SO-51170</td><td>MMI-CLN-15</td><td>8</td><td class="route">B-02-07-A → PACK-05</td><td>PACK-05</td><td>SB</td><td>07:06</td><td><span class="tag blue">Onderweg</span></td></tr>
+                  <tr><td class="mono" data-event-time>11:36</td><td class="mono">MOV-421943</td><td>SO-27761</td><td>ANO-CLP-11</td><td>13</td><td class="route">INB-04-02 → PACK-05</td><td>PACK-05</td><td>TV</td><td>11:52</td><td><span class="tag green">Verwerkt</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div>
+            <section class="panel">
+              <div class="panel-head"><h2>Zonebelasting</h2><span class="meta">Actieve capaciteit</span></div>
+              <div class="stack">
+                <div class="load-row"><strong>Zone A</strong><div class="bar" style="--fill:63%"><span></span></div><span class="row-num">6 op / 2 rep.</span></div>
+                <div class="load-row"><strong>Zone B</strong><div class="bar amber" style="--fill:92%"><span></span></div><span class="row-num">8 op / 5 rep.</span></div>
+                <div class="load-row"><strong>Inbound</strong><div class="bar" style="--fill:41%"><span></span></div><span class="row-num">3 op / 1 QA</span></div>
+                <div class="load-row"><strong>Packing</strong><div class="bar" style="--fill:35%"><span></span></div><span class="row-num">7 / 20 st.</span></div>
+                <div class="load-row"><strong>Sort</strong><div class="bar" style="--fill:48%"><span></span></div><span class="row-num">3 docks</span></div>
+              </div>
+            </section>
+
+            <section class="panel" id="dock">
+              <div class="panel-head"><h2>Dock readiness</h2><span class="meta">Volgende vertrekvensters</span></div>
+              <div class="stack">
+                <div class="carrier-row"><span class="carrier-code">DHL</span><div><strong>DHL Parcel · Dock 02</strong><small>NL-D-50 · NL 3511 · manifest 96%</small></div><span class="row-num">9 gereed</span><span class="tag amber" data-service-cutoff="0">12:00</span></div>
+                <div class="carrier-row"><span class="carrier-code">PNL</span><div><strong>PostNL · Dock 01</strong><small>NL-D-24 · NL 1054 · manifest 100%</small></div><span class="row-num">12 gereed</span><span class="tag green" data-service-cutoff="15">12:15</span></div>
+                <div class="carrier-row"><span class="carrier-code">DPD</span><div><strong>DPD · Dock 03</strong><small>DE · 40213 · manifest 88%</small></div><span class="row-num">21 open</span><span class="tag blue" data-service-cutoff="30">12:30</span></div>
+              </div>
+            </section>
+          </div>
+        </section>
+
+        <section class="lower-grid">
+          <div class="panel" id="returns">
+            <div class="panel-head"><h2>Retouren · floor triage</h2><span class="meta">4 open</span></div>
+            <div class="stack">
+              <div class="return-row"><strong>RMA-61049</strong><div><strong>Atelier Noma · Direct restock</strong><small>Crossbody clasp · grade A</small></div><span class="tag red">Hoog</span><span class="row-num">1u 23m</span></div>
+              <div class="return-row"><strong>RMA-56616</strong><div><strong>Velour Home · Herverpakken</strong><small>Woontextiel · grade B</small></div><span class="tag amber">Normaal</span><span class="row-num">2u 14m</span></div>
+              <div class="return-row"><strong>RMA-82302</strong><div><strong>Moss &amp; Mineral · Lichte recovery</strong><small>Serum set · grade C</small></div><span class="tag amber">Normaal</span><span class="row-num">3u 08m</span></div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head"><h2>Operationele activiteit</h2><span class="meta">Live event stream</span></div>
+            <div class="stack">
+              <div class="event-row"><time class="event-time" data-event-time>11:42</time><span class="event-pin"></span><div><strong>Pick bevestigd</strong><small>ANO-CLP-11 · B-02-07-A → PACK-05 · MS</small></div></div>
+              <div class="event-row"><time class="event-time" data-event-time>11:41</time><span class="event-pin"></span><div><strong>Carrier handover scan</strong><small>JVGL14800987 · DHL Parcel · manifest MF-0150</small></div></div>
+              <div class="event-row"><time class="event-time" data-event-time>11:40</time><span class="event-pin"></span><div><strong>Replenishment vrijgegeven</strong><small>Zone B · 24 units · ETA pickface <span data-eta-minutes="11">11:51</span></small></div></div>
+              <div class="event-row"><time class="event-time" data-event-time>11:39</time><span class="event-pin"></span><div><strong>Pack QA afgerond</strong><small>SO-37028 · verpakking C2 · TV</small></div></div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+  <script src="variation.js"></script>
+</body>
+</html>

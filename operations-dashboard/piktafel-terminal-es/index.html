@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="es" data-operation-day="" data-operation-sequence="">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#060a0d" />
+    <title>Terminal de Picking BHP</title>
+    <link rel="stylesheet" href="../piktafel-terminal/piktafel-terminal.css" />
+    <script defer src="../piktafel-terminal/piktafel-terminal.js"></script>
+    <script defer src="./piktafel-terminal-es.js"></script>
+  </head>
+  <body data-view="calm" data-operator-ready="false">
+    <section class="operator-entry" id="operatorEntry" aria-labelledby="operatorEntryTitle">
+      <div class="operator-entry__panel">
+        <div class="operator-entry__identity">
+          <span class="operator-entry__logo-frame">
+            <img
+              class="operator-entry__logo"
+              src="../assets/brand/bhp-logo-horizontal.png"
+              alt="Brand House Partners"
+              width="250"
+              height="74"
+            />
+          </span>
+          <span class="operator-entry__station"><i aria-hidden="true"></i>Mesa 02 · Ubicación E</span>
+        </div>
+
+        <div class="operator-entry__copy">
+          <p class="operator-entry__eyebrow">Terminal de picking</p>
+          <h1 id="operatorEntryTitle">Listo para tu turno</h1>
+          <p>Introduce tu nombre para abrir el terminal.</p>
+        </div>
+
+        <form class="operator-entry__form" id="operatorGateForm">
+          <label for="operatorName">Nombre del operador</label>
+          <input
+            id="operatorName"
+            name="operatorName"
+            type="text"
+            minlength="2"
+            maxlength="64"
+            autocomplete="name"
+            enterkeyhint="go"
+            placeholder="Nombre y apellidos"
+            required
+          />
+          <button type="submit">Abrir terminal <span aria-hidden="true">→</span></button>
+        </form>
+      </div>
+    </section>
+
+    <div class="terminal-shell" hidden>
+      <header class="terminal-header" aria-label="Contexto de la mesa de picking">
+        <div class="station-identity">
+          <div class="brand-cluster">
+            <span class="brand-logo-frame">
+              <img
+                class="brand-logo"
+                src="../assets/brand/bhp-logo-horizontal.png"
+                alt="Brand House Partners"
+                width="125"
+                height="37"
+              />
+            </span>
+            <span class="station-type">Terminal de<br />picking</span>
+          </div>
+          <span class="station-location">Mesa 02 · Ubicación E</span>
+          <strong class="picker-name">Herman</strong>
+        </div>
+
+        <div class="terminal-controls">
+          <div class="view-switcher" role="group" aria-label="Vista del terminal">
+            <button class="view-button is-active" type="button" data-view-mode="calm" aria-pressed="true">
+              Opción 1 · Calma
+            </button>
+            <button class="view-button" type="button" data-view-mode="numbers" aria-pressed="false">
+              Opción 2 · Cifras
+            </button>
+            <button class="view-button" type="button" data-view-mode="dual" aria-pressed="false">
+              Opción 3 · Doble
+            </button>
+          </div>
+          <time class="terminal-clock" id="terminalClock" datetime="">14:00:00</time>
+        </div>
+      </header>
+
+      <main class="terminal-main">
+        <section
+          class="pace-panel"
+          id="pacePanel"
+          role="img"
+          tabindex="0"
+          aria-label="Tiempo de picking 35 segundos por pedido, dentro del objetivo"
+        >
+          <div class="gauge-stage">
+            <canvas id="paceGauge" width="720" height="560" aria-hidden="true"></canvas>
+            <div class="gauge-readout" aria-hidden="true">
+              <div class="pace-value"><strong id="paceValue">35</strong><span>seg</span></div>
+              <div class="pace-label">Tiempo por pedido</div>
+              <div class="pace-status" id="paceStatus">Dentro del objetivo</div>
+              <div class="pace-threshold">óptimo &lt; 30 · máx. 40</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="shift-summary" aria-label="Rendimiento de picking de hoy">
+          <article class="summary-metric summary-metric--remaining">
+            <p class="metric-label">Pendientes de picking</p>
+            <p class="metric-value"><strong id="remainingOrders">30</strong><span>pedidos</span></p>
+            <p class="metric-context" id="remainingContext">de 619 recibidos · 5% pendiente</p>
+          </article>
+
+          <article class="summary-metric summary-metric--picked">
+            <p class="metric-label">Preparados por ti</p>
+            <p class="metric-value"><strong id="personalPicked">122</strong><span>pedidos</span></p>
+            <p class="metric-context" id="personalContext">previsto ahora 133 · −11</p>
+          </article>
+
+          <article class="summary-metric summary-metric--forecast">
+            <p class="metric-label">Previsión 22:00</p>
+            <p class="metric-value"><strong id="forecastOrders">261</strong><span>pedidos</span></p>
+            <p class="metric-context" id="forecastContext">objetivo diario 285 · −24</p>
+          </article>
+        </section>
+      </main>
+
+      <footer class="terminal-footer" aria-label="Estado del turno">
+        <div class="floor-status">
+          <span>Planta <strong id="floorRate">90</strong> pedidos/h</span>
+          <span><strong id="floorPicked">589</strong> de <strong id="floorReceived">619</strong> preparados</span>
+          <span>Tu ritmo <strong id="personalRate">19</strong>/h</span>
+        </div>
+        <div class="cutoff-status">Hora límite en <strong id="cutoffCountdown">08:00</strong></div>
+      </footer>
+    </div>
+
+    <p class="sr-only" id="viewAnnouncement" aria-live="polite"></p>
+    <script>
+      (() => {
+        const storageKey = "bhp.piktafel.operator.es";
+        const form = document.getElementById("operatorGateForm");
+        const input = document.getElementById("operatorName");
+        const entry = document.getElementById("operatorEntry");
+        const terminal = document.querySelector(".terminal-shell");
+
+        const normalizeName = (value) => value.trim().replace(/\s+/g, " ").slice(0, 64);
+
+        const openTerminal = (name, persist = true) => {
+          const operatorName = normalizeName(name);
+          if (operatorName.length < 2) return;
+
+          document.querySelectorAll(".picker-name").forEach((node) => {
+            node.textContent = operatorName;
+          });
+          entry.hidden = true;
+          terminal.hidden = false;
+          document.body.dataset.operatorReady = "true";
+
+          if (persist) {
+            try {
+              sessionStorage.setItem(storageKey, operatorName);
+            } catch {}
+          }
+
+          requestAnimationFrame(() => window.dispatchEvent(new Event("resize")));
+        };
+
+        let storedName = "";
+        try {
+          storedName = sessionStorage.getItem(storageKey) || "";
+        } catch {}
+
+        if (normalizeName(storedName).length >= 2) {
+          openTerminal(storedName, false);
+        } else {
+          requestAnimationFrame(() => input.focus());
+        }
+
+        form.addEventListener("submit", (event) => {
+          event.preventDefault();
+          openTerminal(input.value);
+        });
+      })();
+    </script>
+  </body>
+</html>

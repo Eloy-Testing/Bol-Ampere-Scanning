@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b0f14">
+  <title>BHP Operations Control — Client Promise</title>
+  <link rel="stylesheet" href="variation.css">
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar" aria-label="Hoofdnavigatie">
+      <a class="brand" href="index.html"><span>[</span>BHP<span>]</span></a>
+      <nav class="nav">
+        <a class="active" href="client-promise.html" data-icon="◇">Portfolio</a>
+        <a href="#drivers" data-icon="▦">Warehouse</a>
+        <a href="#interventions" data-icon="≡">Orders</a>
+        <a href="#carrier" data-icon="⇥">Shipping</a>
+        <a href="#returns" data-icon="↶">Retouren</a>
+      </nav>
+      <div class="sidebar-foot">AMS · WH-01<br><span data-clock>11:42</span></div>
+    </aside>
+
+    <div class="app">
+      <header class="topbar">
+        <div class="top-title"><strong>BHP Operations Control</strong><span class="location">⌖ &nbsp;<b>Vandaag · Amsterdam</b></span></div>
+        <div class="toolbar">
+          <select class="control" aria-label="Portfolio"><option>Portfolio · alle merken</option></select>
+          <input class="control search" aria-label="Zoeken" placeholder="Zoek klant, order, SKU…">
+          <span class="avatar" aria-label="Operator MS">MS</span>
+        </div>
+      </header>
+
+      <main class="workspace" data-pulse="0">
+        <div class="page-head">
+          <div><p class="eyebrow">Portfolio operations · Service control</p><h1>Client Promise</h1></div>
+          <p class="page-note">Servicebelofte eerst; warehouse- en carrierdrivers blijven per interventie herleidbaar. Laatste verwerking <span class="mono" data-synced>11:42:18</span>.</p>
+        </div>
+
+        <section class="client-summary" aria-label="Portfoliostatus">
+          <div class="summary-title"><strong>Vandaag · 4 merken</strong><span>Shift <span data-active-shift>06:00–14:00</span></span></div>
+          <div><strong data-live-value data-base="267" data-every="118">434</strong><span>Orders ontvangen</span></div>
+          <div><strong>98,1%</strong><span>On-time forecast</span></div>
+          <div><strong>99,60%</strong><span>Voorraadnauwkeurigheid</span></div>
+          <div><strong>2</strong><span>Actieve interventies</span></div>
+          <div><strong>€ 2.953</strong><span>Waarde hersteld</span></div>
+        </section>
+
+        <section class="client-lanes" aria-labelledby="clientTitle">
+          <div class="panel-head"><h2 id="clientTitle">Client promises · vandaag</h2><span class="meta">Gewogen op cut-off en service-impact</span></div>
+          <div class="lane-head"><div>Merk / status</div><div>Orders</div><div>Units</div><div>Servicebelofte</div><div>On-time</div><div>Voorraad</div><div>Open ex.</div><div>Cut-off / exposed</div></div>
+          <article class="client-lane warning">
+            <div class="client-name"><strong>Atelier Noma</strong><span>Attention · Wave 8 pick stock</span></div><div class="lane-value"><b>134</b><small>+12% vs gisteren</small></div><div class="lane-value">246</div><div class="lane-value"><b>Same-day</b><small>DHL Parcel</small></div><div class="lane-value"><b>98,3%</b><small>−0,7 p.p.</small></div><div class="lane-value">99,61%</div><div><span class="tag amber">2 actief</span></div><div class="lane-value"><b data-service-cutoff="0">12:00</b><small>14 units exposed</small></div>
+          </article>
+          <article class="client-lane">
+            <div class="client-name"><strong>Velour Home</strong><span>Op schema · geen blokkades</span></div><div class="lane-value"><b>117</b><small>+8% vs gisteren</small></div><div class="lane-value">189</div><div class="lane-value"><b>24-hour</b><small>PostNL</small></div><div class="lane-value"><b>98,5%</b><small>+0,2 p.p.</small></div><div class="lane-value">99,52%</div><div><span class="tag green">0 actief</span></div><div class="lane-value"><b data-service-cutoff="15">12:15</b><small>0 exposed</small></div>
+          </article>
+          <article class="client-lane">
+            <div class="client-name"><strong>Moss &amp; Mineral</strong><span>Op schema · QA compleet</span></div><div class="lane-value"><b>99</b><small>+5% vs gisteren</small></div><div class="lane-value">172</div><div class="lane-value"><b>24-hour</b><small>DPD</small></div><div class="lane-value"><b>98,6%</b><small>+0,4 p.p.</small></div><div class="lane-value">99,67%</div><div><span class="tag green">0 actief</span></div><div class="lane-value"><b data-service-cutoff="30">12:30</b><small>0 exposed</small></div>
+          </article>
+          <article class="client-lane danger">
+            <div class="client-name"><strong>North &amp; Needle</strong><span>Urgent · order near cut-off</span></div><div class="lane-value"><b>82</b><small>−3% vs gisteren</small></div><div class="lane-value">141</div><div class="lane-value"><b>Same-day</b><small>DHL Parcel</small></div><div class="lane-value"><b>96,8%</b><small>−1,2 p.p.</small></div><div class="lane-value">99,58%</div><div><span class="tag red">1 urgent</span></div><div class="lane-value"><b data-service-cutoff="0">12:00</b><small>6 units exposed</small></div>
+          </article>
+        </section>
+
+        <section class="promise-grid">
+          <div class="panel" id="interventions">
+            <div class="panel-head"><h2>Promise interventions</h2><span class="meta">3 dossiers · 2 voor cut-off</span></div>
+            <div class="intervention">
+              <span class="severity red">!</span><div><strong>North &amp; Needle · SO-83970</strong><small>NNO-TWL-04 · 6 units · Same-day</small></div><div><strong>Pick niet vrijgegeven</strong><small>Picking · zone B → DHL Parcel <span data-service-cutoff="0">12:00</span></small></div><span class="owner"><i>MS</i></span><span class="deadline">00:09:42</span><button class="action" type="button">Open dossier</button>
+            </div>
+            <div class="intervention">
+              <span class="severity">!</span><div><strong>Atelier Noma · SO-41822</strong><small>ANO-CLP-11 · 14 units · Same-day</small></div><div><strong>Minimale pickvoorraad</strong><small>Replenishment Wave 8 → DHL Parcel <span data-service-cutoff="0">12:00</span></small></div><span class="owner"><i>TV</i></span><span class="deadline">00:17:32</span><button class="action" type="button">Open dossier</button>
+            </div>
+            <div class="intervention">
+              <span class="severity" style="background:var(--blue)">i</span><div><strong>Velour Home · SO-66032</strong><small>VHO-CUS-18 · 9 units · 24-hour</small></div><div><strong>Carrier scan open</strong><small>Handover → PostNL <span data-service-cutoff="15">12:15</span></small></div><span class="owner"><i>SB</i></span><span class="deadline" style="color:var(--blue)">00:32:14</span><button class="action" type="button">Open dossier</button>
+            </div>
+          </div>
+
+          <div class="panel" id="carrier">
+            <div class="panel-head"><h2>Carrier promise</h2><span class="meta">Dispatch readiness</span></div>
+            <div class="stack">
+              <div class="carrier-row"><span class="carrier-code">DHL</span><div><strong>DHL Parcel · <span data-service-cutoff="0">12:00</span></strong><small>Dock 02 · manifest 96% · 14 exposed</small></div><span class="row-num">39 / 44</span><span class="tag amber">At risk</span></div>
+              <div class="carrier-row"><span class="carrier-code">PNL</span><div><strong>PostNL · <span data-service-cutoff="15">12:15</span></strong><small>Dock 01 · manifest 100% · 0 exposed</small></div><span class="row-num">32 / 32</span><span class="tag green">Gereed</span></div>
+              <div class="carrier-row"><span class="carrier-code">DPD</span><div><strong>DPD · <span data-service-cutoff="30">12:30</span></strong><small>Dock 03 · manifest 88% · 0 exposed</small></div><span class="row-num">21 / 27</span><span class="tag blue">Opbouw</span></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel" id="drivers" style="margin-top:13px">
+          <div class="panel-head"><h2>Fulfilment drivers</h2><span class="meta">Portfolio WIP · oorzaak vóór gevolg</span></div>
+          <div class="driver-grid">
+            <div class="driver"><span class="eyebrow">01 Intake</span><b>21</b><small>oudste 17 min · 29%</small></div>
+            <div class="driver"><span class="eyebrow">02 Allocated</span><b>33</b><small>oudste 20 min · 45%</small></div>
+            <div class="driver warning"><span class="eyebrow">03 Picking</span><b>37</b><small>oudste 1u 41m · 92% · Wave 8</small></div>
+            <div class="driver"><span class="eyebrow">04 Packing</span><b>21</b><small>oudste 04 min · 35%</small></div>
+            <div class="driver"><span class="eyebrow">05 Manifested</span><b>27</b><small>oudste 14 min · 48%</small></div>
+            <div class="driver"><span class="eyebrow">06 Handover</span><b>12</b><small>oudste 06 min · 31%</small></div>
+            <div class="driver"><span class="eyebrow">07 Delivered</span><b>316</b><small>forecast 98,1% · doel 420</small></div>
+          </div>
+        </section>
+
+        <section class="lower-grid">
+          <div class="panel" id="returns">
+            <div class="panel-head"><h2>Waarde hersteld · retouren</h2><span class="meta">€ 2.953 vandaag</span></div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>RMA</th><th>Client</th><th>Reden</th><th>Grade</th><th>Disposition</th><th>Leeftijd</th><th>Recoverable</th></tr></thead>
+                <tbody>
+                  <tr><td class="mono">RMA-61049</td><td>Atelier Noma</td><td>Verpakking geopend</td><td>A</td><td>Direct restock</td><td>1u 23m</td><td>€ 186</td></tr>
+                  <tr><td class="mono">RMA-56616</td><td>Velour Home</td><td>Doos beschadigd</td><td>B</td><td>Herverpakken</td><td>2u 14m</td><td>€ 121</td></tr>
+                  <tr><td class="mono">RMA-82302</td><td>Moss &amp; Mineral</td><td>Seal controle</td><td>C</td><td>Lichte recovery</td><td>3u 08m</td><td>€ 74</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head"><h2>Portfolio activiteit</h2><span class="meta">Laatste events</span></div>
+            <div class="stack">
+              <div class="event-row"><time class="event-time" data-event-time>11:42</time><span class="event-pin"></span><div><strong>Atelier Noma replenishment toegewezen</strong><small>ANO-CLP-11 · Wave 8 · eigenaar TV</small></div></div>
+              <div class="event-row"><time class="event-time" data-event-time>11:41</time><span class="event-pin"></span><div><strong>North &amp; Needle dossier geëscaleerd</strong><small>SO-83970 · 6 units exposed · DHL Parcel</small></div></div>
+              <div class="event-row"><time class="event-time" data-event-time>11:40</time><span class="event-pin"></span><div><strong>Moss &amp; Mineral QA vrijgegeven</strong><small>Batch LOT-3019 · 15 units · aantallen akkoord</small></div></div>
+              <div class="event-row"><time class="event-time" data-event-time>11:39</time><span class="event-pin"></span><div><strong>Velour Home handover scan</strong><small>JVGL14800987 · PostNL · manifest compleet</small></div></div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+  <script src="variation.js"></script>
+</body>
+</html>

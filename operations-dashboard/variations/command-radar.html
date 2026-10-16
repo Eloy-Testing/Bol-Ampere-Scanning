@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#090a0c">
+  <title>BHP Operations Control — Departure Command</title>
+  <link rel="stylesheet" href="command-radar.css">
+</head>
+<body>
+  <header class="command-header">
+    <a class="bhp-mark" href="index.html" aria-label="Terug naar richtingen"><span>[</span>BHP<span>]</span></a>
+    <nav class="mode-nav" aria-label="Operationele secties">
+      <a class="active" href="#command">Command</a>
+      <a href="#flow">Warehouse flow</a>
+      <a href="#ledger">Operations ledger</a>
+    </nav>
+    <div class="header-status">
+      <span class="live-state"><i></i> Operationeel</span>
+      <span class="site">AMS · WH-01</span>
+      <b data-clock-seconds>11:42:21</b>
+      <span class="operator" aria-label="Operator MS">MS</span>
+    </div>
+  </header>
+
+  <main id="command">
+    <section class="page-bar">
+      <div class="page-title">
+        <p class="kicker">Shift lead · <span data-shift>06:00—14:00</span></p>
+        <h1>Departure Command</h1>
+        <span class="sync-note">Bijgewerkt <b data-sync>11:42:18</b></span>
+      </div>
+      <div class="headline-metrics" aria-label="Shiftprestatie">
+        <div><span>Orders</span><b data-live-value data-base="267" data-every="118">434</b><small>+12% d/d</small></div>
+        <div><span>Units verwerkt</span><b data-live-value data-base="451" data-every="87">786</b><small>+8% d/d</small></div>
+        <div><span>On-time forecast</span><b>98,1%</b><small>Doel 98,0%</small></div>
+      </div>
+    </section>
+
+    <section class="decision-shell" aria-label="Actieve cut-off beslissing">
+      <aside class="action-card" aria-labelledby="actionTitle">
+        <div class="action-top"><span>Actieve interventie</span><b>P1</b></div>
+        <p>Atelier Noma · Wave 8</p>
+        <h2 id="actionTitle">Herstel pickcapaciteit voor DHL <span data-cutoff-time>12:00</span>.</h2>
+        <div class="action-facts">
+          <div><span>Oorzaak</span><b>Pick zone B · 92%</b></div>
+          <div><span>Gevolg</span><b>14 same-day units exposed</b></div>
+          <div><span>Oudste tote</span><b>T-8062 · 1u 41m</b></div>
+          <div><span>Eigenaar</span><b><i>TV</i> T. Vos</b></div>
+        </div>
+        <div class="prescription">
+          <span>Aanbevolen inzet</span>
+          <b>2 operators Packing → Pick zone B</b>
+          <small>Tot WIP onder 28 komt · replenishment ETA <span data-eta="9">11:51</span></small>
+        </div>
+        <button class="primary-action" type="button">Bevestig inzet <span>→</span></button>
+      </aside>
+
+      <article class="departure-board">
+        <div class="departure-focus">
+          <div class="focus-label"><span>Volgende vertrek</span><b><i></i> Risico</b></div>
+          <div class="carrier-lockup">
+            <span class="carrier-seal">DHL</span>
+            <div><small>DHL Parcel · Dock 02</small><b data-cutoff-time>12:00</b></div>
+          </div>
+          <div class="cutoff-clock"><span>Vertrek over</span><b data-countdown data-shift-cutoff>00:17:32</b></div>
+          <div class="readiness">
+            <div><span>Manifest</span><b>39 / 44</b><small>96% compleet</small></div>
+            <div><span>Gereed</span><b>9</b><small>zendingen</small></div>
+            <div class="exposed"><span>Blootgesteld</span><b>14</b><small>units · 4 orders</small></div>
+          </div>
+        </div>
+
+        <div class="upcoming-window">
+          <div class="window-label"><span>Daarna</span><small>Readiness richting cut-off</small></div>
+          <article class="upcoming">
+            <time>12:15</time>
+            <div><b>PostNL</b><small>Dock 01 · NL-D-24</small></div>
+            <div class="progress ready" data-progress data-base="100" aria-label="PostNL readiness" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100"><span></span></div>
+            <div class="window-state"><b>32 / 32</b><small>Gereed</small></div>
+          </article>
+          <article class="upcoming">
+            <time>12:30</time>
+            <div><b>DPD Classic</b><small>Dock 03 · DE 40213</small></div>
+            <div class="progress building" data-progress data-base="86" data-range="4" aria-label="DPD readiness" aria-valuemin="0" aria-valuemax="100" aria-valuenow="88"><span></span></div>
+            <div class="window-state"><b>21 / 27</b><small>Opbouw</small></div>
+          </article>
+        </div>
+      </article>
+    </section>
+
+    <section class="flow-line" id="flow" aria-labelledby="flowTitle">
+      <header>
+        <div><p class="kicker">Causale onderlaag</p><h2 id="flowTitle">Warehouse flow</h2></div>
+        <span>151 open units · bottleneck Pick zone B</span>
+      </header>
+      <div class="stage-track">
+        <article><span>01 · Intake</span><b>21</b><small>17m · 29%</small></article>
+        <article><span>02 · Allocated</span><b>33</b><small>20m · 45%</small></article>
+        <article class="constraint"><span>03 · Picking</span><b>37</b><small>1u 41m · 92%</small></article>
+        <article><span>04 · Packing</span><b>21</b><small>04m · 35%</small></article>
+        <article><span>05 · Manifest</span><b>27</b><small>14m · 48%</small></article>
+        <article><span>06 · Handover</span><b>12</b><small>06m · 31%</small></article>
+        <article class="complete"><span>07 · Delivered</span><b>316</b><small>Vandaag</small></article>
+      </div>
+    </section>
+
+    <section class="operations-ledger" id="ledger">
+      <article class="queue" aria-labelledby="queueTitle">
+        <header><div><p class="kicker">Follow-up</p><h2 id="queueTitle">Interventiequeue</h2></div><span>2 actief</span></header>
+        <div class="queue-row urgent">
+          <span class="priority-code">P1</span>
+          <div><b>North &amp; Needle · SO-83970</b><small>Pack QA mist gewichtsscan · 6 units</small></div>
+          <time>00:24:08</time>
+        </div>
+        <div class="queue-row watch">
+          <span class="priority-code">P2</span>
+          <div><b>Velour Home · SO-41822</b><small>Controleer PostNL manifest MF-0150</small></div>
+          <time>00:32:14</time>
+        </div>
+      </article>
+
+      <article class="movement-trace" aria-labelledby="traceTitle">
+        <header><div><p class="kicker">Physical trace</p><h2 id="traceTitle">Laatste warehouse movements</h2></div><button type="button">Volledige trace ↗</button></header>
+        <div class="trace-head"><span>Tijd / move</span><span>Order / object</span><span>Route</span><span>Operator</span><span>Dwell</span><span>Status</span></div>
+        <div class="trace-row"><span><b data-event-time>11:42</b><small>MOV-721191</small></span><span><b>SO-83970</b><small>ANO-CLP-11 · qty 4</small></span><span><b>B-02-07-A → PACK-05</b><small>Pick complete</small></span><span>MS</span><span>06:18</span><span class="trace-state complete">Verwerkt</span></div>
+        <div class="trace-row"><span><b data-event-time>11:41</b><small>MOV-279021</small></span><span><b>SO-41822</b><small>VHO-CUS-18 · qty 9</small></span><span><b>A-03-02-C → SORT-DHL</b><small>Transfer</small></span><span>TV</span><span>03:44</span><span class="trace-state transit">Onderweg</span></div>
+        <div class="trace-row"><span><b data-event-time>11:40</b><small>MOV-439690</small></span><span><b>SO-66032</b><small>MMI-SRM-30 · qty 15</small></span><span><b>A-01-04-B → SORT-PNL</b><small>Manifest sort</small></span><span>SB</span><span>05:11</span><span class="trace-state complete">Verwerkt</span></div>
+        <div class="trace-row"><span><b data-event-time>11:39</b><small>MOV-887682</small></span><span><b>SO-37028</b><small>ANO-CLP-11 · qty 5</small></span><span><b>B-02-07-A → PACK-05</b><small>Pack QA</small></span><span>NR</span><span>18:02</span><span class="trace-state held">Wacht QA</span></div>
+      </article>
+    </section>
+
+    <footer><span>[BHP] Operations Control</span><span>Amsterdam · WH-01 · Shift <b data-shift>06:00—14:00</b></span><span>Verwerkt <b data-sync>11:42:18</b></span></footer>
+  </main>
+  <script src="redesign-runtime.js"></script>
+</body>
+</html>
